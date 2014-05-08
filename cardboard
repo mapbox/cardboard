@@ -35,6 +35,12 @@ if (argv.dump) {
         .pipe(process.stdout);
 }
 
+if (argv.query) {
+    cardboard.query(JSON.parse(argv.query), function(err, results) {
+        console.log(JSON.stringify(results));
+    });
+}
+
 function docs() {
     fs.createReadStream(__dirname + '/CLI.md').pipe(process.stdout);
 }

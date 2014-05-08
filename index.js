@@ -2,7 +2,8 @@ var levelup = require('levelup'),
     s2index = require('s2-index'),
     through = require('through2'),
     geojsonStream = require('geojson-stream'),
-    normalize = require('geojson-normalize');
+    normalize = require('geojson-normalize'),
+    queue = require('queue-async');
 
 module.exports = Cardboard;
 
@@ -33,6 +34,27 @@ Cardboard.prototype.importGeoJSON = function(_) {
     }
 };
 
+Cardboard.prototype.query = function(_, callback) {
+    if (typeof _ == 'object' && _.length == 2) {
+        _ = { type: 'Point', coordinates: _ };
+    }
+    var indexes = indexGeoJSON(normalize(_).features[0].geometry);
+    var q = queue(1);
+    var db = this.db;
+    indexes.forEach(function(idx) {
+        q.defer(function(idx, cb) {
+            db.get(idx, function(err, val) {
+                if (err.notFound) {
+                    return cb();
+                } else {
+                    return cb(null, val);
+                }
+            });
+        }, idx);
+    }.bind(this));
+    q.awaitAll(callback);
+};
+
 Cardboard.prototype.dump = function(_) {
     return this.db.createReadStream();
 };
@@ -48,7 +70,7 @@ Cardboard.prototype.export = function(_) {
 
 function indexGeoJSON(geom) {
     if (geom.type === 'Point') {
-        return s2index.point(geom.coordinates);
+        return s2index.point(geom.coordinates, 6, 12);
     }
     if (geom.type === 'Polygon') {
         return s2index.polygon(geom.coordinates[0]);
