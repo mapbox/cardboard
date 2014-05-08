@@ -1,0 +1,40 @@
+#!/usr/bin/env node
+
+var levelup = require('levelup'),
+    fs = require('fs'),
+    Cardboard = require('./'),
+    concat = require('concat-stream'),
+    JSONStream = require('JSONStream'),
+    argv = require('minimist')(process.argv.slice(2), {
+        boolean: ['dump', 'export']
+    });
+
+if (!argv._.length) {
+    docs();
+    return console.error('database filename required');
+}
+
+var cardboard = new Cardboard(argv._[0]);
+
+
+if (!process.stdin.isTTY) {
+    process.stdin.pipe(concat(function(buf) {
+        cardboard.importGeoJSON(JSON.parse(buf));
+    }));
+    return;
+}
+
+if (argv.export) {
+    cardboard.export()
+        .pipe(process.stdout);
+}
+
+if (argv.dump) {
+    cardboard.dump()
+        .pipe(JSONStream.stringify())
+        .pipe(process.stdout);
+}
+
+function docs() {
+    fs.createReadStream(__dirname + '/CLI.md').pipe(process.stdout);
+}
