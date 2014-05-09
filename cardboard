@@ -37,7 +37,10 @@ if (argv.dump) {
 
 if (argv.query) {
     cardboard.query(JSON.parse(argv.query), function(err, results) {
-        console.log(JSON.stringify(results));
+        results.filter(function(_) { return _; })
+            .forEach(function(r) {
+                console.log(r);
+            });
     });
 }
 

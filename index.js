@@ -3,6 +3,7 @@ var levelup = require('levelup'),
     through = require('through2'),
     geojsonStream = require('geojson-stream'),
     normalize = require('geojson-normalize'),
+    uniq = require('uniq'),
     queue = require('queue-async');
 
 module.exports = Cardboard;
@@ -52,7 +53,9 @@ Cardboard.prototype.query = function(_, callback) {
             });
         }, idx);
     }.bind(this));
-    q.awaitAll(callback);
+    q.awaitAll(function(err, res) {
+        callback(err, uniq(res));
+    });
 };
 
 Cardboard.prototype.dump = function(_) {
