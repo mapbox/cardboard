@@ -34,7 +34,8 @@
     "JSONStream": "~0.7.3",
     "geojson-stream": "0.0.0",
     "through2": "~0.4.1",
-    "queue-async": "~1.0.7"
+    "queue-async": "~1.0.7",
+    "s2-index": "0.0.0"
   },
   "devDependencies": {
     "tap": "~0.4.9"

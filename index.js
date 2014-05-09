@@ -44,7 +44,7 @@ Cardboard.prototype.query = function(_, callback) {
     indexes.forEach(function(idx) {
         q.defer(function(idx, cb) {
             db.get(idx, function(err, val) {
-                if (err.notFound) {
+                if (err) {
                     return cb();
                 } else {
                     return cb(null, val);
@@ -73,7 +73,13 @@ function indexGeoJSON(geom) {
         return s2index.point(geom.coordinates, 6, 12);
     }
     if (geom.type === 'Polygon') {
-        return s2index.polygon(geom.coordinates[0]);
+        return geom.coordinates.reduce(function(mem, ring) {
+            return mem.concat(s2index.polygon(ring, {
+                min: 6,
+                max: 12,
+                max_cells: 100
+            }));
+        }, []);
     }
     return [];
 }
