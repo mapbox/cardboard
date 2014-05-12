@@ -3,7 +3,8 @@ var levelup = require('levelup'),
     through = require('through2'),
     geojsonStream = require('geojson-stream'),
     normalize = require('geojson-normalize'),
-    uniq = require('uniq'),
+    unique = require('unique-stream'),
+    combinedStream = require('combined-stream'),
     queue = require('queue-async');
 
 module.exports = Cardboard;
@@ -42,20 +43,15 @@ Cardboard.prototype.query = function(_, callback) {
     var indexes = indexGeoJSON(normalize(_).features[0].geometry);
     var q = queue(1);
     var db = this.db;
+    var combiner = combinedStream.create();
     indexes.forEach(function(idx) {
-        q.defer(function(idx, cb) {
-            db.get(idx, function(err, val) {
-                if (err) {
-                    return cb();
-                } else {
-                    return cb(null, val);
-                }
-            });
-        }, idx);
+        console.log(idx);
+        combiner.append(db.createReadStream({
+            start: idx,
+            end: idx
+        }));
     }.bind(this));
-    q.awaitAll(function(err, res) {
-        callback(err, uniq(res));
-    });
+    return combiner;
 };
 
 Cardboard.prototype.dump = function(_) {

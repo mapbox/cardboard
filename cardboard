@@ -36,12 +36,10 @@ if (argv.dump) {
 }
 
 if (argv.query) {
-    cardboard.query(JSON.parse(argv.query), function(err, results) {
-        results.filter(function(_) { return _; })
-            .forEach(function(r) {
-                console.log(r);
-            });
-    });
+    cardboard.query(JSON.parse(argv.query))
+        .on('data', function(d) {
+            console.log(d);
+        });
 }
 
 function docs() {

@@ -26,17 +26,19 @@
   "homepage": "https://github.com/mapbox/cardboard",
   "dependencies": {
     "levelup": "~0.18.3",
-    "leveldown-prebuilt": "~0.10.2",
+    "leveldown": "~0.10.2",
     "minimist": "0.0.9",
     "concat-stream": "~1.4.5",
-    "leveldown": "~0.10.2",
     "geojson-normalize": "0.0.0",
     "JSONStream": "~0.7.3",
     "geojson-stream": "0.0.0",
     "through2": "~0.4.1",
     "queue-async": "~1.0.7",
     "s2-index": "0.0.0",
-    "uniq": "~1.0.0"
+    "uniq": "~1.0.0",
+    "kat": "~0.3.0",
+    "unique-stream": "0.0.4",
+    "combined-stream": "0.0.4"
   },
   "devDependencies": {
     "tap": "~0.4.9"
