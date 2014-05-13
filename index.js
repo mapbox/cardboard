@@ -58,7 +58,9 @@ Cardboard.prototype.dumpGeoJSON = function(_) {
                 properties: {
                     key: data.key
                 },
-                geometry: new s2.S2Cell(new s2.S2CellId(data.key.split('!')[1])).toGeoJSON()
+                geometry: new s2.S2Cell(new s2.S2CellId()
+                    .fromToken(
+                        data.key.split('!')[1])).toGeoJSON()
             });
             cb();
         }))
@@ -77,7 +79,7 @@ Cardboard.prototype.export = function(_) {
 function indexGeoJSON(geom, primary) {
     var i, j;
     if (geom.type === 'Point') {
-        return pointIndexes(geom.coordinates, 6, 12, primary);
+        return pointIndexes(geom.coordinates, 0, 30, primary);
     }
     if (geom.type === 'Polygon') {
         var indexes = [];
@@ -116,12 +118,9 @@ function pointIndexes(coords, min, max, primary) {
     var id = new s2.S2CellId(new s2.S2LatLng(coords[1], coords[0])),
         strings = [];
 
-    do {
-        if (id.level() >= min && id.level() <= max) {
-            strings.push(cellString(id, primary));
-        }
-        id = id.parent();
-    } while (id.level() > 0);
+    for (var i = min; i <= max; i++) {
+        strings.push(cellString(id.parent(i), primary));
+    }
 
     return strings;
 }
@@ -139,8 +138,8 @@ function polygonIndexes(coords, options, primary) {
 
 function cellString(cell, primary) {
     if (primary !== undefined) {
-        return 'cell!' + cell.id().toString() + '!' + primary;
+        return 'cell!' + cell.toToken() + '!' + primary;
     } else {
-        return 'cell!' + cell.id().toString();
+        return 'cell!' + cell.toToken();
     }
 }
