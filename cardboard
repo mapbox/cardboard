@@ -4,6 +4,7 @@ var levelup = require('levelup'),
     fs = require('fs'),
     Cardboard = require('./'),
     concat = require('concat-stream'),
+    geojsonNormalize = require('geojson-normalize'),
     JSONStream = require('JSONStream'),
     argv = require('minimist')(process.argv.slice(2), {
         boolean: ['dump', 'export']
@@ -16,10 +17,14 @@ if (!argv._.length) {
 
 var cardboard = new Cardboard(argv._[0]);
 
-
 if (!process.stdin.isTTY) {
     process.stdin.pipe(concat(function(buf) {
-        cardboard.importGeoJSON(JSON.parse(buf));
+        var gj = geojsonNormalize(JSON.parse(buf));
+        gj.features.forEach(function(feature) {
+            var id = ((feature.id !== undefined) ?
+                feature.id : feature.properties.id);
+            cardboard.insert(id, feature);
+        });
     }));
     return;
 }
@@ -32,6 +37,11 @@ if (argv.export) {
 if (argv.dump) {
     cardboard.dump()
         .pipe(JSONStream.stringify())
+        .pipe(process.stdout);
+}
+
+if (argv.dumpGeoJSON) {
+    cardboard.dumpGeoJSON()
         .pipe(process.stdout);
 }
 

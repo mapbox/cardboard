@@ -27,6 +27,8 @@ Currently as stringified GeoJSON
 
 As S2CellIds that cover the point for a range of S2 levels
 
-### How are >1 items per key stored?
+### What are the keys like?
 
-Not sure yet.
+You need to specify a stringable primary key on the way in. The final keys look like
+
+    cell!S2CELLID!PRIMARYKEY

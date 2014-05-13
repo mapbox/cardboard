@@ -1,4 +1,4 @@
-rm -f food.db
+rm -rf foo.db
 ./cardboard foo.db < countries.geojson
-./cardboard foo.db --dump
-./cardboard foo.db --query="[10,0]"
+./cardboard foo.db --dumpGeoJSON > patches.geojson
+# ./cardboard foo.db --query="[90,90]"
