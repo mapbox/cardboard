@@ -32,3 +32,9 @@ As S2CellIds that cover the point for a range of S2 levels
 You need to specify a stringable primary key on the way in. The final keys look like
 
     cell!S2CELLID!PRIMARYKEY
+
+## What about [MongoDB](http://www.mongodb.org/)?
+
+MongoDB [uses S2 for its spherical indexes](http://blog.mongodb.org/post/50984169045/new-geo-features-in-mongodb-2-4).
+
+Where [mongo turns cells into query parameters](https://github.com/mongodb/mongo/blob/f5ed485c97b08490f59234bc1ddef2c80c2c88b9/src/mongo/db/index/expression_index.h#L42-161).

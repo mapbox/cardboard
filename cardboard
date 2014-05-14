@@ -45,12 +45,18 @@ if (argv.dumpGeoJSON) {
         .pipe(process.stdout);
 }
 
-if (argv.query) {
-    cardboard.query(JSON.parse(argv.query))
-        .on('data', function(d) {
-            console.log(d);
-        });
+if (argv.intersects) {
+    cardboard.intersects(JSON.parse(argv.intersects), function(err, res) {
+        JSON.stringify('here');
+    });
 }
+
+// if (argv.contains) {
+//     cardboard.contains(JSON.parse(argv.contains))
+//         .on('data', function(d) {
+//             console.log(d);
+//         });
+// }
 
 function docs() {
     fs.createReadStream(__dirname + '/CLI.md').pipe(process.stdout);

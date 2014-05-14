@@ -1,11 +1,11 @@
 var levelup = require('levelup'),
     s2 = require('s2'),
-    Combine = require('stream-combiner'),
     through = require('through2'),
+    _ = require('lodash'),
     geojsonStream = require('geojson-stream'),
+    concat = require('concat-stream'),
     normalize = require('geojson-normalize'),
-    unique = require('unique-stream'),
-    combinedStream = require('combined-stream'),
+    uniq = require('uniq'),
     queue = require('queue-async');
 
 module.exports = Cardboard;
@@ -28,22 +28,30 @@ Cardboard.prototype.insert = function(primary, feature) {
     }
 };
 
-Cardboard.prototype.query = function(_, callback) {
-    if (typeof _ == 'object' && _.length == 2) {
-        _ = { type: 'Point', coordinates: _ };
+Cardboard.prototype.intersects = function(input, callback) {
+    if (typeof input == 'object' && input.length == 2) {
+        input = { type: 'Point', coordinates: input };
     }
-    var indexes = indexGeoJSON(normalize(_).features[0].geometry);
+    var indexes = indexGeoJSON(normalize(input).features[0].geometry);
     var q = queue(1);
     var db = this.db;
-    var combiner = combinedStream.create();
-    console.log(indexes);
     indexes.forEach(function(idx) {
-        combiner.append(db.createReadStream({
-            start: idx,
-            end: idx
-        }));
-    }.bind(this));
-    return combiner;
+        q.defer(function(idx, cb) {
+            db.createReadStream({
+                start: idx
+            }).pipe(concat(function(data) {
+                cb(null, data);
+            }));
+        }, idx);
+    });
+    q.awaitAll(function(err, res) {
+        var flat = _.flatten(res);
+        uniq(flat, function(a, b) {
+            return a.key.split('!')[2] !== b.key.split('!')[2];
+        });
+        console.log(flat);
+        callback(err, flat);
+    });
 };
 
 Cardboard.prototype.dump = function(_) {

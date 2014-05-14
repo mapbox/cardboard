@@ -34,10 +34,9 @@
     "geojson-stream": "0.0.0",
     "through2": "~0.4.1",
     "queue-async": "~1.0.7",
-    "unique-stream": "0.0.4",
-    "combined-stream": "0.0.4",
     "s2": "~0.3.0",
-    "stream-combiner": "~0.1.0"
+    "uniq": "~1.0.0",
+    "lodash": "~2.4.1"
   },
   "devDependencies": {
     "tap": "~0.4.9"
