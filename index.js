@@ -37,11 +37,18 @@ Cardboard.prototype.intersects = function(input, callback) {
     var db = this.db;
     indexes.forEach(function(idx) {
         q.defer(function(idx, cb) {
-            db.createReadStream({
+            var readStream = db.createReadStream({
                 start: idx
-            }).pipe(concat(function(data) {
+            });
+            readStream.pipe(concat(function(data) {
                 cb(null, data);
             }));
+            readStream.on('data', function(data) {
+                if (data.key.indexOf(idx) !== 0) {
+                    readStream.emit('end');
+                    readStream.destroy();
+                }
+            });
         }, idx);
     });
     q.awaitAll(function(err, res) {
@@ -86,7 +93,7 @@ Cardboard.prototype.export = function(_) {
 function indexGeoJSON(geom, primary) {
     var i, j;
     if (geom.type === 'Point') {
-        return pointIndexes(geom.coordinates, 0, 30, primary);
+        return pointIndexes(geom.coordinates, 28, 30, primary);
     }
     if (geom.type === 'Polygon') {
         var indexes = [];

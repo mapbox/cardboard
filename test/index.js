@@ -1,6 +1,7 @@
 var test = require('tap').test,
     levelup = require('levelup'),
     memdown = require('memdown'),
+    fs = require('fs'),
     concat = require('concat-stream'),
     Cardboard = require('../');
 
@@ -54,10 +55,27 @@ test('Cardboard#intersects', function(t) {
     }), cardboard, '.insert');
 
     cardboard.intersects([0, 0], function(err, res) {
-        t.deepEqual(res, [{
-            key : "cell!10000001!hello", // != undefined
-            value : "{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[0,0]}}" // != undefined
-        }]);
+        t.deepEqual(ids(res), ['hello']);
         t.end();
     });
 });
+
+test('countries.geojson', function(t) {
+    var countries = JSON.parse(fs.readFileSync(__dirname + '/data/countries.geojson'));
+    var cardboard = new Cardboard(levelup('', { db: memdown }));
+    countries.features.forEach(function(feature) {
+        var id = ((feature.id !== undefined) ?
+            feature.id : feature.properties.id);
+        cardboard.insert(id, feature);
+    });
+    cardboard.intersects([-96.6796875, 37.996162679728116], function(err, res) {
+        t.deepEqual(ids(res), ["USA"]);
+        t.end();
+    });
+});
+
+function ids(res) {
+    return res.map(function(r) {
+        return r.key.split('!')[2];
+    });
+}
