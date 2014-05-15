@@ -15,7 +15,7 @@ if (!argv._.length) {
     return console.error('database filename required');
 }
 
-var cardboard = new Cardboard(argv._[0]);
+var cardboard = new Cardboard(levelup(argv._[0]));
 
 if (!process.stdin.isTTY) {
     process.stdin.pipe(concat(function(buf) {

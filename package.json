@@ -4,7 +4,7 @@
   "description": "db of leveldb + s2",
   "main": "index.js",
   "scripts": {
-    "test": "tap test/*.js"
+    "test": "tap --tap test/*.js"
   },
   "bin": {
     "cardboard": "./cardboard"
@@ -39,6 +39,7 @@
     "lodash": "~2.4.1"
   },
   "devDependencies": {
-    "tap": "~0.4.9"
+    "tap": "~0.4.9",
+    "memdown": "~0.9.0"
   }
 }

@@ -1,5 +1,4 @@
-var levelup = require('levelup'),
-    s2 = require('s2'),
+var s2 = require('s2'),
     through = require('through2'),
     _ = require('lodash'),
     geojsonStream = require('geojson-stream'),
@@ -10,9 +9,9 @@ var levelup = require('levelup'),
 
 module.exports = Cardboard;
 
-function Cardboard(name) {
-    if (!(this instanceof Cardboard)) return new Cardboard(name);
-    this.db = levelup(name);
+function Cardboard(db) {
+    if (!(this instanceof Cardboard)) return new Cardboard(db);
+    this.db = db;
 }
 
 Cardboard.prototype.insert = function(primary, feature) {
@@ -22,6 +21,7 @@ Cardboard.prototype.insert = function(primary, feature) {
 
     indexes.forEach(writeFeature);
     ws.end();
+    return this;
 
     function writeFeature(index) {
         ws.write({ key: index, value: featureStr });
@@ -49,7 +49,6 @@ Cardboard.prototype.intersects = function(input, callback) {
         uniq(flat, function(a, b) {
             return a.key.split('!')[2] !== b.key.split('!')[2];
         });
-        console.log(flat);
         callback(err, flat);
     });
 };
