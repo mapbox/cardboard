@@ -4,8 +4,10 @@ var s2 = require('s2'),
     geojsonStream = require('geojson-stream'),
     concat = require('concat-stream'),
     normalize = require('geojson-normalize'),
+    geojsonCover = require('./lib/geojsoncover'),
     uniq = require('uniq'),
     queue = require('queue-async');
+
 
 module.exports = Cardboard;
 
@@ -16,7 +18,7 @@ function Cardboard(db) {
 
 Cardboard.prototype.insert = function(primary, feature) {
     var ws = this.db.createWriteStream(),
-        indexes = indexGeoJSON(feature.geometry, primary),
+        indexes = geojsonCover(feature.geometry),
         featureStr = JSON.stringify(feature);
 
     indexes.forEach(writeFeature);
@@ -24,7 +26,7 @@ Cardboard.prototype.insert = function(primary, feature) {
     return this;
 
     function writeFeature(index) {
-        ws.write({ key: index, value: featureStr });
+        ws.write({ key: 'cell!' + index + '!' + primary, value: featureStr });
     }
 };
 
@@ -32,19 +34,19 @@ Cardboard.prototype.intersects = function(input, callback) {
     if (typeof input == 'object' && input.length == 2) {
         input = { type: 'Point', coordinates: input };
     }
-    var indexes = indexGeoJSON(normalize(input).features[0].geometry);
+    var indexes = geojsonCover(normalize(input).features[0].geometry);
     var q = queue(1);
     var db = this.db;
     indexes.forEach(function(idx) {
         q.defer(function(idx, cb) {
             var readStream = db.createReadStream({
-                start: idx
+                start: 'cell!' + idx
             });
             readStream.pipe(concat(function(data) {
                 cb(null, data);
             }));
             readStream.on('data', function(data) {
-                if (data.key.indexOf(idx) !== 0) {
+                if (data.key.indexOf('cell!' + idx) !== 0) {
                     readStream.emit('end');
                     readStream.destroy();
                 }
@@ -89,66 +91,6 @@ Cardboard.prototype.export = function(_) {
         }))
         .pipe(geojsonStream.stringify());
 };
-
-function indexGeoJSON(geom, primary) {
-    var i, j;
-    if (geom.type === 'Point') {
-        return pointIndexes(geom.coordinates, 28, 30, primary);
-    }
-    if (geom.type === 'Polygon') {
-        var indexes = [];
-        for (i = 0; i < geom.coordinates.length; i++) {
-            var toAdd = polygonIndexes(geom.coordinates[i], {
-                min: 1,
-                max: 30,
-                max_cells: 200
-            }, primary);
-            for (var k = 0; k < toAdd.length; k++) {
-                indexes.push(toAdd[k]);
-            }
-        }
-        return indexes;
-    }
-    if (geom.type === 'MultiPolygon') {
-        var indexes = [];
-        for (i = 0; i < geom.coordinates.length; i++) {
-            for (j = 0; j < geom.coordinates[i].length; j++) {
-                var toAdd = polygonIndexes(geom.coordinates[i][j], {
-                    min: 1,
-                    max: 30,
-                    max_cells: 200
-                }, primary);
-                for (var k = 0; k < toAdd.length; k++) {
-                    indexes.push(toAdd[k]);
-                }
-            }
-        }
-        return indexes;
-    }
-    return [];
-}
-
-function pointIndexes(coords, min, max, primary) {
-    var id = new s2.S2CellId(new s2.S2LatLng(coords[1], coords[0])),
-        strings = [];
-
-    for (var i = min; i <= max; i++) {
-        strings.push(cellString(id.parent(i), primary));
-    }
-
-    return strings;
-}
-
-function polygonIndexes(coords, options, primary) {
-    var cover = s2.getCover(coords.map(function(c) {
-        return new s2.S2LatLng(c[1], c[0]);
-    }), options || {});
-    var out = [];
-    for (var i = 0; i < cover.length; i++) {
-        out.push(cellString(cover[i].id(), primary));
-    }
-    return out;
-}
 
 function cellString(cell, primary) {
     if (primary !== undefined) {

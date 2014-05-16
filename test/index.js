@@ -5,7 +5,7 @@ var test = require('tap').test,
     concat = require('concat-stream'),
     Cardboard = require('../');
 
-test('Cardboard#dump', function(t) {
+test('dump', function(t) {
     var cardboard = new Cardboard(levelup('', { db: memdown }));
 
     cardboard.dump().pipe(concat(function(data) {
@@ -14,7 +14,7 @@ test('Cardboard#dump', function(t) {
     }));
 });
 
-test('Cardboard#dumpGeoJSON', function(t) {
+test('dumpGeoJSON', function(t) {
     var cardboard = new Cardboard(levelup('', { db: memdown }));
 
     cardboard.dumpGeoJSON().pipe(concat(function(data) {
@@ -26,7 +26,7 @@ test('Cardboard#dumpGeoJSON', function(t) {
     }));
 });
 
-test('Cardboard#insert', function(t) {
+test('insert', function(t) {
     var cardboard = new Cardboard(levelup('', { db: memdown }));
 
     t.equal(cardboard.insert('hello', {
@@ -43,7 +43,7 @@ test('Cardboard#insert', function(t) {
     }));
 });
 
-test('Cardboard#intersects', function(t) {
+test('intersects', function(t) {
     var cardboard = new Cardboard(levelup('', { db: memdown }));
 
     t.equal(cardboard.insert('hello', {
@@ -55,19 +55,25 @@ test('Cardboard#intersects', function(t) {
     }), cardboard, '.insert');
 
     cardboard.intersects([0, 0], function(err, res) {
-        t.deepEqual(ids(res), ['hello']);
+        t.deepEqual(ids(res), ['hello'], 'hello');
         t.end();
     });
 });
 
 test('countries.geojson', function(t) {
-    var countries = JSON.parse(fs.readFileSync(__dirname + '/data/countries.geojson'));
+    console.log('countries');
     var cardboard = new Cardboard(levelup('', { db: memdown }));
+    console.log('countries');
+    t.ok(cardboard, 'cardboard is initialized');
+    var countries = JSON.parse(fs.readFileSync(__dirname + '/data/countries.geojson'));
+    console.log('countries');
     countries.features.forEach(function(feature) {
         var id = ((feature.id !== undefined) ?
             feature.id : feature.properties.id);
+        console.log('inserting', id);
         cardboard.insert(id, feature);
     });
+    console.log('done with insert');
     cardboard.intersects([-96.6796875, 37.996162679728116], function(err, res) {
         t.deepEqual(ids(res), ["USA"]);
         t.end();
