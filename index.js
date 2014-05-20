@@ -8,7 +8,6 @@ var s2 = require('s2'),
     uniq = require('uniq'),
     queue = require('queue-async');
 
-
 module.exports = Cardboard;
 
 function Cardboard(db) {

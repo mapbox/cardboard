@@ -26,7 +26,7 @@ test('dumpGeoJSON', function(t) {
     }));
 });
 
-test('insert', function(t) {
+test('insert & dump', function(t) {
     var cardboard = new Cardboard(levelup('', { db: memdown }));
 
     t.equal(cardboard.insert('hello', {
@@ -37,47 +37,10 @@ test('insert', function(t) {
         }
     }), cardboard, '.insert');
 
-    cardboard.dumpGeoJSON().pipe(concat(function(data) {
-        t.ok(data, 'creates data');
+    cardboard.dump().pipe(concat(function(data) {
+        t.equal(data.length, 1, 'creates data');
         t.end();
     }));
-});
-
-test('intersects', function(t) {
-    var cardboard = new Cardboard(levelup('', { db: memdown }));
-
-    t.equal(cardboard.insert('hello', {
-        type: 'Feature',
-        geometry: {
-            type: 'Point',
-            coordinates: [0, 0]
-        }
-    }), cardboard, '.insert');
-
-    cardboard.intersects([0, 0], function(err, res) {
-        t.deepEqual(ids(res), ['hello'], 'hello');
-        t.end();
-    });
-});
-
-test('countries.geojson', function(t) {
-    console.log('countries');
-    var cardboard = new Cardboard(levelup('', { db: memdown }));
-    console.log('countries');
-    t.ok(cardboard, 'cardboard is initialized');
-    var countries = JSON.parse(fs.readFileSync(__dirname + '/data/countries.geojson'));
-    console.log('countries');
-    countries.features.forEach(function(feature) {
-        var id = ((feature.id !== undefined) ?
-            feature.id : feature.properties.id);
-        console.log('inserting', id);
-        cardboard.insert(id, feature);
-    });
-    console.log('done with insert');
-    cardboard.intersects([-96.6796875, 37.996162679728116], function(err, res) {
-        t.deepEqual(ids(res), ["USA"]);
-        t.end();
-    });
 });
 
 function ids(res) {

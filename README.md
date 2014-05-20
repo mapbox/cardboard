@@ -53,3 +53,7 @@ It only supports point queries, and is written in Java.
 
 These query types should be roughly equivalent to the PostGIS [ST_Within](http://postgis.refractions.net/documentation/manual-1.4/ST_Within.html)
 and [ST_Intersects](http://postgis.org/docs/ST_Intersects.html) queries.
+
+## About DynamoDB
+
+* [Hot hash keys](http://nate.io/dynamodb-and-hot-hash-keys/)
