@@ -5,6 +5,7 @@ var test = require('tap').test,
     queue = require('queue-async'),
     concat = require('concat-stream'),
     Cardboard = require('../'),
+    geojsonExtent = require('geojson-extent'),
     fixtures = require('./fixtures');
 
 var emptyFeatureCollection = {
@@ -86,5 +87,32 @@ test('insert polygon', function(t) {
 
     t.equal(cardboard.insert('us', fixtures.USA), cardboard, '.insert USA');
 
-    t.end();
+    var queries = [
+        {
+            query: [-10, -10, 10, 10],
+            length: 0
+        },
+        {
+            query: [-76.0, 38.0, -79, 40],
+            length: 1
+        },
+        {
+            query: geojsonExtent(fixtures.USA),
+            length: 1
+        }
+    ];
+
+    var q = queue(1);
+
+    queries.forEach(function(query) {
+        q.defer(function(query, callback) {
+            t.equal(cardboard.bboxQuery(query.query, function(err, data) {
+                t.equal(err, null, 'no error for ' + query.query.join(','));
+                t.equal(data.length, query.length, 'finds ' + query.length + ' data with a query');
+                callback();
+            }), undefined, '.bboxQuery');
+        }, query);
+    });
+
+    q.awaitAll(function() { t.end(); });
 });
