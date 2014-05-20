@@ -62,6 +62,7 @@ and [ST_Intersects](http://postgis.org/docs/ST_Intersects.html) queries.
 ## About DynamoDB
 
 * [Hot hash keys](http://nate.io/dynamodb-and-hot-hash-keys/)
+* [We should not](http://simondlr.com/post/26360955465/dynamodb-is-awesome-but) use [the scan operation](http://blog.coredumped.org/2012/01/amazon-dynamodb.html) for anything.
 
 ## What Levels Should you use?
 
@@ -75,3 +76,7 @@ and [ST_Intersects](http://postgis.org/docs/ST_Intersects.html) queries.
 * We can't have them as numbers, because JavaScript does not tolerate 64-bit
   ints. Ints can only have 52 bits of precision in JS.
 * Current approach is to use tokens
+
+## Building Loops
+
+* GeoJSON Polygons / rings always have a duplicate vertex at the end. S2Loop doesn't like that.

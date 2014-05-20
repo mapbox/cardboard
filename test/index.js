@@ -4,26 +4,8 @@ var test = require('tap').test,
     fs = require('fs'),
     queue = require('queue-async'),
     concat = require('concat-stream'),
-    Cardboard = require('../');
-
-var nullIsland = {
-    type: 'Feature',
-    geometry: {
-        type: 'Point',
-        coordinates: [0, 0]
-    }
-};
-
-var dc = {
-    type: 'Feature',
-    geometry: {
-        type: 'Point',
-        coordinates: [
-          -77.02875137329102,
-          38.93337493490118
-        ]
-    }
-};
+    Cardboard = require('../'),
+    fixtures = require('./fixtures');
 
 var emptyFeatureCollection = {
     type: 'FeatureCollection',
@@ -51,7 +33,7 @@ test('dumpGeoJSON', function(t) {
 test('insert & dump', function(t) {
     var cardboard = new Cardboard(levelup('', { db: memdown }));
 
-    t.equal(cardboard.insert('hello', nullIsland), cardboard, '.insert');
+    t.equal(cardboard.insert('hello', fixtures.nullIsland), cardboard, '.insert');
 
     cardboard.dump().pipe(concat(function(data) {
         t.equal(data.length, 1, 'creates data');
@@ -62,8 +44,8 @@ test('insert & dump', function(t) {
 test('insert & query', function(t) {
     var cardboard = new Cardboard(levelup('', { db: memdown }));
 
-    t.equal(cardboard.insert('nullisland', nullIsland), cardboard, '.insert');
-    t.equal(cardboard.insert('dc', dc), cardboard, '.insert');
+    t.equal(cardboard.insert('nullisland', fixtures.nullIsland), cardboard, '.insert');
+    t.equal(cardboard.insert('dc', fixtures.dc), cardboard, '.insert');
 
     var queries = [
         {
@@ -99,8 +81,10 @@ test('insert & query', function(t) {
     q.awaitAll(function() { t.end(); });
 });
 
-function ids(res) {
-    return res.map(function(r) {
-        return r.key.split('!')[2];
-    });
-}
+test('insert polygon', function(t) {
+    var cardboard = new Cardboard(levelup('', { db: memdown }));
+
+    t.equal(cardboard.insert('us', fixtures.USA), cardboard, '.insert USA');
+
+    t.end();
+});
