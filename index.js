@@ -3,7 +3,6 @@ var s2 = require('s2'),
     _ = require('lodash'),
     geojsonStream = require('geojson-stream'),
     concat = require('concat-stream'),
-    normalize = require('geojson-normalize'),
     geojsonCover = require('./lib/geojsoncover'),
     uniq = require('uniq'),
     queue = require('queue-async');
@@ -17,7 +16,7 @@ function Cardboard(db) {
 
 Cardboard.prototype.insert = function(primary, feature) {
     var ws = this.db.createWriteStream(),
-        indexes = geojsonCover(feature.geometry),
+        indexes = geojsonCover.geometry(feature.geometry),
         featureStr = JSON.stringify(feature);
 
     indexes.forEach(writeFeature);
@@ -29,17 +28,15 @@ Cardboard.prototype.insert = function(primary, feature) {
     }
 };
 
-Cardboard.prototype.intersects = function(input, callback) {
-    if (typeof input == 'object' && input.length == 2) {
-        input = { type: 'Point', coordinates: input };
-    }
-    var indexes = geojsonCover(normalize(input).features[0].geometry);
+Cardboard.prototype.bboxQuery = function(input, callback) {
+    var indexes = geojsonCover.bboxQueryIndexes(input);
     var q = queue(1);
     var db = this.db;
     indexes.forEach(function(idx) {
         q.defer(function(idx, cb) {
             var readStream = db.createReadStream({
-                start: 'cell!' + idx
+                start: 'cell!' + idx[0],
+                end: 'cell!' + idx[1]
             });
             readStream.pipe(concat(function(data) {
                 cb(null, data);

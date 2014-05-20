@@ -1,10 +1,13 @@
 # cardboard
 
-Demo platform for `s2-index` on leveldb.
+Demo platform for `s2-index` on LevelDB.
 
 ## Approach
 
-This project aims to create a simple, fast geospatial index as a layer on top of LevelDB. This means that the index will not be built into the database or contained in a single R-Tree - it will be baked into the indexes by which data is stored.
+This project aims to create a simple, fast geospatial index as a layer on top
+of [LevelDB](http://code.google.com/p/leveldb/) and [DynamoDB](https://aws.amazon.com/dynamodb/). This
+means that the index will not be built into the database or
+contained in a single R-Tree - it will be baked into the indexes by which data is stored.
 
 Support target:
 
@@ -25,16 +28,18 @@ Currently as stringified GeoJSON
 
 ### How are points stored
 
-As S2CellIds that cover the point for a range of S2 levels
+As S2CellIds that cover the point on level 30.
 
 ### What are the keys like?
 
 You need to specify a stringable primary key on the way in. The final keys look like
 
-    cell!S2CELLID!PRIMARYKEY
+    cell ! (s2 cell id as token) ! (primary key)
 
 Since this indexing scheme relies on range queries, it's unlikely primary IDs
-will be used as hash keys in DynamoDB because you can [only do a range query within a single hash key](http://0x74696d.com/posts/falling-in-and-out-of-love-with-dynamodb-part-ii/).
+will be used as hash keys in DynamoDB because you
+can [only do a range query within a single hash key](http://0x74696d.com/posts/falling-in-and-out-of-love-with-dynamodb-part-ii/).
+Instead, hash keys in DynamoDB will be more like database or layer names.
 
 ## What about [MongoDB](http://www.mongodb.org/)?
 
@@ -57,3 +62,16 @@ and [ST_Intersects](http://postgis.org/docs/ST_Intersects.html) queries.
 ## About DynamoDB
 
 * [Hot hash keys](http://nate.io/dynamodb-and-hot-hash-keys/)
+
+## What Levels Should you use?
+
+* For points, as high as possible (30?)
+* For rectanges, [twofishes default?](https://github.com/foursquare/twofishes/blob/master/util/src/main/scala/GeometryUtils.scala#L10-14) - 8 to 12, mod 2
+
+## Cell IDs as strings or tokens?
+
+* Looks like Google [uses tokens in mustang](https://github.com/mapbox/node-s2/blob/69b063dc2ef7a3e41d1d0b3079599105d29ddec6/geometry/s2cellid.cc#L168-187) (or did, mustang is retired, I think)
+  but these are only accessible via CellId.
+* We can't have them as numbers, because JavaScript does not tolerate 64-bit
+  ints. Ints can only have 52 bits of precision in JS.
+* Current approach is to use tokens
