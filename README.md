@@ -1,6 +1,6 @@
 # cardboard
 
-Demo platform for `s2-index` on LevelDB.
+Demo platform for [s2](https://github.com/mapbox/node-s2) on LevelDB.
 
 ## Approach
 
