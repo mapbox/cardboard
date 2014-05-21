@@ -87,11 +87,3 @@ Cardboard.prototype.export = function(_) {
         }))
         .pipe(geojsonStream.stringify());
 };
-
-function cellString(cell, primary) {
-    if (primary !== undefined) {
-        return 'cell!' + cell.toToken() + '!' + primary;
-    } else {
-        return 'cell!' + cell.toToken();
-    }
-}
