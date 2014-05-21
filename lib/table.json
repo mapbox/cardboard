@@ -1,0 +1,15 @@
+{
+    "TableName": "geo",
+    "AttributeDefinitions": [
+        {"AttributeName": "layer", "AttributeType": "S"},
+        {"AttributeName": "id", "AttributeType": "S"}
+    ],
+    "KeySchema": [
+        {"AttributeName": "layer", "KeyType": "HASH"},
+        {"AttributeName": "id", "KeyType": "RANGE"}
+    ],
+    "ProvisionedThroughput": {
+        "ReadCapacityUnits": 5,
+        "WriteCapacityUnits": 50
+    }
+}

@@ -14,14 +14,14 @@ function Cardboard(db) {
     this.db = db;
 }
 
-Cardboard.prototype.insert = function(primary, feature) {
+Cardboard.prototype.insert = function(primary, feature, cb) {
     var ws = this.db.createWriteStream(),
         indexes = geojsonCover.geometry(feature.geometry),
         featureStr = JSON.stringify(feature);
 
     indexes.forEach(writeFeature);
     ws.end();
-    return this;
+    ws.on('close', cb);
 
     function writeFeature(index) {
         ws.write({ key: 'cell!' + index + '!' + primary, value: featureStr });
