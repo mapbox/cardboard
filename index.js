@@ -7,6 +7,10 @@ var s2 = require('s2'),
     uniq = require('uniq'),
     queue = require('queue-async');
 
+var DEBUG = true;
+
+function log(s) { if (DEBUG) console.log(s); }
+
 module.exports = Cardboard;
 
 function Cardboard(db) {
@@ -19,6 +23,7 @@ Cardboard.prototype.insert = function(primary, feature, cb) {
         indexes = geojsonCover.geometry(feature.geometry),
         featureStr = JSON.stringify(feature);
 
+    log('indexing ' + primary + ' with ' + indexes.length + ' indexes');
     indexes.forEach(writeFeature);
     ws.end();
     ws.on('close', cb);
@@ -32,22 +37,9 @@ Cardboard.prototype.bboxQuery = function(input, callback) {
     var indexes = geojsonCover.bboxQueryIndexes(input);
     var q = queue(1);
     var db = this.db;
+    log('querying with ' + indexes.length + ' indexes');
     indexes.forEach(function(idx) {
-        q.defer(function(idx, cb) {
-            var readStream = db.createReadStream({
-                start: 'cell!' + idx[0],
-                end: 'cell!' + idx[1]
-            });
-            readStream.pipe(concat(function(data) {
-                cb(null, data);
-            }));
-            readStream.on('data', function(data) {
-                if (data.key.indexOf('cell!' + idx) !== 0) {
-                    readStream.emit('end');
-                    readStream.destroy();
-                }
-            });
-        }, idx);
+        q.defer(db.rangeQuery, idx);
     });
     q.awaitAll(function(err, res) {
         var flat = _.flatten(res);
