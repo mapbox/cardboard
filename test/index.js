@@ -89,10 +89,8 @@ test('insert & dump', function(t) {
 });
 teardown(test);
 
-/*
-
-t.test('insert & query', function(t) {
-
+setup(test);
+test('insert & query', function(t) {
     var queries = [
         {
             query: [-10, -10, 10, 10],
@@ -111,67 +109,59 @@ t.test('insert & query', function(t) {
             length: 1
         }
     ];
+    var cardboard = new Cardboard(db);
+    var insertQueue = queue(1);
 
-    adapter[1](function(db) {
-        var cardboard = new Cardboard(db);
-        var insertQueue = queue(1);
+    [['nullisland', fixtures.nullIsland],
+    ['dc', fixtures.dc]].forEach(function(fix) {
+        insertQueue.defer(cardboard.insert.bind(cardboard), fix[0], fix[1]);
+    });
 
-        [['nullisland', fixtures.nullIsland],
-        ['dc', fixtures.dc]].forEach(function(fix) {
-            insertQueue.defer(cardboard.insert.bind(cardboard), fix[0], fix[1]);
+    insertQueue.awaitAll(inserted);
+
+    function inserted() {
+        var q = queue(1);
+        queries.forEach(function(query) {
+            q.defer(function(query, callback) {
+                t.equal(cardboard.bboxQuery(query.query, function(err, data) {
+                    t.equal(err, null, 'no error for ' + query.query.join(','));
+                    t.equal(data.length, query.length, 'finds ' + query.length + ' data with a query');
+                    callback();
+                }), undefined, '.bboxQuery');
+            }, query);
         });
-
-        insertQueue.awaitAll(inserted);
-
-        function inserted() {
-            var q = queue(1);
-            queries.forEach(function(query) {
-                q.defer(function(query, callback) {
-                    t.equal(cardboard.bboxQuery(query.query, function(err, data) {
-                        t.equal(err, null, 'no error for ' + query.query.join(','));
-                        t.equal(data.length, query.length, 'finds ' + query.length + ' data with a query');
-                        callback();
-                    }), undefined, '.bboxQuery');
-                }, query);
-            });
-            q.awaitAll(function() { t.end(); });
-        }
-    });
+        q.awaitAll(function() { t.end(); });
+    }
 });
+teardown(test);
 
-t.test('insert polygon', function(t) {
-    adapter[1](function(db) {
-        var cardboard = new Cardboard(db);
+setup(test);
+test('insert polygon', function(t) {
+    var cardboard = new Cardboard(db);
+    cardboard.insert('us', fixtures.haiti, inserted);
 
-        cardboard.insert('us', fixtures.USA, inserted);
-
-        function inserted() {
-            var queries = [
-                {
-                    query: [-10, -10, 10, 10],
-                    length: 0
-                },
-                {
-                    query: [-76.0, 38.0, -79, 40],
-                    length: 1
-                },
-                {
-                    query: geojsonExtent(fixtures.USA),
-                    length: 1
-                }
-            ];
-            var q = queue(1);
-            queries.forEach(function(query) {
-                q.defer(function(query, callback) {
-                    t.equal(cardboard.bboxQuery(query.query, function(err, data) {
-                        t.equal(err, null, 'no error for ' + query.query.join(','));
-                        t.equal(data.length, query.length, 'finds ' + query.length + ' data with a query');
-                        callback();
-                    }), undefined, '.bboxQuery');
-                }, query);
-            });
-            q.awaitAll(function() { t.end(); });
-        }
-    });
+    function inserted() {
+        var queries = [
+            {
+                query: [-10, -10, 10, 10],
+                length: 0
+            },
+            {
+                query: [-76.0, 38.0, -79, 40],
+                length: 0
+            }
+        ];
+        var q = queue(1);
+        queries.forEach(function(query) {
+            q.defer(function(query, callback) {
+                t.equal(cardboard.bboxQuery(query.query, function(err, data) {
+                    t.equal(err, null, 'no error for ' + query.query.join(','));
+                    t.equal(data.length, query.length, 'finds ' + query.length + ' data with a query');
+                    callback();
+                }), undefined, '.bboxQuery');
+            }, query);
+        });
+        q.awaitAll(function() { t.end(); });
+    }
 });
-*/
+teardown(test);
