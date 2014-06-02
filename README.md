@@ -80,3 +80,9 @@ and [ST_Intersects](http://postgis.org/docs/ST_Intersects.html) queries.
 ## Building Loops
 
 * GeoJSON Polygons / rings always have a duplicate vertex at the end. S2Loop doesn't like that.
+
+## Get or Scan?
+
+DynamoDB treats Scan operations on tables with small keys very well:
+
+> You can use the Query and Scan operations in DynamoDB to retrieve multiple consecutive items from a table in a single request. With these operations, DynamoDB uses the cumulative size of the processed items to calculate provisioned throughput. For example, if a Query operation retrieves 100 items that are 1 KB each, the read capacity calculation is not (100 × 4 KB) = 100 read capacity units, as if those items were retrieved individually using GetItem or BatchGetItem. Instead, the total would be only 25 read capacity units ((100 * 1024 bytes) = 100 KB, which is then divided by 4 KB).

@@ -11,6 +11,11 @@ var DEBUG = true;
 
 function log(s) { if (DEBUG) console.log(s); }
 
+var emptyFeatureCollection = {
+    type: 'FeatureCollection',
+    features: []
+};
+
 module.exports = Cardboard;
 
 function Cardboard(db) {
@@ -51,24 +56,27 @@ Cardboard.prototype.bboxQuery = function(input, callback) {
 };
 
 Cardboard.prototype.dump = function(_) {
-    return this.db.createReadStream();
+    this.db.getAll(_);
 };
 
-Cardboard.prototype.dumpGeoJSON = function(_) {
-    return this.db.createReadStream()
-        .pipe(through({ objectMode: true }, function(data, enc, cb) {
-            this.push({
-                type: 'Feature',
-                properties: {
-                    key: data.key
-                },
-                geometry: new s2.S2Cell(new s2.S2CellId()
-                    .fromToken(
-                        data.key.split('!')[1])).toGeoJSON()
-            });
-            cb();
-        }))
-        .pipe(geojsonStream.stringify());
+Cardboard.prototype.dumpGeoJSON = function(callback) {
+    return this.db.getAll(function(err, res) {
+        if (err) return callback(err);
+        return callback(null, {
+            type: 'FeatureCollection',
+            features: res.map(function(f) {
+                return {
+                    type: 'Feature',
+                    properties: {
+                        key: f.key
+                    },
+                    geometry: new s2.S2Cell(new s2.S2CellId()
+                        .fromToken(
+                            f.key.split('!')[1])).toGeoJSON()
+                };
+            })
+        });
+    });
 };
 
 Cardboard.prototype.export = function(_) {
