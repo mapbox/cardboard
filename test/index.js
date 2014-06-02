@@ -73,21 +73,23 @@ test('dumpGeoJSON', function(t) {
 });
 teardown(test);
 
-/*
+setup(test);
+test('insert & dump', function(t) {
+    var cardboard = new Cardboard(db);
 
-t.test('insert & dump', function(t) {
-    adapter[1](function(db) {
-        var cardboard = new Cardboard(db);
-
-        cardboard.insert('hello', fixtures.nullIsland, function() {
-            t.pass('inserted');
-            cardboard.dump().pipe(concat(function(data) {
-                t.equal(data.length, 1, 'creates data');
-                t.end();
-            }));
+    cardboard.insert('hello', fixtures.nullIsland, function(err) {
+        t.equal(err, null);
+        t.pass('inserted');
+        cardboard.dump(function(err, data) {
+            t.equal(err, null);
+            t.equal(data.length, 1, 'creates data');
+            t.end();
         });
     });
 });
+teardown(test);
+
+/*
 
 t.test('insert & query', function(t) {
 

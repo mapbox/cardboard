@@ -24,18 +24,22 @@ function Cardboard(db) {
 }
 
 Cardboard.prototype.insert = function(primary, feature, cb) {
-    var ws = this.db.createWriteStream(),
-        indexes = geojsonCover.geometry(feature.geometry),
-        featureStr = JSON.stringify(feature);
+    var indexes = geojsonCover.geometry(feature.geometry),
+        featureStr = JSON.stringify(feature),
+        db = this.db;
 
     log('indexing ' + primary + ' with ' + indexes.length + ' indexes');
-    indexes.forEach(writeFeature);
-    ws.end();
-    ws.on('close', cb);
-
-    function writeFeature(index) {
-        ws.write({ key: 'cell!' + index + '!' + primary, value: featureStr });
-    }
+    var q = queue(1);
+    indexes.forEach(function(index) {
+        q.defer(db.putItem, {
+            id: 'cell!' + index + '!' + primary,
+            layer: 'default',
+            val: featureStr
+        });
+    });
+    q.awaitAll(function(err, res) {
+        cb(err);
+    });
 };
 
 Cardboard.prototype.bboxQuery = function(input, callback) {
