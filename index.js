@@ -29,7 +29,7 @@ Cardboard.prototype.insert = function(primary, feature, cb) {
         db = this.db;
 
     log('indexing ' + primary + ' with ' + indexes.length + ' indexes');
-    var q = queue(1);
+    var q = queue(50);
     indexes.forEach(function(index) {
         q.defer(db.putItem, {
             id: 'cell!' + index + '!' + primary,

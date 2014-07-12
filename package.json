@@ -4,7 +4,7 @@
   "description": "db of leveldb + s2",
   "main": "index.js",
   "scripts": {
-    "test": "tap --tap test/*.js"
+    "test": "tap --tap test/*.js | ./node_modules/.bin/faucet"
   },
   "bin": {
     "cardboard": "./cardboard"
@@ -43,8 +43,9 @@
     "readable-stream": "~1.0.27-1"
   },
   "devDependencies": {
-    "tap": "~0.4.9",
+    "dynalite": "~0.3.6",
+    "faucet": "0.0.1",
     "memdown": "~0.9.0",
-    "dynalite": "~0.3.6"
+    "tap": "~0.4.9"
   }
 }
