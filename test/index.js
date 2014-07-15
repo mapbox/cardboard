@@ -1,5 +1,4 @@
 var test = require('tap').test,
-    dyno = require('dyno')(),
     fs = require('fs'),
     queue = require('queue-async'),
     concat = require('concat-stream'),
@@ -40,7 +39,7 @@ function teardown(cb) {
 
 setup(test);
 test('tables', function(t) {
-    dyno.listTables(function(err, res) {
+    db.dyno.listTables(function(err, res) {
         t.equal(err, null);
         t.deepEqual(res, { TableNames: ['geo'] });
         t.end();
