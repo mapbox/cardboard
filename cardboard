@@ -8,49 +8,58 @@ var levelup = require('levelup'),
     JSONStream = require('JSONStream'),
     argv = require('minimist')(process.argv.slice(2), {
         boolean: ['dump', 'export']
-    });
+    }),
+    dynamoAdapter = require('./lib/dynamodbadapter');
 
 if (!argv._.length) {
     docs();
     return console.error('database filename required');
 }
+var db;
+dynamoAdapter(function(_db) {
+    db = _db;
+    ready();
+});
 
-var cardboard = new Cardboard(levelup(argv._[0]));
+function ready(){
+    var cardboard = new Cardboard(db);
 
-if (!process.stdin.isTTY) {
-    process.stdin.pipe(concat(function(buf) {
-        var gj = geojsonNormalize(JSON.parse(buf));
-        gj.features.forEach(function(feature) {
-            var id = ((feature.id !== undefined) ?
-                feature.id : feature.properties.id);
-            cardboard.insert(id, feature);
+    if (!process.stdin.isTTY) {
+        process.stdin.pipe(concat(function(buf) {
+            var gj = geojsonNormalize(JSON.parse(buf));
+            gj.features.forEach(function(feature) {
+                var id = ((feature.id !== undefined) ?
+                    feature.id : feature.properties.id);
+                cardboard.insert(id, feature, function(err){
+                    if(err) throw err;
+                });
+            });
+        }));
+        return;
+    }
+
+    if (argv.export) {
+        cardboard.export()
+            .pipe(process.stdout);
+    }
+
+    if (argv.dump) {
+        cardboard.dump()
+            .pipe(JSONStream.stringify())
+            .pipe(process.stdout);
+    }
+
+    if (argv.dumpGeoJSON) {
+        cardboard.dumpGeoJSON()
+            .pipe(process.stdout);
+    }
+
+    if (argv.intersects) {
+        cardboard.intersects(JSON.parse(argv.intersects), function(err, res) {
+            JSON.stringify('here');
         });
-    }));
-    return;
+    }
 }
-
-if (argv.export) {
-    cardboard.export()
-        .pipe(process.stdout);
-}
-
-if (argv.dump) {
-    cardboard.dump()
-        .pipe(JSONStream.stringify())
-        .pipe(process.stdout);
-}
-
-if (argv.dumpGeoJSON) {
-    cardboard.dumpGeoJSON()
-        .pipe(process.stdout);
-}
-
-if (argv.intersects) {
-    cardboard.intersects(JSON.parse(argv.intersects), function(err, res) {
-        JSON.stringify('here');
-    });
-}
-
 // if (argv.contains) {
 //     cardboard.contains(JSON.parse(argv.contains))
 //         .on('data', function(d) {

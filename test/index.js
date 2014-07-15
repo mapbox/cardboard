@@ -1,6 +1,4 @@
 var test = require('tap').test,
-    levelup = require('levelup'),
-    memdown = require('memdown'),
     fs = require('fs'),
     queue = require('queue-async'),
     concat = require('concat-stream'),
@@ -41,7 +39,7 @@ function teardown(cb) {
 
 setup(test);
 test('tables', function(t) {
-    db.dynamodb.client.listTables(function(err, res) {
+    db.dyno.listTables(function(err, res) {
         t.equal(err, null);
         t.deepEqual(res, { TableNames: ['geo'] });
         t.end();
