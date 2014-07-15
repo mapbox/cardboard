@@ -1,7 +1,7 @@
 {
   "name": "cardboard",
   "version": "0.0.0",
-  "description": "db of leveldb + s2",
+  "description": "",
   "main": "index.js",
   "scripts": {
     "test": "tap --tap test/*.js | ./node_modules/.bin/faucet"
