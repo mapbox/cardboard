@@ -5,11 +5,8 @@ var s2 = require('s2'),
     concat = require('concat-stream'),
     geojsonCover = require('./lib/geojsoncover'),
     uniq = require('uniq'),
+    log = require('debug')('cardboard'),
     queue = require('queue-async');
-
-var DEBUG = true;
-
-function log(s) { if (DEBUG) console.log(s); }
 
 var emptyFeatureCollection = {
     type: 'FeatureCollection',
