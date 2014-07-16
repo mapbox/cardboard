@@ -163,3 +163,34 @@ test('insert polygon', function(t) {
     }
 });
 teardown(test);
+
+setup(test);
+test('insert linestring', function(t) {
+    var cardboard = new Cardboard(db);
+    cardboard.insert('us', fixtures.haitiLine, inserted);
+
+    function inserted() {
+        var queries = [
+            {
+                query: [-10, -10, 10, 10],
+                length: 0
+            },
+            {
+                query: [-76.0, 38.0, -79, 40],
+                length: 0
+            }
+        ];
+        var q = queue(1);
+        queries.forEach(function(query) {
+            q.defer(function(query, callback) {
+                t.equal(cardboard.bboxQuery(query.query, function(err, data) {
+                    t.equal(err, null, 'no error for ' + query.query.join(','));
+                    t.equal(data.length, query.length, 'finds ' + query.length + ' data with a query');
+                    callback();
+                }), undefined, '.bboxQuery');
+            }, query);
+        });
+        q.awaitAll(function() { t.end(); });
+    }
+});
+teardown(test);
