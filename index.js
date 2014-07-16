@@ -5,6 +5,7 @@ var s2 = require('s2'),
     concat = require('concat-stream'),
     geojsonCover = require('./lib/geojsoncover'),
     uniq = require('uniq'),
+    geobuf = require('geobuf'),
     log = require('debug')('cardboard'),
     queue = require('queue-async');
 
@@ -22,7 +23,6 @@ function Cardboard(db) {
 
 Cardboard.prototype.insert = function(primary, feature, cb) {
     var indexes = geojsonCover.geometry(feature.geometry),
-        featureStr = JSON.stringify(feature),
         db = this.db;
 
     log('indexing ' + primary + ' with ' + indexes.length + ' indexes');
@@ -31,7 +31,7 @@ Cardboard.prototype.insert = function(primary, feature, cb) {
         q.defer(db.putItem, {
             id: 'cell!' + index + '!' + primary,
             layer: 'default',
-            val: featureStr
+            val: geobuf.featureToGeobuf(feature).toBuffer()
         });
     });
     q.awaitAll(function(err, res) {
@@ -83,7 +83,7 @@ Cardboard.prototype.dumpGeoJSON = function(callback) {
 Cardboard.prototype.export = function(_) {
     return this.db.createReadStream()
         .pipe(through({ objectMode: true }, function(data, enc, cb) {
-            this.push(JSON.parse(data.value));
+            this.push(geobuf.geobufToFeature(data.value));
             cb();
         }))
         .pipe(geojsonStream.stringify());

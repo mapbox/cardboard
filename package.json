@@ -38,7 +38,8 @@
     "through2": "~0.4.1",
     "uniq": "~1.0.0",
     "debug": "~1.0.3",
-    "rw": "~0.1.1"
+    "rw": "~0.1.1",
+    "geobuf": "~0.1.0"
   },
   "devDependencies": {
     "dynalite": "~0.3.6",
