@@ -16,19 +16,18 @@ var emptyFeatureCollection = {
 
 module.exports = Cardboard;
 
-function Cardboard(db) {
-    if (!(this instanceof Cardboard)) return new Cardboard(db);
-    this.db = db;
+function Cardboard(dyno) {
+    if (!(this instanceof Cardboard)) return new Cardboard(dyno);
+    this.dyno = dyno;
 }
 
 Cardboard.prototype.insert = function(primary, feature, cb) {
-    var indexes = geojsonCover.geometry(feature.geometry),
-        db = this.db;
-
+    var indexes = geojsonCover.geometry(feature.geometry);
+    var dyno = this.dyno;
     log('indexing ' + primary + ' with ' + indexes.length + ' indexes');
     var q = queue(50);
     indexes.forEach(function(index) {
-        q.defer(db.putItem, {
+        q.defer(dyno.putItem, {
             id: 'cell!' + index + '!' + primary,
             layer: 'default',
             val: geobuf.featureToGeobuf(feature).toBuffer()
@@ -42,12 +41,16 @@ Cardboard.prototype.insert = function(primary, feature, cb) {
 Cardboard.prototype.bboxQuery = function(input, callback) {
     var indexes = geojsonCover.bboxQueryIndexes(input);
     var q = queue(1);
-    var db = this.db;
+    var dyno = this.dyno;
     log('querying with ' + indexes.length + ' indexes');
     indexes.forEach(function(idx) {
-        q.defer(db.rangeQuery, idx);
+        q.defer(dyno.query,
+            { id: {'BETWEEN': ['cell!' + idx[0], 'cell!' + idx[1]]},
+              layer: {'EQ': 'default'}
+          });
     });
     q.awaitAll(function(err, res) {
+        res = res.map(function(r){return r.items});
         var flat = _.flatten(res);
         uniq(flat, function(a, b) {
             return a.key.split('!')[2] !== b.key.split('!')[2];
@@ -56,16 +59,16 @@ Cardboard.prototype.bboxQuery = function(input, callback) {
     });
 };
 
-Cardboard.prototype.dump = function(_) {
-    this.db.getAll(_);
+Cardboard.prototype.dump = function(cb) {
+    this.dyno.scan(cb);
 };
 
 Cardboard.prototype.dumpGeoJSON = function(callback) {
-    return this.db.getAll(function(err, res) {
+    return this.dyno.scan(function(err, res) {
         if (err) return callback(err);
         return callback(null, {
             type: 'FeatureCollection',
-            features: res.map(function(f) {
+            features: res.items.map(function(f) {
                 return {
                     type: 'Feature',
                     properties: {
@@ -81,7 +84,7 @@ Cardboard.prototype.dumpGeoJSON = function(callback) {
 };
 
 Cardboard.prototype.export = function(_) {
-    return this.db.createReadStream()
+    return this.dyno.scan()
         .pipe(through({ objectMode: true }, function(data, enc, cb) {
             this.push(geobuf.geobufToFeature(data.value));
             cb();

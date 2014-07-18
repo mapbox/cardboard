@@ -4,8 +4,14 @@ var test = require('tap').test,
     concat = require('concat-stream'),
     Cardboard = require('../'),
     geojsonExtent = require('geojson-extent'),
-    dynamoAdapter = require('../lib/dynamodbadapter'),
     fixtures = require('./fixtures');
+
+var dyno = require('dyno')({
+    awsKey: 'fake',
+    awsSecret: 'fake',
+    table: 'geo',
+    endpoint: 'http://localhost:4567'
+});
 
 var emptyFeatureCollection = {
     type: 'FeatureCollection',
@@ -22,8 +28,7 @@ function setup(t) {
             deleteTableMs: 0
         });
         dynalite.listen(4567, function() {
-            dynamoAdapter(function(_db) {
-                db = _db;
+            dyno.createTable(require('../lib/table.json'), function(err, resp){
                 t.end();
             });
         });
@@ -39,7 +44,7 @@ function teardown(cb) {
 
 setup(test);
 test('tables', function(t) {
-    db.dyno.listTables(function(err, res) {
+    dyno.listTables(function(err, res) {
         t.equal(err, null);
         t.deepEqual(res, { TableNames: ['geo'] });
         t.end();
@@ -49,11 +54,10 @@ teardown(test);
 
 setup(test);
 test('dump', function(t) {
-    var cardboard = new Cardboard(db);
-
+    var cardboard = new Cardboard(dyno);
     cardboard.dump(function(err, data) {
         t.equal(err, null);
-        t.deepEqual(data, [], 'no results with a new database');
+        t.deepEqual(data.items, [], 'no results with a new database');
         t.end();
     });
 });
@@ -61,7 +65,7 @@ teardown(test);
 
 setup(test);
 test('dumpGeoJSON', function(t) {
-    var cardboard = new Cardboard(db);
+    var cardboard = new Cardboard(dyno);
 
     cardboard.dumpGeoJSON(function(err, data) {
         t.deepEqual(data, emptyFeatureCollection, 'no results with a new database');
@@ -73,14 +77,14 @@ teardown(test);
 
 setup(test);
 test('insert & dump', function(t) {
-    var cardboard = new Cardboard(db);
+    var cardboard = new Cardboard(dyno);
 
     cardboard.insert('hello', fixtures.nullIsland, function(err) {
         t.equal(err, null);
         t.pass('inserted');
         cardboard.dump(function(err, data) {
             t.equal(err, null);
-            t.equal(data.length, 1, 'creates data');
+            t.equal(data.items.length, 1, 'creates data');
             t.end();
         });
     });
@@ -107,7 +111,7 @@ test('insert & query', function(t) {
             length: 1
         }
     ];
-    var cardboard = new Cardboard(db);
+    var cardboard = new Cardboard(dyno);
     var insertQueue = queue(1);
 
     [['nullisland', fixtures.nullIsland],
@@ -128,14 +132,15 @@ test('insert & query', function(t) {
                 }), undefined, '.bboxQuery');
             }, query);
         });
-        q.awaitAll(function() { t.end(); });
+        q.awaitAll(function() {
+            t.end(); });
     }
 });
 teardown(test);
 
 setup(test);
 test('insert polygon', function(t) {
-    var cardboard = new Cardboard(db);
+    var cardboard = new Cardboard(dyno);
     cardboard.insert('us', fixtures.haiti, inserted);
 
     function inserted() {
@@ -166,7 +171,7 @@ teardown(test);
 
 setup(test);
 test('insert linestring', function(t) {
-    var cardboard = new Cardboard(db);
+    var cardboard = new Cardboard(dyno);
     cardboard.insert('us', fixtures.haitiLine, inserted);
 
     function inserted() {
