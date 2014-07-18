@@ -6,22 +6,32 @@ var fs = require('fs'),
     geojsonNormalize = require('geojson-normalize'),
     JSONStream = require('JSONStream'),
     argv = require('minimist')(process.argv.slice(2)),
-    dynamoAdapter = require('./lib/dynamodbadapter');
+    dyno = require('dyno');
 
 if (!argv._.length) {
     docs();
     return console.error('database filename required');
 }
 
-var db;
-dynamoAdapter(function(_db) {
-    db = _db;
+var dyno = require('dyno')({
+    awsKey: 'fake',
+    awsSecret: 'fake',
+    table: argv._[0],
+    endpoint: 'http://localhost:4567'
+});
+
+
+var cardboard = new Cardboard(dyno);
+
+var table = require('./lib/table.json')
+table.TableName = argv._[0];
+
+dyno.createTable(table, function(err){
+    if(err) throw err;
     ready();
 });
 
-function ready() {
-    var cardboard = new Cardboard(db);
-
+function ready(){
     if (!process.stdin.isTTY) {
         process.stdin.pipe(concat(function(buf) {
             var gj = geojsonNormalize(JSON.parse(buf));
@@ -35,25 +45,20 @@ function ready() {
         }));
         return;
     }
-
-    if (argv._.length) {
-        switch (argv._[0]) {
-            case 'export':
-                cardboard.export()
-                    .pipe(process.stdout);
-                break;
-            case 'dump':
-                cardboard.dump()
-                    .pipe(JSONStream.stringify())
-                    .pipe(process.stdout);
-                break;
-            case 'dumpGeoJSON':
-                cardboard.dumpGeoJSON()
-                    .pipe(process.stdout);
-                break;
-        }
+    if (argv.export) {
+        cardboard.export()
+            .pipe(process.stdout);
+    } else if(argv.dump === 'geojson') {
+        cardboard.dumpGeoJSON()
+            .pipe(process.stdout);
+    } else if(argv.dump) {
+        cardboard.dump()
+            .pipe(JSONStream.stringify())
+            .pipe(process.stdout);
     }
+
 }
+
 
 function docs() {
     fs.createReadStream(__dirname + '/CLI.md').pipe(process.stdout);

@@ -60,7 +60,7 @@ Cardboard.prototype.bboxQuery = function(input, callback) {
 };
 
 Cardboard.prototype.dump = function(cb) {
-    this.dyno.scan(cb);
+    return this.dyno.scan(cb);
 };
 
 Cardboard.prototype.dumpGeoJSON = function(callback) {
@@ -86,8 +86,8 @@ Cardboard.prototype.dumpGeoJSON = function(callback) {
 Cardboard.prototype.export = function(_) {
     return this.dyno.scan()
         .pipe(through({ objectMode: true }, function(data, enc, cb) {
-            this.push(geobuf.geobufToFeature(data.value));
-            cb();
+             this.push(geobuf.geobufToFeature(data.val));
+             cb();
         }))
         .pipe(geojsonStream.stringify());
 };
