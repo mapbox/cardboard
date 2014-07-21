@@ -13,17 +13,17 @@ if (!argv._.length) {
     return console.error('database filename required');
 }
 
-var dyno = require('dyno')({
+var config = {
     awsKey: 'fake',
     awsSecret: 'fake',
     table: argv._[0],
     endpoint: 'http://localhost:4567'
-});
+};
+var dyno = require('dyno')(config);
 
+var cardboard = new Cardboard(config);
 
-var cardboard = new Cardboard(dyno);
-
-var table = require('./lib/table.json')
+var table = require('./lib/table.json');
 table.TableName = argv._[0];
 
 dyno.createTable(table, function(err){

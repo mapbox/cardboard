@@ -6,12 +6,14 @@ var test = require('tap').test,
     geojsonExtent = require('geojson-extent'),
     fixtures = require('./fixtures');
 
-var dyno = require('dyno')({
+var config = {
     awsKey: 'fake',
     awsSecret: 'fake',
     table: 'geo',
     endpoint: 'http://localhost:4567'
-});
+};
+
+var dyno = require('dyno')(config);
 
 var emptyFeatureCollection = {
     type: 'FeatureCollection',
@@ -54,7 +56,7 @@ teardown(test);
 
 setup(test);
 test('dump', function(t) {
-    var cardboard = new Cardboard(dyno);
+    var cardboard = new Cardboard(config);
     cardboard.dump(function(err, data) {
         t.equal(err, null);
         t.deepEqual(data.items, [], 'no results with a new database');
@@ -65,7 +67,7 @@ teardown(test);
 
 setup(test);
 test('dumpGeoJSON', function(t) {
-    var cardboard = new Cardboard(dyno);
+    var cardboard = new Cardboard(config);
 
     cardboard.dumpGeoJSON(function(err, data) {
         t.deepEqual(data, emptyFeatureCollection, 'no results with a new database');
@@ -77,7 +79,7 @@ teardown(test);
 
 setup(test);
 test('insert & dump', function(t) {
-    var cardboard = new Cardboard(dyno);
+    var cardboard = new Cardboard(config);
 
     cardboard.insert('hello', fixtures.nullIsland, function(err) {
         t.equal(err, null);
@@ -111,7 +113,7 @@ test('insert & query', function(t) {
             length: 1
         }
     ];
-    var cardboard = new Cardboard(dyno);
+    var cardboard = new Cardboard(config);
     var insertQueue = queue(1);
 
     [['nullisland', fixtures.nullIsland],
@@ -140,7 +142,7 @@ teardown(test);
 
 setup(test);
 test('insert polygon', function(t) {
-    var cardboard = new Cardboard(dyno);
+    var cardboard = new Cardboard(config);
     cardboard.insert('us', fixtures.haiti, inserted);
 
     function inserted() {
@@ -171,7 +173,7 @@ teardown(test);
 
 setup(test);
 test('insert linestring', function(t) {
-    var cardboard = new Cardboard(dyno);
+    var cardboard = new Cardboard(config);
     cardboard.insert('us', fixtures.haitiLine, inserted);
 
     function inserted() {

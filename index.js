@@ -7,7 +7,8 @@ var s2 = require('s2'),
     uniq = require('uniq'),
     geobuf = require('geobuf'),
     log = require('debug')('cardboard'),
-    queue = require('queue-async');
+    queue = require('queue-async'),
+    Dyno = require('dyno');
 
 var emptyFeatureCollection = {
     type: 'FeatureCollection',
@@ -16,9 +17,9 @@ var emptyFeatureCollection = {
 
 module.exports = Cardboard;
 
-function Cardboard(dyno) {
-    if (!(this instanceof Cardboard)) return new Cardboard(dyno);
-    this.dyno = dyno;
+function Cardboard(c) {
+    if (!(this instanceof Cardboard)) return new Cardboard(c);
+    this.dyno = Dyno(c);
 }
 
 Cardboard.prototype.insert = function(primary, feature, cb) {
@@ -50,10 +51,15 @@ Cardboard.prototype.bboxQuery = function(input, callback) {
           });
     });
     q.awaitAll(function(err, res) {
-        res = res.map(function(r){return r.items});
+        res = res.map(function(r){
+            return r.items.map(function(i){
+                i.val = geobuf.geobufToFeature(i.val);
+                return i;
+            });
+        });
         var flat = _.flatten(res);
         uniq(flat, function(a, b) {
-            return a.key.split('!')[2] !== b.key.split('!')[2];
+            return a.id.split('!')[2] !== b.id.split('!')[2];
         });
         callback(err, flat);
     });
