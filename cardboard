@@ -7,6 +7,7 @@ var fs = require('fs'),
     JSONStream = require('JSONStream'),
     argv = require('minimist')(process.argv.slice(2)),
     dyno = require('dyno');
+require('dotenv').load();
 
 if (!argv._.length) {
     docs();
@@ -14,10 +15,11 @@ if (!argv._.length) {
 }
 
 var config = {
-    awsKey: 'fake',
-    awsSecret: 'fake',
+    awsKey: process.env.awsKey || 'fake',
+    awsSecret:  process.env.awsSecret || 'fake',
     table: argv._[0],
-    endpoint: 'http://localhost:4567'
+    //endpoint:  process.env.Endpoint || 'http://localhost:4567',
+    region: process.env.Region
 };
 var dyno = require('dyno')(config);
 

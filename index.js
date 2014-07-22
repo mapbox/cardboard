@@ -41,7 +41,7 @@ Cardboard.prototype.insert = function(primary, feature, cb) {
 
 Cardboard.prototype.bboxQuery = function(input, callback) {
     var indexes = geojsonCover.bboxQueryIndexes(input);
-    var q = queue(5);
+    var q = queue(100);
     var dyno = this.dyno;
     log('querying with ' + indexes.length + ' indexes');
     indexes.forEach(function(idx) {
