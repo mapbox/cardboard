@@ -51,18 +51,23 @@ Cardboard.prototype.bboxQuery = function(input, callback) {
           });
     });
     q.awaitAll(function(err, res) {
-        res = res.map(function(r){
+        if (err) return callback(err);
+
+        res = res.map(function(r) {
             return r.items.map(function(i){
                 i.val = geobuf.geobufToFeature(i.val);
                 return i;
             });
         });
+
         var flat = _(res).chain().flatten().sortBy(function(a){
             return a.id.split('!')[2];
         }).value();
+
         flat = uniq(flat, function(a, b) {
             return a.id.split('!')[2] !== b.id.split('!')[2];
         }, true);
+
         callback(err, flat);
     });
 };
