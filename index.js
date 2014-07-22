@@ -41,7 +41,7 @@ Cardboard.prototype.insert = function(primary, feature, cb) {
 
 Cardboard.prototype.bboxQuery = function(input, callback) {
     var indexes = geojsonCover.bboxQueryIndexes(input);
-    var q = queue(1);
+    var q = queue(5);
     var dyno = this.dyno;
     log('querying with ' + indexes.length + ' indexes');
     indexes.forEach(function(idx) {
@@ -57,10 +57,12 @@ Cardboard.prototype.bboxQuery = function(input, callback) {
                 return i;
             });
         });
-        var flat = _.flatten(res);
-        uniq(flat, function(a, b) {
+        var flat = _(res).chain().flatten().sortBy(function(a){
+            return a.id.split('!')[2];
+        }).value();
+        flat = uniq(flat, function(a, b) {
             return a.id.split('!')[2] !== b.id.split('!')[2];
-        });
+        }, true);
         callback(err, flat);
     });
 };
@@ -97,3 +99,4 @@ Cardboard.prototype.export = function(_) {
         }))
         .pipe(geojsonStream.stringify());
 };
+Cardboard.prototype.geojsonCover = geojsonCover;

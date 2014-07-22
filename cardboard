@@ -55,6 +55,10 @@ function ready(){
         cardboard.dump()
             .pipe(JSONStream.stringify())
             .pipe(process.stdout);
+    }else if(argv.query) {
+        cardboard.bboxQuery(argv.query.split(',').map(function(q){ return parseFloat(q); }), function(err, data){
+            console.log(err, data);
+        });
     }
 
 }
