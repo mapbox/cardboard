@@ -104,4 +104,5 @@ Cardboard.prototype.export = function(_) {
         }))
         .pipe(geojsonStream.stringify());
 };
+
 Cardboard.prototype.geojsonCover = geojsonCover;
