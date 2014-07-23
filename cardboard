@@ -18,7 +18,7 @@ var config = {
     awsKey: process.env.awsKey || 'fake',
     awsSecret:  process.env.awsSecret || 'fake',
     table: argv._[0],
-    //endpoint:  process.env.Endpoint || 'http://localhost:4567',
+    endpoint:  process.env.Endpoint || 'http://localhost:4567',
     region: process.env.Region
 };
 var dyno = require('dyno')(config);
@@ -40,7 +40,7 @@ function ready(){
             gj.features.forEach(function(feature) {
                 var id = ((feature.id !== undefined) ?
                     feature.id : feature.properties.id);
-                cardboard.insert(id, feature, function(err){
+                cardboard.insert(id, feature, argv.layer || 'default', function(err){
                     if(err) throw err;
                 });
             });
@@ -58,7 +58,10 @@ function ready(){
             .pipe(JSONStream.stringify())
             .pipe(process.stdout);
     }else if(argv.query) {
-        cardboard.bboxQuery(argv.query.split(',').map(function(q){ return parseFloat(q); }), function(err, data){
+        cardboard.bboxQuery(
+            argv.query.split(',').map(function(q){ return parseFloat(q); }),
+            argv.layer || 'default',
+            function(err, data){
             console.log(err, data);
         });
     }
