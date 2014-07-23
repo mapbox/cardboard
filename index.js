@@ -39,6 +39,10 @@ Cardboard.prototype.insert = function(primary, feature, layer, cb) {
     });
 };
 
+Cardboard.prototype.createTable = function(callback) {
+    this.dyno.createTable(require('./lib/table.json'), callback);
+};
+
 Cardboard.prototype.bboxQuery = function(input, layer, callback) {
     var indexes = geojsonCover.bboxQueryIndexes(input);
     var q = queue(100);

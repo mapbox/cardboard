@@ -20,9 +20,14 @@ Initialize a new cardboard database connector given a config object that is
 sent to dyno.
 
 ```js
-c.insert(primarykey, feature, layer, callback);
-c.bboxQuery(bbox, layer, callback);
-c.dumpGeoJSON(callback);
+c.insert(primarykey: string, feature: object, layer: string, callback: fn);
+```
+
+Insert a single feature, indexing it with a primary key in a given layer.
+
+```js
+c.bboxQuery(bbox: array, layer: string, callback: fn);
+c.dumpGeoJSON(callback: fn);
 c.dump(); // -> stream
 c.export(); // -> stream
 ```
