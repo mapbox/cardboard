@@ -28,6 +28,7 @@ Cardboard.prototype.insert = function(primary, feature, layer, cb) {
     log('indexing ' + primary + ' with ' + indexes.length + ' indexes');
     var q = queue(50);
     indexes.forEach(function(index) {
+        console.log('putting', 'cell!' + index, layer);
         q.defer(dyno.putItem, {
             id: 'cell!' + index,
             layer: layer,
@@ -50,6 +51,7 @@ Cardboard.prototype.bboxQuery = function(input, layer, callback) {
     log('querying with ' + indexes.length + ' indexes');
     console.time('query');
     indexes.forEach(function(idx) {
+        console.log('getting', 'cell!' + idx, layer);
         q.defer(dyno.getItem, {
             layer: layer,
             id: 'cell!' + idx
