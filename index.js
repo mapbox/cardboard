@@ -29,7 +29,7 @@ Cardboard.prototype.insert = function(primary, feature, layer, cb) {
     var q = queue(50);
     indexes.forEach(function(index) {
         q.defer(dyno.putItem, {
-            id: 'cell!' + index + '!' + primary,
+            id: 'cell!' + index,
             layer: layer,
             val: geobuf.featureToGeobuf(feature).toBuffer()
         });
@@ -48,23 +48,25 @@ Cardboard.prototype.bboxQuery = function(input, layer, callback) {
     var q = queue(100);
     var dyno = this.dyno;
     log('querying with ' + indexes.length + ' indexes');
+    console.time('query');
     indexes.forEach(function(idx) {
-        q.defer(dyno.query,
-            { id: {'BETWEEN': ['cell!' + idx[0], 'cell!' + idx[1]]},
-              layer: {'EQ': layer}
-          });
+        q.defer(dyno.getItem, {
+            layer: layer,
+            id: 'cell!' + idx
+        }, { table: 'geo' });
     });
     q.awaitAll(function(err, res) {
+        console.timeEnd('query');
         if (err) return callback(err);
 
         res = res.map(function(r) {
-            return r.items.map(function(i){
+            return r.items && r.items.map(function(i){
                 i.val = geobuf.geobufToFeature(i.val);
                 return i;
             });
         });
 
-        var flat = _(res).chain().flatten().sortBy(function(a){
+        var flat = _(res).chain().flatten().compact().sortBy(function(a) {
             return a.id.split('!')[2];
         }).value();
 
