@@ -41,7 +41,8 @@
     "s2": "^0.3.5",
     "through2": "~0.4.1",
     "uniq": "~1.0.0",
-    "hat": "0.0.3"
+    "hat": "0.0.3",
+    "geojson-cover": "0.0.0"
   },
   "devDependencies": {
     "dynalite": "~0.3.6",
