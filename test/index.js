@@ -81,7 +81,7 @@ setup(test);
 test('insert & dump', function(t) {
     var cardboard = new Cardboard(config);
 
-    cardboard.insert('hello', fixtures.nullIsland, function(err) {
+    cardboard.insert('hello', fixtures.nullIsland, 'default', function(err) {
         t.equal(err, null);
         t.pass('inserted');
         cardboard.dump(function(err, data) {
@@ -118,7 +118,7 @@ test('insert & query', function(t) {
 
     [['nullisland', fixtures.nullIsland],
     ['dc', fixtures.dc]].forEach(function(fix) {
-        insertQueue.defer(cardboard.insert.bind(cardboard), fix[0], fix[1]);
+        insertQueue.defer(cardboard.insert.bind(cardboard), fix[0], fix[1], 'default');
     });
 
     insertQueue.awaitAll(inserted);
@@ -127,7 +127,7 @@ test('insert & query', function(t) {
         var q = queue(1);
         queries.forEach(function(query) {
             q.defer(function(query, callback) {
-                t.equal(cardboard.bboxQuery(query.query, function(err, data) {
+                t.equal(cardboard.bboxQuery(query.query, 'default', function(err, data) {
                     t.equal(err, null, 'no error for ' + query.query.join(','));
                     t.equal(data.length, query.length, 'finds ' + query.length + ' data with a query');
                     callback();
@@ -143,7 +143,7 @@ teardown(test);
 setup(test);
 test('insert polygon', function(t) {
     var cardboard = new Cardboard(config);
-    cardboard.insert('us', fixtures.haiti, inserted);
+    cardboard.insert('us', fixtures.haiti, 'default', inserted);
 
     function inserted() {
         var queries = [
@@ -159,7 +159,7 @@ test('insert polygon', function(t) {
         var q = queue(1);
         queries.forEach(function(query) {
             q.defer(function(query, callback) {
-                t.equal(cardboard.bboxQuery(query.query, function(err, data) {
+                t.equal(cardboard.bboxQuery(query.query, 'default', function(err, data) {
                     t.equal(err, null, 'no error for ' + query.query.join(','));
                     t.equal(data.length, query.length, 'finds ' + query.length + ' data with a query');
                     callback();
@@ -174,7 +174,7 @@ teardown(test);
 setup(test);
 test('insert linestring', function(t) {
     var cardboard = new Cardboard(config);
-    cardboard.insert('us', fixtures.haitiLine, inserted);
+    cardboard.insert('us', fixtures.haitiLine, 'default', inserted);
 
     function inserted() {
         var queries = [
@@ -190,7 +190,7 @@ test('insert linestring', function(t) {
         var q = queue(1);
         queries.forEach(function(query) {
             q.defer(function(query, callback) {
-                t.equal(cardboard.bboxQuery(query.query, function(err, data) {
+                t.equal(cardboard.bboxQuery(query.query, 'deafult', function(err, data) {
                     t.equal(err, null, 'no error for ' + query.query.join(','));
                     t.equal(data.length, query.length, 'finds ' + query.length + ' data with a query');
                     callback();

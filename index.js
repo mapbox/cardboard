@@ -22,7 +22,7 @@ function Cardboard(c) {
     this.dyno = Dyno(c);
 }
 
-Cardboard.prototype.insert = function(primary, feature, cb) {
+Cardboard.prototype.insert = function(primary, feature, layer, cb) {
     var indexes = geojsonCover.geometry(feature.geometry);
     var dyno = this.dyno;
     log('indexing ' + primary + ' with ' + indexes.length + ' indexes');
@@ -30,7 +30,7 @@ Cardboard.prototype.insert = function(primary, feature, cb) {
     indexes.forEach(function(index) {
         q.defer(dyno.putItem, {
             id: 'cell!' + index + '!' + primary,
-            layer: 'default',
+            layer: layer,
             val: geobuf.featureToGeobuf(feature).toBuffer()
         });
     });
@@ -39,7 +39,7 @@ Cardboard.prototype.insert = function(primary, feature, cb) {
     });
 };
 
-Cardboard.prototype.bboxQuery = function(input, callback) {
+Cardboard.prototype.bboxQuery = function(input, layer, callback) {
     var indexes = geojsonCover.bboxQueryIndexes(input);
     var q = queue(100);
     var dyno = this.dyno;
@@ -47,7 +47,7 @@ Cardboard.prototype.bboxQuery = function(input, callback) {
     indexes.forEach(function(idx) {
         q.defer(dyno.query,
             { id: {'BETWEEN': ['cell!' + idx[0], 'cell!' + idx[1]]},
-              layer: {'EQ': 'default'}
+              layer: {'EQ': layer}
           });
     });
     q.awaitAll(function(err, res) {
