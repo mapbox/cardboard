@@ -1,6 +1,6 @@
 # also
 
-* ElasticSearch
+* ElasticSearch - [point geometry index with nearby search](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-geo-distance-filter.html)
 * PostGIS
 * MySQL Spatial
 
