@@ -4,6 +4,7 @@
 * PostGIS
 * MySQL Spatial
 
+```
 name,datastructure
 "ElasticSearch","geohash"
 "PostGIS",gist
@@ -11,3 +12,4 @@ name,datastructure
 "MongoDB 1",geohash
 "MongoDB 2",s2
 "CouchDB","revised r*tree"
+```
