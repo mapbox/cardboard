@@ -42,7 +42,7 @@
     "through2": "~0.4.1",
     "uniq": "~1.0.0",
     "hat": "0.0.3",
-    "geojson-cover": "https://github.com/mapbox/geojson-cover/archive/flat.tar"
+    "geojson-cover": "https://github.com/mapbox/geojson-cover/archive/flat.tar.gz"
   },
   "devDependencies": {
     "dynalite": "~0.3.6",
