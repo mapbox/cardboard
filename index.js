@@ -23,7 +23,7 @@ function Cardboard(c) {
 }
 
 Cardboard.prototype.insert = function(primary, feature, layer, cb) {
-    var indexes = geojsonCover.geometry(feature.geometry);
+    var indexes = geojsonCover.geometryIndexes(feature.geometry);
     var dyno = this.dyno;
     log('indexing ' + primary + ' with ' + indexes.length + ' indexes');
     var q = queue(50);
