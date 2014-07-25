@@ -3,10 +3,12 @@
 var fs = require('fs'),
     Cardboard = require('./'),
     concat = require('concat-stream'),
+    hat = require('hat'),
     geojsonNormalize = require('geojson-normalize'),
     JSONStream = require('JSONStream'),
     argv = require('minimist')(process.argv.slice(2)),
     dyno = require('dyno');
+
 require('dotenv').load();
 
 if (!argv._.length) {
@@ -23,6 +25,7 @@ var config = {
     endpoint:  process.env.Endpoint || 'http://localhost:4567',
     region: process.env.Region
 };
+
 var dyno = require('dyno')(config);
 var cardboard = new Cardboard(config);
 
@@ -30,19 +33,22 @@ var table = require('./lib/table.json');
 table.TableName = tableName;
 
 dyno.createTable(table, function(err){
-    if(err) return console.error(err);
+    if (err) {
+        console.error(err);
+        throw err;
+    }
 
-    console.log('your table is ready', table.TableName);
+    console.error('your table is ready', table.TableName);
     ready();
 });
 
-function ready(){
+function ready() {
     if (!process.stdin.isTTY) {
         process.stdin.pipe(concat(function(buf) {
             var gj = geojsonNormalize(JSON.parse(buf));
             gj.features.forEach(function(feature) {
-                var id = ((feature.id !== undefined) ?
-                    feature.id : feature.properties.id);
+                var id = (((feature.id !== undefined) ?
+                    feature.id : feature.properties.id)) || hat();
                 cardboard.insert(id, feature, argv.layer || 'default', function(err){
                     if(err) throw err;
                 });
@@ -68,9 +74,7 @@ function ready(){
             console.log(err, data);
         });
     }
-
 }
-
 
 function docs() {
     fs.createReadStream(__dirname + '/CLI.md').pipe(process.stdout);

@@ -3,7 +3,7 @@ var s2 = require('s2'),
     _ = require('lodash'),
     geojsonStream = require('geojson-stream'),
     concat = require('concat-stream'),
-    geojsonCover = require('./lib/geojsoncover'),
+    geojsonCover = require('geojson-cover'),
     uniq = require('uniq'),
     geobuf = require('geobuf'),
     log = require('debug')('cardboard'),
@@ -23,7 +23,7 @@ function Cardboard(c) {
 }
 
 Cardboard.prototype.insert = function(primary, feature, layer, cb) {
-    var indexes = geojsonCover.geometry(feature.geometry);
+    var indexes = geojsonCover.geometryIndexes(feature.geometry);
     var dyno = this.dyno;
     log('indexing ' + primary + ' with ' + indexes.length + ' indexes');
     var q = queue(50);
@@ -37,6 +37,10 @@ Cardboard.prototype.insert = function(primary, feature, layer, cb) {
     q.awaitAll(function(err, res) {
         cb(err);
     });
+};
+
+Cardboard.prototype.createTable = function(callback) {
+    this.dyno.createTable(require('./lib/table.json'), callback);
 };
 
 Cardboard.prototype.bboxQuery = function(input, layer, callback) {
@@ -104,4 +108,5 @@ Cardboard.prototype.export = function(_) {
         }))
         .pipe(geojsonStream.stringify());
 };
+
 Cardboard.prototype.geojsonCover = geojsonCover;
