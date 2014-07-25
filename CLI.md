@@ -2,17 +2,23 @@ usage:
 
 import geojson file
 
-    cardboard file.cb < file.geojson
+    cardboard [table] < file.geojson
 
 export as geojson featurecollection
 
-    cardboard file.cb --export > foo.geojson
+    cardboard [table] --export > foo.geojson
 
 dump raw structure of key,value
 
-    cardboard file.cb --dump > foo.json
+    cardboard [table] --dump > foo.json
 
-query by a point or polygon. shorthand form is `[lng,lat]`, which
-gets exported to a Point.
+query by a bbox. shorthand form is `lng,lat,lng,lat`
 
-    cardboard file.cb --query="[10,20]"
+    cardboard [table] --query="1,2,3,4"
+
+cardboard takes Env vars.
+
+AWSKey -
+AWSSecret -
+Endpoint   - defaults to 'http://localhost4567'
+Region - defaults to undefined

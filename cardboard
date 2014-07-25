@@ -14,22 +14,25 @@ if (!argv._.length) {
     return console.error('database filename required');
 }
 
+var tableName = argv._[0];
+
 var config = {
-    awsKey: process.env.awsKey || 'fake',
-    awsSecret:  process.env.awsSecret || 'fake',
-    table: argv._[0],
+    awsKey: process.env.AWSKey || 'fake',
+    awsSecret:  process.env.AWSSecret || 'fake',
+    table: tableName,
     endpoint:  process.env.Endpoint || 'http://localhost:4567',
     region: process.env.Region
 };
 var dyno = require('dyno')(config);
-
 var cardboard = new Cardboard(config);
 
 var table = require('./lib/table.json');
-table.TableName = argv._[0];
+table.TableName = tableName;
 
 dyno.createTable(table, function(err){
-    if(err) throw err;
+    if(err) return console.error(err);
+
+    console.log('your table is ready', table.TableName);
     ready();
 });
 
