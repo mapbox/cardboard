@@ -26,19 +26,15 @@ var config = {
     region: process.env.Region
 };
 
-var dyno = require('dyno')(config);
 var cardboard = new Cardboard(config);
 
-var table = require('./lib/table.json');
-table.TableName = tableName;
-
-dyno.createTable(table, function(err){
+cardboard.createTable(tableName, function(err){
     if (err) {
         console.error(err);
         throw err;
     }
 
-    console.error('your table is ready', table.TableName);
+    console.error('your table is ready', tableName);
     ready();
 });
 

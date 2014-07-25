@@ -39,8 +39,10 @@ Cardboard.prototype.insert = function(primary, feature, layer, cb) {
     });
 };
 
-Cardboard.prototype.createTable = function(callback) {
-    this.dyno.createTable(require('./lib/table.json'), callback);
+Cardboard.prototype.createTable = function(tableName, callback) {
+    var table = require('./lib/table.json');
+    table.TableName = tableName;
+    this.dyno.createTable(table, callback);
 };
 
 Cardboard.prototype.bboxQuery = function(input, layer, callback) {

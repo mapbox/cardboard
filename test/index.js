@@ -30,7 +30,8 @@ function setup(t) {
             deleteTableMs: 0
         });
         dynalite.listen(4567, function() {
-            dyno.createTable(require('../lib/table.json'), function(err, resp){
+            var cardboard = new Cardboard(config);
+            cardboard.createTable(config.table, function(err, resp){
                 t.end();
             });
         });
