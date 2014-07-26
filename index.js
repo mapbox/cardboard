@@ -51,10 +51,14 @@ Cardboard.prototype.bboxQuery = function(input, layer, callback) {
     var dyno = this.dyno;
     log('querying with ' + indexes.length + ' indexes');
     indexes.forEach(function(idx) {
-        q.defer(dyno.query,
-            { id: {'BETWEEN': ['cell!' + idx[0], 'cell!' + idx[1]]},
-              layer: {'EQ': layer}
-          });
+        q.defer(
+            dyno.query,
+            {
+                id: { 'BETWEEN': [ 'cell!' + idx[0], 'cell!' + idx[1] ] },
+                layer: { 'EQ': layer }
+            },
+            { pages: 0 }
+        );
     });
     q.awaitAll(function(err, res) {
         if (err) return callback(err);
