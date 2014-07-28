@@ -48,6 +48,6 @@
     "dynalite": "~0.3.6",
     "faucet": "0.0.1",
     "tap": "~0.4.9",
-    "geojson-fixtures": "0.0.0"
+    "geojson-fixtures": "0.1.0"
   }
 }

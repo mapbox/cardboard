@@ -4,6 +4,7 @@ var test = require('tap').test,
     concat = require('concat-stream'),
     Cardboard = require('../'),
     geojsonExtent = require('geojson-extent'),
+    geojsonFixtures = require('geojson-fixtures'),
     fixtures = require('./fixtures');
 
 var config = {
@@ -199,6 +200,24 @@ test('insert linestring', function(t) {
             }, query);
         });
         q.awaitAll(function() { t.end(); });
+    }
+});
+teardown(test);
+
+setup(test);
+test('insert idaho', function(t) {
+    var cardboard = new Cardboard(config);
+    var q = queue(1);
+    t.pass('inserting idaho');
+    var i = 0;
+    geojsonFixtures.featurecollection.idaho.features.forEach(function(block) {
+        q.defer(cardboard.insert.bind(cardboard), 'default', block, i++);
+    });
+    q.awaitAll(inserted);
+
+    function inserted(err, res) {
+        t.pass('inserted idaho');
+        t.end();
     }
 });
 teardown(test);
