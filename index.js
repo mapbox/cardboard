@@ -65,7 +65,6 @@ Cardboard.prototype.bboxQuery = function(input, layer, callback) {
 
         res = res.map(function(r) {
             return r.items.map(function(i){
-                i.val = geobuf.geobufToFeature(i.val);
                 return i;
             });
         });
@@ -78,6 +77,10 @@ Cardboard.prototype.bboxQuery = function(input, layer, callback) {
             return a.id.split('!')[2] !== b.id.split('!')[2];
         }, true);
 
+        flat = flat.map(function(i) {
+            i.val = geobuf.geobufToFeature(i.val);
+            return i;
+        });
         callback(err, flat);
     });
 };
