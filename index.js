@@ -10,6 +10,8 @@ var s2 = require('s2'),
     queue = require('queue-async'),
     Dyno = require('dyno');
 
+var MAX_ENTRY_BYTES = 64 * 1024; // 64KB
+
 var emptyFeatureCollection = {
     type: 'FeatureCollection',
     features: []
@@ -28,11 +30,16 @@ Cardboard.prototype.insert = function(primary, feature, layer, cb) {
     log('indexing ' + primary + ' with ' + indexes.length + ' indexes');
     var q = queue(50);
     indexes.forEach(function(index) {
-        q.defer(dyno.putItem, {
-            id: 'cell!' + index + '!' + primary,
-            layer: layer,
-            val: geobuf.featureToGeobuf(feature).toBuffer()
-        });
+        var buf = geobuf.featureToGeobuf(feature).toBuffer();
+        var id = 'cell!' + index + '!' + primary;
+        var chunks = [];
+        for (var start = 0; start < buf.length; start++) {
+            q.defer(dyno.putItem, {
+                id: id,
+                layer: layer,
+                val: buf.slice(start, start + MAX_ENTRY_BYTES)
+            });
+        }
     });
     q.awaitAll(function(err, res) {
         cb(err);
