@@ -137,7 +137,8 @@ test('insert & query', function(t) {
             }, query);
         });
         q.awaitAll(function() {
-            t.end(); });
+            t.end();
+        });
     }
 });
 teardown(test);

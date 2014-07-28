@@ -77,23 +77,34 @@ Cardboard.prototype.bboxQuery = function(input, layer, callback) {
         if (err) return callback(err);
 
         res = res.map(function(r) {
-            return r.items.map(function(i){
+            return r.items.map(function(i) {
+                i.id_parts = i.id.split('!');
                 return i;
             });
         });
 
-        var flat = _(res).chain().flatten().sortBy(function(a){
-            return a.id.split('!')[2];
+        var flat = _(res).chain().flatten().sortBy(function(a) {
+            return a.id_parts[2];
         }).value();
 
-        flat = uniq(flat, function(a, b) {
-            return a.id.split('!')[2] !== b.id.split('!')[2];
-        }, true);
+        flat = _.values(_.groupBy(uniq(flat, function(a, b) {
+            return a.id_parts[2] !== b.id_parts[2] &&
+                a.id_parts[3] !== b.id_parts[3];
+        }, true), function(_) {
+            return _.id_parts[2];
+        })).map(function(_) {
+            var concatted = Buffer.concat(_.map(function(i) {
+                return i.val;
+            }));
+            _[0].val = concatted;
+            return _[0];
+        });
 
         flat = flat.map(function(i) {
             i.val = geobuf.geobufToFeature(i.val);
             return i;
         });
+
         callback(err, flat);
     });
 };
