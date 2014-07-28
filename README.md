@@ -1,5 +1,7 @@
 # cardboard
 
+[![build status](https://secure.travis-ci.org/mapbox/cardboard.png)](http://travis-ci.org/mapbox/cardboard)
+
 Demo platform for [s2](https://github.com/mapbox/node-s2) on LevelDB.
 This provides query, indexing, and storage logic. Look to `node-s2` for
 bindings and higher level code for interfaces.
