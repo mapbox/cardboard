@@ -28,8 +28,9 @@ Cardboard.prototype.insert = function(primary, feature, layer, cb) {
     log('indexing ' + primary + ' with ' + indexes.length + ' indexes');
     var q = queue(50);
     indexes.forEach(function(index) {
+        console.log('putting', 'cell!' + index, layer);
         q.defer(dyno.putItem, {
-            id: 'cell!' + index + '!' + primary,
+            id: 'cell!' + index,
             layer: layer,
             val: geobuf.featureToGeobuf(feature).toBuffer()
         });
@@ -50,37 +51,33 @@ Cardboard.prototype.bboxQuery = function(input, layer, callback) {
     var q = queue(100);
     var dyno = this.dyno;
     log('querying with ' + indexes.length + ' indexes');
+    console.time('query');
     indexes.forEach(function(idx) {
-        q.defer(
-            dyno.query,
-            {
-                id: { 'BETWEEN': [ 'cell!' + idx[0], 'cell!' + idx[1] ] },
-                layer: { 'EQ': layer }
-            },
-            { pages: 0 }
-        );
+        console.log('getting', 'cell!' + idx, layer);
+        q.defer(dyno.getItem, {
+            layer: layer,
+            id: 'cell!' + idx
+        });
     });
     q.awaitAll(function(err, res) {
+        console.timeEnd('query');
         if (err) return callback(err);
 
         res = res.map(function(r) {
-            return r.items.map(function(i){
-                return i;
-            });
+            if (r && r.Item) {
+                r.Item.val = geobuf.geobufToFeature(r.Item.val)
+            }
+            return r.Item;
         });
 
-        var flat = _(res).chain().flatten().sortBy(function(a){
-            return a.id.split('!')[2];
+        var flat = _(res).chain().flatten().compact().sortBy(function(a) {
+            return a.id.split('!')[1];
         }).value();
 
         flat = uniq(flat, function(a, b) {
-            return a.id.split('!')[2] !== b.id.split('!')[2];
+            return a.id.split('!')[1] !== b.id.split('!')[1];
         }, true);
 
-        flat = flat.map(function(i) {
-            i.val = geobuf.geobufToFeature(i.val);
-            return i;
-        });
         callback(err, flat);
     });
 };
