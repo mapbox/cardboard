@@ -10,7 +10,7 @@ var s2 = require('s2'),
     queue = require('queue-async'),
     Dyno = require('dyno');
 
-var MAX_ENTRY_BYTES = 64 * 1024; // 64KB
+var MAX_ENTRY_BYTES = 64 * 1000; // 64KB
 
 var emptyFeatureCollection = {
     type: 'FeatureCollection',
@@ -27,22 +27,25 @@ function Cardboard(c) {
 Cardboard.prototype.insert = function(primary, feature, layer, cb) {
     var indexes = geojsonCover.geometryIndexes(feature.geometry);
     var dyno = this.dyno;
-    log('indexing ' + primary + ' with ' + indexes.length + ' indexes');
+    // log('indexing ' + primary + ' with ' + indexes.length + ' indexes');
     var q = queue(50);
     indexes.forEach(function(index) {
         var buf = geobuf.featureToGeobuf(feature).toBuffer();
         var id = 'cell!' + index + '!' + primary;
         var chunks = [], num_chunks = 0;
+        var chunkBytes = MAX_ENTRY_BYTES - id.length;
         for (var start = 0; start < buf.length;) {
             q.defer(dyno.putItem, {
                 id: id,
                 layer: layer,
-                val: buf.slice(start, start + MAX_ENTRY_BYTES)
+                val: buf.slice(start, start + chunkBytes)
             });
-            start += MAX_ENTRY_BYTES;
+            start += chunkBytes;
             num_chunks++;
         }
-        if (num_chunks > 1) log('chunks: ' + num_chunks);
+        if (num_chunks > 1) {
+            log('length: ' + buf.length + ', chunks: ' + num_chunks + ', chunkBytes: ' + chunkBytes);
+        }
     });
     q.awaitAll(function(err, res) {
         cb(err);
