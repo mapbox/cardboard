@@ -32,19 +32,19 @@ Cardboard.prototype.insert = function(primary, feature, layer, cb) {
     indexes.forEach(function(index) {
         var buf = geobuf.featureToGeobuf(feature).toBuffer();
         var id = 'cell!' + index + '!' + primary;
-        var chunks = [], num_chunks = 0;
+        var chunks = [], part = 0;
         var chunkBytes = MAX_ENTRY_BYTES - id.length;
         for (var start = 0; start < buf.length;) {
             q.defer(dyno.putItem, {
-                id: id,
+                id: id + '!' + part,
                 layer: layer,
                 val: buf.slice(start, start + chunkBytes)
             });
             start += chunkBytes;
-            num_chunks++;
+            part++;
         }
-        if (num_chunks > 1) {
-            log('length: ' + buf.length + ', chunks: ' + num_chunks + ', chunkBytes: ' + chunkBytes);
+        if (part > 1) {
+            log('length: ' + buf.length + ', chunks: ' + part + ', chunkBytes: ' + chunkBytes);
         }
     });
     q.awaitAll(function(err, res) {
