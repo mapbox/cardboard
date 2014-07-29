@@ -8,31 +8,80 @@ var s2 = require('s2'),
     geobuf = require('geobuf'),
     log = require('debug')('cardboard'),
     queue = require('queue-async'),
-    Dyno = require('dyno');
+    AWS = require('aws-sdk');
 
-var emptyFeatureCollection = {
-    type: 'FeatureCollection',
-    features: []
-};
+
+var constants = {};
+constants.MAX_QUERY_CELLS = 100;
+constants.QUERY_MIN_LEVEL = 5;
+constants.QUERY_MAX_LEVEL = 5;
+constants.MAX_INDEX_CELLS = 100;
+constants.INDEX_MIN_LEVEL = 5;
+constants.INDEX_MAX_LEVEL = 5;
+constants.INDEX_POINT_LEVEL = 15;
+geojsonCover.constants(constants);
 
 module.exports = Cardboard;
 
 function Cardboard(c) {
     if (!(this instanceof Cardboard)) return new Cardboard(c);
-    this.dyno = Dyno(c);
+
+    AWS.config.update({
+        accessKeyId: c.awsKey,
+        secretAccessKey: c.awsSecret,
+        region: c.region || 'us-east-1',
+
+    });
+    this.bucket = c.bucket || 'mapbox-s2';
+    this.prefix = c.prefix || 'dev';
+    this.s3 = new AWS.S3();
 }
 
 Cardboard.prototype.insert = function(primary, feature, layer, cb) {
     var indexes = geojsonCover.geometryIndexes(feature.geometry);
-    var dyno = this.dyno;
+    var s3 = this.s3;
+    var bucket = this.bucket;
+    var prefix = this.prefix;
+    if(!feature.properties) feature.properties = {};
+    feature.properties.id = primary;
     log('indexing ' + primary + ' with ' + indexes.length + ' indexes');
-    var q = queue(50);
+    var q = queue(1);
+
+    function updateCell(key, feature, cb) {
+        console.log('update, ', key)
+        s3.getObject({Key:key, Bucket: bucket}, getObjectResp);
+        function getObjectResp(err, data) {
+            if (err && err.code !== 'NoSuchKey') {
+                console.log('Error Read', err);
+                throw err;
+            }
+            var fc;
+            if (data && data.Body) {
+                fc = geobuf.geobufToFeatureCollection(data.Body);
+                fc.features.push(feature);
+
+            } else {
+                fc = {type:'FeatureCollection', features:[feature]};
+            }
+            s3.putObject(
+                {
+                    Key:key,
+                    Bucket:bucket,
+                    Body: geobuf.featureCollectionToGeobuf(fc).toBuffer()
+                },
+                putObjectResp);
+
+        }
+        function putObjectResp(err, data) {
+            if(err) console.log(err)
+            cb(err, data)
+        }
+    }
+
+
     indexes.forEach(function(index) {
-        q.defer(dyno.putItem, {
-            id: 'cell!' + index + '!' + primary,
-            layer: layer,
-            val: geobuf.featureToGeobuf(feature).toBuffer()
-        });
+        var key =  [prefix, layer, 'cell', index].join('/');
+        q.defer(updateCell, key, feature);
     });
     q.awaitAll(function(err, res) {
         cb(err);
@@ -48,40 +97,55 @@ Cardboard.prototype.createTable = function(tableName, callback) {
 Cardboard.prototype.bboxQuery = function(input, layer, callback) {
     var indexes = geojsonCover.bboxQueryIndexes(input);
     var q = queue(100);
-    var dyno = this.dyno;
+    var s3 = this.s3;
+    var prefix = this.prefix;
+    var bucket = this.bucket;
     log('querying with ' + indexes.length + ' indexes');
+    console.time('query');
     indexes.forEach(function(idx) {
-        q.defer(
-            dyno.query,
-            {
-                id: { 'BETWEEN': [ 'cell!' + idx[0], 'cell!' + idx[1] ] },
-                layer: { 'EQ': layer }
-            },
-            { pages: 0 }
-        );
+
+        function getCell(k, cb) {
+            s3.getObject({
+                Key: k,
+                Bucket: bucket
+            }, function(err, data){
+                if(err && err.code !== 'NoSuchKey') {
+                    console.error(err);
+                    throw err;
+                }
+                cb(null, data);
+            });
+        }
+        var key = [prefix, layer, 'cell', idx].join('/');
+        q.defer(getCell, key);
     });
     q.awaitAll(function(err, res) {
+        console.timeEnd('query');
         if (err) return callback(err);
+        console.time('parse');
 
-        res = res.map(function(r) {
-            return r.items.map(function(i){
-                return i;
-            });
+
+        var features = [];
+
+        res = res.forEach(function(r) {
+            if (r && r.Body) {
+                features = features.concat(geobuf.geobufToFeatureCollection(r.Body).features);
+            }
         });
 
-        var flat = _(res).chain().flatten().sortBy(function(a){
-            return a.id.split('!')[2];
+        var features = _(features).compact().sortBy(function(a) {
+             return a.properties.id;
         }).value();
 
-        flat = uniq(flat, function(a, b) {
-            return a.id.split('!')[2] !== b.id.split('!')[2];
+        features = uniq(features, function(a, b) {
+            return a.properties.id !== b.properties.id;
         }, true);
+        console.timeEnd('parse');
 
-        flat = flat.map(function(i) {
-            i.val = geobuf.geobufToFeature(i.val);
-            return i;
-        });
-        callback(err, flat);
+        features= features.map(function(f){
+            return {val:f};
+        })
+        callback(err, features);
     });
 };
 

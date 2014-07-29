@@ -9,7 +9,7 @@
         {"AttributeName": "id", "KeyType": "RANGE"}
     ],
     "ProvisionedThroughput": {
-        "ReadCapacityUnits": 5,
+        "ReadCapacityUnits": 500,
         "WriteCapacityUnits": 50
     }
 }
