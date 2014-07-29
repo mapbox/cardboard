@@ -6,37 +6,19 @@ var fs = require('fs'),
     hat = require('hat'),
     geojsonNormalize = require('geojson-normalize'),
     JSONStream = require('JSONStream'),
-    argv = require('minimist')(process.argv.slice(2)),
-    dyno = require('dyno');
+    argv = require('minimist')(process.argv.slice(2));
 
 require('dotenv').load();
-
-if (!argv._.length) {
-    docs();
-    return console.error('database filename required');
-}
-
-var tableName = argv._[0];
 
 var config = {
     awsKey: process.env.AWSKey || 'fake',
     awsSecret:  process.env.AWSSecret || 'fake',
-    table: tableName,
-    endpoint:  process.env.Endpoint || 'http://localhost:4567',
+    bucket: process.env.Bucket || 'mapbox-s2',
     region: process.env.Region
 };
 
 var cardboard = new Cardboard(config);
-
-cardboard.createTable(tableName, function(err){
-    if (err) {
-        console.error(err);
-        throw err;
-    }
-
-    console.error('your table is ready', tableName);
-    ready();
-});
+ready();
 
 function ready() {
     if (!process.stdin.isTTY) {
@@ -44,7 +26,8 @@ function ready() {
             var gj = geojsonNormalize(JSON.parse(buf));
             gj.features.forEach(function(feature) {
                 var id = (((feature.id !== undefined) ?
-                    feature.id : feature.properties.id)) || hat();
+                    feature.id : feature.properties.id))
+                    id = hat();
                 cardboard.insert(id, feature, argv.layer || 'default', function(err){
                     if(err) throw err;
                 });

@@ -26,10 +26,10 @@
   "homepage": "https://github.com/mapbox/cardboard",
   "dependencies": {
     "JSONStream": "~0.7.3",
+    "aws-sdk": "^2.0.9",
     "concat-stream": "~1.4.5",
     "debug": "~1.0.3",
     "dotenv": "^0.4.0",
-    "dyno": "^0.3.0",
     "geobuf": "~0.1.0",
     "geojson-cover": "^0.1.0",
     "geojson-extent": "0.1.0",
@@ -42,9 +42,7 @@
     "rw": "~0.1.1",
     "s2": "^0.3.5",
     "through2": "~0.4.1",
-    "uniq": "~1.0.0",
-    "hat": "0.0.3",
-    "geojson-cover": "https://github.com/mapbox/geojson-cover/archive/flat.tar.gz"
+    "uniq": "^1.0.1"
   },
   "devDependencies": {
     "dynalite": "~0.3.6",
