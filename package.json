@@ -30,7 +30,7 @@
     "debug": "~1.0.3",
     "dotenv": "^0.4.0",
     "dyno": "^0.3.0",
-    "geobuf": "~0.1.0",
+    "geobuf": "0.2.0",
     "geojson-cover": "^0.1.0",
     "geojson-extent": "0.1.0",
     "geojson-normalize": "0.0.0",

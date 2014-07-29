@@ -28,8 +28,8 @@ Cardboard.prototype.insert = function(primary, feature, layer, cb) {
     var indexes = geojsonCover.geometryIndexes(feature.geometry);
     var dyno = this.dyno;
     var q = queue(50);
+    var buf = geobuf.featureToGeobuf(feature).toBuffer();
     indexes.forEach(function(index) {
-        var buf = geobuf.featureToGeobuf(feature).toBuffer();
         var id = 'cell!' + index + '!' + primary;
         var chunks = [], part = 0;
         var chunkBytes = MAX_ENTRY_BYTES - id.length;
