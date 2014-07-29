@@ -4,6 +4,7 @@ var fs = require('fs'),
     Cardboard = require('./'),
     concat = require('concat-stream'),
     hat = require('hat'),
+    queue = require('queue-async'),
     geojsonNormalize = require('geojson-normalize'),
     JSONStream = require('JSONStream'),
     argv = require('minimist')(process.argv.slice(2)),
@@ -41,13 +42,16 @@ cardboard.createTable(tableName, function(err){
 function ready() {
     if (!process.stdin.isTTY) {
         process.stdin.pipe(concat(function(buf) {
+            var q = queue(10);
             var gj = geojsonNormalize(JSON.parse(buf));
             gj.features.forEach(function(feature) {
                 var id = (((feature.id !== undefined) ?
                     feature.id : feature.properties.id)) || hat();
-                cardboard.insert(id, feature, argv.layer || 'default', function(err){
-                    if(err) throw err;
-                });
+                q.defer(cardboard.insert.bind(cardboard), id, feature, argv.layer || 'default');
+            });
+            q.awaitAll(function(err, res) {
+                if (err) console.error(err);
+                else console.log('inserted');
             });
         }));
         return;
@@ -55,20 +59,23 @@ function ready() {
     if (argv.export) {
         cardboard.export()
             .pipe(process.stdout);
-    } else if(argv.dump === 'geojson') {
+    } else if (argv.dump === 'geojson') {
         cardboard.dumpGeoJSON()
             .pipe(process.stdout);
-    } else if(argv.dump) {
+    } else if (argv.dump) {
         cardboard.dump()
             .pipe(JSONStream.stringify())
             .pipe(process.stdout);
-    }else if(argv.query) {
+    } else if (argv.query) {
         cardboard.bboxQuery(
-            argv.query.split(',').map(function(q){ return parseFloat(q); }),
+            argv.query.split(',').map(function(q) { return parseFloat(q); }),
             argv.layer || 'default',
-            function(err, data){
-            console.log(err, data);
-        });
+            function(err, data) {
+                if (err) return console.log(err);
+                data.forEach(function(d) {
+                    console.log(JSON.stringify(d.val.properties, null, 2));
+                });
+            });
     }
 }
 

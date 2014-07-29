@@ -10,6 +10,8 @@ var s2 = require('s2'),
     queue = require('queue-async'),
     Dyno = require('dyno');
 
+var MAX_ENTRY_BYTES = 64 * 1000; // 64KB
+
 var emptyFeatureCollection = {
     type: 'FeatureCollection',
     features: []
@@ -25,14 +27,27 @@ function Cardboard(c) {
 Cardboard.prototype.insert = function(primary, feature, layer, cb) {
     var indexes = geojsonCover.geometryIndexes(feature.geometry);
     var dyno = this.dyno;
-    log('indexing ' + primary + ' with ' + indexes.length + ' indexes');
     var q = queue(50);
     indexes.forEach(function(index) {
-        q.defer(dyno.putItem, {
-            id: 'cell!' + index + '!' + primary,
-            layer: layer,
-            val: geobuf.featureToGeobuf(feature).toBuffer()
-        });
+        var buf = geobuf.featureToGeobuf(feature).toBuffer();
+        var id = 'cell!' + index + '!' + primary;
+        var chunks = [], part = 0;
+        var chunkBytes = MAX_ENTRY_BYTES - id.length;
+        for (var start = 0; start < buf.length;) {
+            q.defer(dyno.putItem, {
+                id: id + '!' + part,
+                layer: layer,
+                val: buf.slice(start, start + chunkBytes)
+            });
+            start += chunkBytes;
+            part++;
+        }
+        if (part > 1) {
+            log('length: ' + buf.length + ', chunks: ' + part + ', chunkBytes: ' + chunkBytes);
+        }
+        if (part === 0) {
+            log('part of 0!');
+        }
     });
     q.awaitAll(function(err, res) {
         cb(err);
@@ -64,23 +79,40 @@ Cardboard.prototype.bboxQuery = function(input, layer, callback) {
         if (err) return callback(err);
 
         res = res.map(function(r) {
-            return r.items.map(function(i){
+            return r.items.map(function(i) {
+                i.id_parts = i.id.split('!');
                 return i;
             });
         });
 
-        var flat = _(res).chain().flatten().sortBy(function(a){
-            return a.id.split('!')[2];
+        var flat = _(res).chain().flatten().sortBy(function(a) {
+            return a.id_parts[2];
         }).value();
 
         flat = uniq(flat, function(a, b) {
-            return a.id.split('!')[2] !== b.id.split('!')[2];
+            return a.id_parts[2] !== b.id_parts[2] ||
+                a.id_parts[3] !== b.id_parts[3];
         }, true);
+        
+        flat = _.groupBy(flat, function(_) {
+            return _.id_parts[2];
+        });
+
+        flat = _.values(flat);
+        
+        flat = flat.map(function(_) {
+            var concatted = Buffer.concat(_.map(function(i) {
+                return i.val;
+            }));
+            _[0].val = concatted;
+            return _[0];
+        });
 
         flat = flat.map(function(i) {
             i.val = geobuf.geobufToFeature(i.val);
             return i;
         });
+
         callback(err, flat);
     });
 };

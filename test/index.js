@@ -4,6 +4,7 @@ var test = require('tap').test,
     concat = require('concat-stream'),
     Cardboard = require('../'),
     geojsonExtent = require('geojson-extent'),
+    geojsonFixtures = require('geojson-fixtures'),
     fixtures = require('./fixtures');
 
 var config = {
@@ -30,8 +31,10 @@ function setup(t) {
             deleteTableMs: 0
         });
         dynalite.listen(4567, function() {
+            t.pass('dynalite listening');
             var cardboard = new Cardboard(config);
             cardboard.createTable(config.table, function(err, resp){
+                t.pass('table created');
                 t.end();
             });
         });
@@ -40,8 +43,9 @@ function setup(t) {
 
 function teardown(cb) {
     test('teardown', function(t) {
-        dynalite.close();
-        t.end();
+        dynalite.close(function() {
+            t.end();
+        });
     });
 }
 
@@ -136,7 +140,8 @@ test('insert & query', function(t) {
             }, query);
         });
         q.awaitAll(function() {
-            t.end(); });
+            t.end();
+        });
     }
 });
 teardown(test);
@@ -146,7 +151,8 @@ test('insert polygon', function(t) {
     var cardboard = new Cardboard(config);
     cardboard.insert('us', fixtures.haiti, 'default', inserted);
 
-    function inserted() {
+    function inserted(err, res) {
+        t.notOk(err, 'no error returned');
         var queries = [
             {
                 query: [-10, -10, 10, 10],
@@ -177,7 +183,8 @@ test('insert linestring', function(t) {
     var cardboard = new Cardboard(config);
     cardboard.insert('us', fixtures.haitiLine, 'default', inserted);
 
-    function inserted() {
+    function inserted(err, res) {
+        t.notOk(err, 'no error returned');
         var queries = [
             {
                 query: [-10, -10, 10, 10],
@@ -191,7 +198,45 @@ test('insert linestring', function(t) {
         var q = queue(1);
         queries.forEach(function(query) {
             q.defer(function(query, callback) {
-                t.equal(cardboard.bboxQuery(query.query, 'deafult', function(err, data) {
+                t.equal(cardboard.bboxQuery(query.query, 'default', function(err, data) {
+                    t.equal(err, null, 'no error for ' + query.query.join(','));
+                    t.equal(data.length, query.length, 'finds ' + query.length + ' data with a query');
+                    callback();
+                }), undefined, '.bboxQuery');
+            }, query);
+        });
+        q.awaitAll(function() { t.end(); });
+    }
+});
+teardown(test);
+
+setup(test);
+test('insert idaho', function(t) {
+    var cardboard = new Cardboard(config);
+    var q = queue(1);
+    t.pass('inserting idaho');
+    var i = 0;
+    geojsonFixtures.featurecollection.idaho.features.filter(function(f) {
+        return f.properties.GEOID === '16049960100';
+    }).forEach(function(block) {
+        q.defer(cardboard.insert.bind(cardboard), (i++).toString(), block, 'default');
+    });
+    q.awaitAll(inserted);
+
+    function inserted(err, res) {
+        if (err) console.error(err);
+        t.notOk(err, 'no error returned');
+        t.pass('inserted idaho');
+        var queries = [
+            {
+                query: [-115.09552001953124,45.719603972998634,-114.77691650390625,45.947330315089275],
+                length: 1
+            }
+        ];
+        var q = queue(1);
+        queries.forEach(function(query) {
+            q.defer(function(query, callback) {
+                t.equal(cardboard.bboxQuery(query.query, 'default', function(err, data) {
                     t.equal(err, null, 'no error for ' + query.query.join(','));
                     t.equal(data.length, query.length, 'finds ' + query.length + ' data with a query');
                     callback();
