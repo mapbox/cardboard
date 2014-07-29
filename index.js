@@ -27,7 +27,6 @@ function Cardboard(c) {
 Cardboard.prototype.insert = function(primary, feature, layer, cb) {
     var indexes = geojsonCover.geometryIndexes(feature.geometry);
     var dyno = this.dyno;
-    // log('indexing ' + primary + ' with ' + indexes.length + ' indexes');
     var q = queue(50);
     indexes.forEach(function(index) {
         var buf = geobuf.featureToGeobuf(feature).toBuffer();
@@ -45,6 +44,9 @@ Cardboard.prototype.insert = function(primary, feature, layer, cb) {
         }
         if (part > 1) {
             log('length: ' + buf.length + ', chunks: ' + part + ', chunkBytes: ' + chunkBytes);
+        }
+        if (part === 0) {
+            log('part of 0!');
         }
     });
     q.awaitAll(function(err, res) {
@@ -87,12 +89,18 @@ Cardboard.prototype.bboxQuery = function(input, layer, callback) {
             return a.id_parts[2];
         }).value();
 
-        flat = _.values(_.groupBy(uniq(flat, function(a, b) {
-            return a.id_parts[2] !== b.id_parts[2] &&
+        flat = uniq(flat, function(a, b) {
+            return a.id_parts[2] !== b.id_parts[2] ||
                 a.id_parts[3] !== b.id_parts[3];
-        }, true), function(_) {
+        }, true);
+        
+        flat = _.groupBy(flat, function(_) {
             return _.id_parts[2];
-        })).map(function(_) {
+        });
+
+        flat = _.values(flat);
+        
+        flat = flat.map(function(_) {
             var concatted = Buffer.concat(_.map(function(i) {
                 return i.val;
             }));
