@@ -211,12 +211,14 @@ test('insert linestring', function(t) {
 teardown(test);
 
 setup(test);
-test('insert idaho', { timeout: 10000000 }, function(t) {
+test('insert idaho', function(t) {
     var cardboard = new Cardboard(config);
     var q = queue(1);
     t.pass('inserting idaho');
     var i = 0;
-    geojsonFixtures.featurecollection.idaho.features.forEach(function(block) {
+    geojsonFixtures.featurecollection.idaho.features.filter(function(f) {
+        return f.properties.GEOID === '16049960100';
+    }).forEach(function(block) {
         q.defer(cardboard.insert.bind(cardboard), (i++).toString(), block, 'default');
     });
     q.awaitAll(inserted);
