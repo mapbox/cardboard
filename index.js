@@ -69,9 +69,16 @@ Cardboard.prototype.createTable = function(tableName, callback) {
 
 Cardboard.prototype.deleteItem = function(primary, layer, callback) {
     var dyno = this.dyno;
+};
 
-
-
+Cardboard.prototype.get = function(primary, layer, callback) {
+    var dyno = this.dyno;
+    dyno.query({
+        id: { 'BEGINS_WITH': 'id!' + primary },
+        layer: { 'EQ': layer }
+    }, { pages: 0 }, function(err, res) {
+        callback(err, parseQueryResponse([res]));
+    });
 };
 
 Cardboard.prototype.bboxQuery = function(input, layer, callback) {
@@ -92,44 +99,46 @@ Cardboard.prototype.bboxQuery = function(input, layer, callback) {
     q.awaitAll(function(err, res) {
         if (err) return callback(err);
 
-        res = res.map(function(r) {
-            return r.items.map(function(i) {
-                i.id_parts = i.id.split('!');
-                return i;
-            });
-        });
-
-        var flat = _(res).chain().flatten().sortBy(function(a) {
-            return a.id_parts[2];
-        }).value();
-
-        flat = uniq(flat, function(a, b) {
-            return a.id_parts[2] !== b.id_parts[2] ||
-                a.id_parts[3] !== b.id_parts[3];
-        }, true);
-
-        flat = _.groupBy(flat, function(_) {
-            return _.id_parts[2];
-        });
-
-        flat = _.values(flat);
-
-        flat = flat.map(function(_) {
-            var concatted = Buffer.concat(_.map(function(i) {
-                return i.val;
-            }));
-            _[0].val = concatted;
-            return _[0];
-        });
-
-        flat = flat.map(function(i) {
-            i.val = geobuf.geobufToFeature(i.val);
-            return i;
-        });
-
-        callback(err, flat);
+        callback(err, parseQueryResponse(res));
     });
 };
+
+function parseQueryResponse(res) {
+    res = res.map(function(r) {
+        return r.items.map(function(i) {
+            i.id_parts = i.id.split('!');
+            return i;
+        });
+    });
+
+    var flat = _(res).chain().flatten().sortBy(function(a) {
+        return a.id_parts[2];
+    }).value();
+
+    flat = uniq(flat, function(a, b) {
+        return a.id_parts[2] !== b.id_parts[2] ||
+            a.id_parts[3] !== b.id_parts[3];
+    }, true);
+
+    flat = _.groupBy(flat, function(_) {
+        return _.id_parts[2];
+    });
+
+    flat = _.values(flat);
+
+    flat = flat.map(function(_) {
+        var concatted = Buffer.concat(_.map(function(i) {
+            return i.val;
+        }));
+        _[0].val = concatted;
+        return _[0];
+    });
+
+    return flat.map(function(i) {
+        i.val = geobuf.geobufToFeature(i.val);
+        return i;
+    });
+}
 
 Cardboard.prototype.dump = function(cb) {
     return this.dyno.scan(cb);
