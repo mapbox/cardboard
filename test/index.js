@@ -26,7 +26,7 @@ if(!process.env.AWSKey || ! process.env.AWSSecret) {
 var config = {
     awsKey: process.env.AWSKey,
     awsSecret: process.env.AWSSecret,
-    bucket: 'mapbox-s2',
+    bucket: process.env.Bucket || 'mapbox-s2',
     prefix: 'test',
     layer: 'default'
 };
