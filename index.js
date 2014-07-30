@@ -71,29 +71,37 @@ Cardboard.prototype.del = function(primary, layer, callback) {
     var dyno = this.dyno;
     this.get(primary, layer, function(err, res) {
         if (err) return callback(err);
+        var indexes = geojsonCover.geometryIndexes(res[0].val.geometry);
         var params = {
             RequestItems: {}
         };
+        function deleteId(id) {
+            return {
+                DeleteRequest: {
+                    Key: { id: { S: id }, layer: { S: layer } }
+                }
+            };
+        }
         // TODO: how to get table name properly here.
         params.RequestItems.geo = [
-            {
-                DeleteRequest: {
-                    Key: {
-                        id: {
-                            S: 'id!' + primary + '!0'
-                        },
-                        layer: {
-                            S: layer
-                        }
-                    }
-                }
-            }
+            deleteId('id!' + primary + '!0')
         ];
+        var parts = partsRequired(res[0].val);
+        for (var i = 0; i < indexes.length; i++) {
+            for (var j = 0; j < parts; j++) {
+                params.RequestItems.geo.push(deleteId('cell!' + indexes[i] + '!' + primary + '!' + j));
+            }
+        }
         dyno.batchWriteItem(params, function(err, res) {
             callback(null);
         });
     });
 };
+
+function partsRequired(feature) {
+    var buf = geobuf.featureToGeobuf(feature).toBuffer();
+    return Math.ceil(buf.length / MAX_ENTRY_BYTES);
+}
 
 Cardboard.prototype.get = function(primary, layer, callback) {
     var dyno = this.dyno;
