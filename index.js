@@ -12,13 +12,13 @@ var s2 = require('s2'),
 
 
 var constants = {};
-constants.MAX_QUERY_CELLS = 100;
-constants.QUERY_MIN_LEVEL = 5;
-constants.QUERY_MAX_LEVEL = 5;
-constants.MAX_INDEX_CELLS = 100;
-constants.INDEX_MIN_LEVEL = 5;
-constants.INDEX_MAX_LEVEL = 5;
-constants.INDEX_POINT_LEVEL = 15;
+constants.MAX_QUERY_CELLS = process.env.MAX_QUERY_CELLS || 100;
+constants.QUERY_MIN_LEVEL = process.env.QUERY_MIN_LEVEL || 5;
+constants.QUERY_MAX_LEVEL = process.env.QUERY_MAX_LEVEL || 5;
+constants.MAX_INDEX_CELLS = process.env.MAX_INDEX_CELLS || 100;
+constants.INDEX_MIN_LEVEL = process.env.INDEX_MIN_LEVEL || 5;
+constants.INDEX_MAX_LEVEL = process.env.INDEX_MAX_LEVEL || 5;
+constants.INDEX_POINT_LEVEL = process.env.INDEX_POINT_LEVEL || 15;
 geojsonCover.constants(constants);
 
 module.exports = Cardboard;
@@ -48,7 +48,6 @@ Cardboard.prototype.insert = function(primary, feature, layer, cb) {
     var q = queue(1);
 
     function updateCell(key, feature, cb) {
-        console.log('update, ', key)
         s3.getObject({Key:key, Bucket: bucket}, getObjectResp);
         function getObjectResp(err, data) {
             if (err && err.code !== 'NoSuchKey') {
@@ -88,14 +87,14 @@ Cardboard.prototype.insert = function(primary, feature, layer, cb) {
     });
 };
 
-Cardboard.prototype.createTable = function(tableName, callback) {
-    var table = require('./lib/table.json');
-    table.TableName = tableName;
-    this.dyno.createTable(table, callback);
-};
+// Cardboard.prototype.createTable = function(tableName, callback) {
+//     var table = require('./lib/table.json');
+//     table.TableName = tableName;
+//     this.dyno.createTable(table, callback);
+// };
 
 Cardboard.prototype.bboxQuery = function(input, layer, callback) {
-    var indexes = geojsonCover.bboxQueryIndexes(input);
+    var indexes = geojsonCover.bboxQueryIndexes(input, false);
     var q = queue(100);
     var s3 = this.s3;
     var prefix = this.prefix;
@@ -104,7 +103,7 @@ Cardboard.prototype.bboxQuery = function(input, layer, callback) {
     console.time('query');
     indexes.forEach(function(idx) {
 
-        function getCell(k, cb) {
+         function getCell(k, cb) {
             s3.getObject({
                 Key: k,
                 Bucket: bucket
@@ -149,37 +148,37 @@ Cardboard.prototype.bboxQuery = function(input, layer, callback) {
     });
 };
 
-Cardboard.prototype.dump = function(cb) {
-    return this.dyno.scan(cb);
-};
-
-Cardboard.prototype.dumpGeoJSON = function(callback) {
-    return this.dyno.scan(function(err, res) {
-        if (err) return callback(err);
-        return callback(null, {
-            type: 'FeatureCollection',
-            features: res.items.map(function(f) {
-                return {
-                    type: 'Feature',
-                    properties: {
-                        key: f.key
-                    },
-                    geometry: new s2.S2Cell(new s2.S2CellId()
-                        .fromToken(
-                            f.key.split('!')[1])).toGeoJSON()
-                };
-            })
-        });
-    });
-};
-
-Cardboard.prototype.export = function(_) {
-    return this.dyno.scan()
-        .pipe(through({ objectMode: true }, function(data, enc, cb) {
-             this.push(geobuf.geobufToFeature(data.val));
-             cb();
-        }))
-        .pipe(geojsonStream.stringify());
-};
+// Cardboard.prototype.dump = function(cb) {
+//     return this.dyno.scan(cb);
+// };
+//
+// Cardboard.prototype.dumpGeoJSON = function(callback) {
+//     return this.dyno.scan(function(err, res) {
+//         if (err) return callback(err);
+//         return callback(null, {
+//             type: 'FeatureCollection',
+//             features: res.items.map(function(f) {
+//                 return {
+//                     type: 'Feature',
+//                     properties: {
+//                         key: f.key
+//                     },
+//                     geometry: new s2.S2Cell(new s2.S2CellId()
+//                         .fromToken(
+//                             f.key.split('!')[1])).toGeoJSON()
+//                 };
+//             })
+//         });
+//     });
+// };
+//
+// Cardboard.prototype.export = function(_) {
+//     return this.dyno.scan()
+//         .pipe(through({ objectMode: true }, function(data, enc, cb) {
+//              this.push(geobuf.geobufToFeature(data.val));
+//              cb();
+//         }))
+//         .pipe(geojsonStream.stringify());
+// };
 
 Cardboard.prototype.geojsonCover = geojsonCover;

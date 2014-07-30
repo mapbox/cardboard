@@ -191,7 +191,7 @@ test('insert linestring', function(t) {
         var q = queue(1);
         queries.forEach(function(query) {
             q.defer(function(query, callback) {
-                t.equal(cardboard.bboxQuery(query.query, 'deafult', function(err, data) {
+                t.equal(cardboard.bboxQuery(query.query, 'default', function(err, data) {
                     t.equal(err, null, 'no error for ' + query.query.join(','));
                     t.equal(data.length, query.length, 'finds ' + query.length + ' data with a query');
                     callback();

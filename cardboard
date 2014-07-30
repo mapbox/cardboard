@@ -14,7 +14,8 @@ var config = {
     awsKey: process.env.AWSKey || 'fake',
     awsSecret:  process.env.AWSSecret || 'fake',
     bucket: process.env.Bucket || 'mapbox-s2',
-    region: process.env.Region
+    region: process.env.Region,
+    prefix: process.env.Prefix || 'dev'
 };
 
 var cardboard = new Cardboard(config);
