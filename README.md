@@ -28,8 +28,12 @@ c.insert(primarykey: string, feature: object, layer: string, callback: fn);
 Insert a single feature, indexing it with a primary key in a given layer.
 
 ```js
+// query a bbox, callback-return array of geojson
 c.bboxQuery(bbox: array, layer: string, callback: fn);
+// dump all features as geojson
 c.dumpGeoJSON(callback: fn);
+// delete a feature
+c.del(primarykey: string, layer: string, callback: fn);
 c.dump(); // -> stream
 c.export(); // -> stream
 ```

@@ -67,8 +67,32 @@ Cardboard.prototype.createTable = function(tableName, callback) {
     this.dyno.createTable(table, callback);
 };
 
-Cardboard.prototype.deleteItem = function(primary, layer, callback) {
+Cardboard.prototype.del = function(primary, layer, callback) {
     var dyno = this.dyno;
+    this.get(primary, layer, function(err, res) {
+        if (err) return callback(err);
+        var params = {
+            RequestItems: {}
+        };
+        // TODO: how to get table name properly here.
+        params.RequestItems.geo = [
+            {
+                DeleteRequest: {
+                    Key: {
+                        id: {
+                            S: 'id!' + primary + '!0'
+                        },
+                        layer: {
+                            S: layer
+                        }
+                    }
+                }
+            }
+        ];
+        dyno.batchWriteItem(params, function(err, res) {
+            callback(null);
+        });
+    });
 };
 
 Cardboard.prototype.get = function(primary, layer, callback) {
@@ -77,6 +101,7 @@ Cardboard.prototype.get = function(primary, layer, callback) {
         id: { 'BEGINS_WITH': 'id!' + primary },
         layer: { 'EQ': layer }
     }, { pages: 0 }, function(err, res) {
+        if (err) return callback(err);
         callback(err, parseQueryResponse([res]));
     });
 };

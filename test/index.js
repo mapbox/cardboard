@@ -116,6 +116,30 @@ test('insert & get by index', function(t) {
 teardown(test);
 
 setup(test);
+test('insert & delete', function(t) {
+    var cardboard = new Cardboard(config);
+
+    cardboard.insert('hello', fixtures.nullIsland, 'default', function(err) {
+        t.equal(err, null);
+        t.pass('inserted');
+        cardboard.get('hello', 'default', function(err, data) {
+            t.equal(err, null);
+            t.equal(data.length, 1, 'get by index');
+            t.deepEqual(data[0].val, fixtures.nullIsland);
+            cardboard.del('hello', 'default', function(err, data) {
+                t.equal(err, null);
+                cardboard.get('hello', 'default', function(err, data) {
+                    t.equal(err, null);
+                    t.deepEqual(data, []);
+                    t.end();
+                });
+            });
+        });
+    });
+});
+teardown(test);
+
+setup(test);
 test('insert & query', function(t) {
     var queries = [
         {
