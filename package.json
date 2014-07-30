@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "tap --tap test/*.js | ./node_modules/.bin/faucet"
+    "test": "tap --tap test/index.js | ./node_modules/.bin/faucet"
   },
   "bin": {
     "cardboard": "./cardboard"

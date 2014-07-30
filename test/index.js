@@ -4,97 +4,93 @@ var test = require('tap').test,
     concat = require('concat-stream'),
     Cardboard = require('../'),
     geojsonExtent = require('geojson-extent'),
-    fixtures = require('./fixtures');
+    fixtures = require('./fixtures'),
+    AWS = require('aws-sdk');
+
+
+
+if(!fs.existsSync('../.env.test')) {
+    console.log('AWSKey and AWSSecret must be set to run tests. You can do that .env.test');
+    process.exit(1);
+}
+
+var dotenv = require('dotenv');
+dotenv._getKeysAndValuesFromEnvFilePath('../.env.test');
+dotenv._setEnvs();
+
+if(!process.env.AWSKey || ! process.env.AWSSecret) {
+    console.log('AWSKey and AWSSecret must be set to run tests. You can do that .env.test');
+    process.exit(1);
+}
 
 var config = {
-    awsKey: 'fake',
-    awsSecret: 'fake',
-    table: 'geo',
-    endpoint: 'http://localhost:4567'
+    awsKey: process.env.AWSKey,
+    awsSecret: process.env.AWSSecret,
+    bucket: 'mapbox-s2',
+    prefix: 'test',
+    layer: 'default'
 };
 
-var dyno = require('dyno')(config);
+AWS.config.update({
+    accessKeyId: config.awsKey,
+    secretAccessKey: config.awsSecret,
+    region: 'us-east-1'
+});
+var s3 = new AWS.S3();
 
-var emptyFeatureCollection = {
-    type: 'FeatureCollection',
-    features: []
-};
 
-var dynalite, client, db;
+function clearLayer(cb) {
+    var params = {
+        Bucket: config.bucket,
+        Delimiter: '/',
+        Prefix: config.prefix+'/'+config.layer+'/cell/'
+    };
 
-function setup(t) {
-    test('setup', function(t) {
-        dynalite = require('dynalite')({
-            createTableMs: 0,
-            updateTableMs: 0,
-            deleteTableMs: 0
+    s3.listObjects(params, listResp);
+
+    function listResp(err, data) {
+        if (err) throw err;
+        var keys = data.Contents.map(function(c){
+            return {Key:c.Key};
         });
-        dynalite.listen(4567, function() {
-            var cardboard = new Cardboard(config);
-            cardboard.createTable(config.table, function(err, resp){
-                t.end();
-            });
+
+        if(keys.length === 0) {
+            return cb();
+        }
+        params = {
+            Bucket: config.bucket,
+            Delete: {
+                Objects: keys
+            }
+        };
+        s3.deleteObjects(params, delResp);
+    }
+    function delResp(err, data){
+        if(err) throw err;
+        cb();
+    }
+}
+
+function clear() {
+    test('clear', function(t) {
+        clearLayer(function(){
+            t.end();
         });
     });
 }
-
-function teardown(cb) {
-    test('teardown', function(t) {
-        dynalite.close();
-        t.end();
-    });
-}
-
-setup(test);
-test('tables', function(t) {
-    dyno.listTables(function(err, res) {
-        t.equal(err, null);
-        t.deepEqual(res, { TableNames: ['geo'] });
-        t.end();
-    });
-});
-teardown(test);
-
-setup(test);
-test('dump', function(t) {
-    var cardboard = new Cardboard(config);
-    cardboard.dump(function(err, data) {
-        t.equal(err, null);
-        t.deepEqual(data.items, [], 'no results with a new database');
-        t.end();
-    });
-});
-teardown(test);
-
-setup(test);
-test('dumpGeoJSON', function(t) {
-    var cardboard = new Cardboard(config);
-
-    cardboard.dumpGeoJSON(function(err, data) {
-        t.deepEqual(data, emptyFeatureCollection, 'no results with a new database');
-        t.equal(err, null);
-        t.end();
-    });
-});
-teardown(test);
-
-setup(test);
+clear(test);
 test('insert & dump', function(t) {
     var cardboard = new Cardboard(config);
 
     cardboard.insert('hello', fixtures.nullIsland, 'default', function(err) {
         t.equal(err, null);
         t.pass('inserted');
-        cardboard.dump(function(err, data) {
-            t.equal(err, null);
-            t.equal(data.items.length, 1, 'creates data');
-            t.end();
-        });
+        t.end();
     });
 });
-teardown(test);
 
-setup(test);
+clear();
+
 test('insert & query', function(t) {
     var queries = [
         {
@@ -139,9 +135,9 @@ test('insert & query', function(t) {
             t.end(); });
     }
 });
-teardown(test);
 
-setup(test);
+clear();
+
 test('insert polygon', function(t) {
     var cardboard = new Cardboard(config);
     cardboard.insert('us', fixtures.haiti, 'default', inserted);
@@ -170,9 +166,9 @@ test('insert polygon', function(t) {
         q.awaitAll(function() { t.end(); });
     }
 });
-teardown(test);
 
-setup(test);
+clear();
+
 test('insert linestring', function(t) {
     var cardboard = new Cardboard(config);
     cardboard.insert('us', fixtures.haitiLine, 'default', inserted);
@@ -201,4 +197,4 @@ test('insert linestring', function(t) {
         q.awaitAll(function() { t.end(); });
     }
 });
-teardown(test);
+clear();

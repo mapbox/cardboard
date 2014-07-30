@@ -18,7 +18,7 @@ constants.QUERY_MAX_LEVEL = process.env.QUERY_MAX_LEVEL || 5;
 constants.MAX_INDEX_CELLS = process.env.MAX_INDEX_CELLS || 100;
 constants.INDEX_MIN_LEVEL = process.env.INDEX_MIN_LEVEL || 5;
 constants.INDEX_MAX_LEVEL = process.env.INDEX_MAX_LEVEL || 5;
-constants.INDEX_POINT_LEVEL = process.env.INDEX_POINT_LEVEL || 15;
+constants.INDEX_POINT_LEVEL = process.env.INDEX_POINT_LEVEL || 5;
 geojsonCover.constants(constants);
 
 module.exports = Cardboard;
