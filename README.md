@@ -2,7 +2,7 @@
 
 [![build status](https://secure.travis-ci.org/mapbox/cardboard.png)](http://travis-ci.org/mapbox/cardboard)
 
-Demo platform for [s2](https://github.com/mapbox/node-s2) on LevelDB.
+Demo platform for [s2](https://github.com/mapbox/node-s2) on DynamoDB.
 This provides query, indexing, and storage logic. Look to `node-s2` for
 bindings and higher level code for interfaces.
 
@@ -41,7 +41,7 @@ c.export(); // -> stream
 ## Approach
 
 This project aims to create a simple, fast geospatial index as a layer on top
-of [LevelDB](http://code.google.com/p/leveldb/) and [DynamoDB](https://aws.amazon.com/dynamodb/). This
+of [DynamoDB](https://aws.amazon.com/dynamodb/). This
 means that the index will not be built into the database or
 contained in a single R-Tree - it will be baked into the indexes by which data is stored.
 
