@@ -91,7 +91,7 @@ test('insert & dump', function(t) {
         t.pass('inserted');
         cardboard.dump(function(err, data) {
             t.equal(err, null);
-            t.equal(data.items.length, 1, 'creates data');
+            t.equal(data.items.length, 2, 'creates data');
             t.end();
         });
     });

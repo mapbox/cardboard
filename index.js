@@ -29,8 +29,14 @@ Cardboard.prototype.insert = function(primary, feature, layer, cb) {
     var dyno = this.dyno;
     var q = queue(50);
     var buf = geobuf.featureToGeobuf(feature).toBuffer();
-    indexes.forEach(function(index) {
-        var id = 'cell!' + index + '!' + primary;
+
+    indexes.forEach(writeIndex);
+    writeIndex(null);
+
+    function writeIndex(index) {
+        var id = (index === null) ?
+            ('id!' + primary) :
+            ('cell!' + index + '!' + primary);
         var chunks = [], part = 0;
         var chunkBytes = MAX_ENTRY_BYTES - id.length;
         for (var start = 0; start < buf.length;) {
@@ -48,7 +54,8 @@ Cardboard.prototype.insert = function(primary, feature, layer, cb) {
         if (part === 0) {
             log('part of 0!');
         }
-    });
+    }
+
     q.awaitAll(function(err, res) {
         cb(err);
     });
@@ -58,6 +65,13 @@ Cardboard.prototype.createTable = function(tableName, callback) {
     var table = require('./lib/table.json');
     table.TableName = tableName;
     this.dyno.createTable(table, callback);
+};
+
+Cardboard.prototype.deleteItem = function(primary, layer, callback) {
+    var dyno = this.dyno;
+
+
+
 };
 
 Cardboard.prototype.bboxQuery = function(input, layer, callback) {
@@ -93,13 +107,13 @@ Cardboard.prototype.bboxQuery = function(input, layer, callback) {
             return a.id_parts[2] !== b.id_parts[2] ||
                 a.id_parts[3] !== b.id_parts[3];
         }, true);
-        
+
         flat = _.groupBy(flat, function(_) {
             return _.id_parts[2];
         });
 
         flat = _.values(flat);
-        
+
         flat = flat.map(function(_) {
             var concatted = Buffer.concat(_.map(function(i) {
                 return i.val;
