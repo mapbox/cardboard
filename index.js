@@ -10,16 +10,14 @@ var s2 = require('s2'),
     queue = require('queue-async'),
     AWS = require('aws-sdk');
 
-
-var constants = {};
-constants.MAX_QUERY_CELLS = process.env.MAX_QUERY_CELLS || 100;
-constants.QUERY_MIN_LEVEL = process.env.QUERY_MIN_LEVEL || 5;
-constants.QUERY_MAX_LEVEL = process.env.QUERY_MAX_LEVEL || 5;
-constants.MAX_INDEX_CELLS = process.env.MAX_INDEX_CELLS || 100;
-constants.INDEX_MIN_LEVEL = process.env.INDEX_MIN_LEVEL || 5;
-constants.INDEX_MAX_LEVEL = process.env.INDEX_MAX_LEVEL || 5;
-constants.INDEX_POINT_LEVEL = process.env.INDEX_POINT_LEVEL || 5;
-geojsonCover.constants(constants);
+var coverOpts = {};
+coverOpts.MAX_QUERY_CELLS = 100;
+coverOpts.QUERY_MIN_LEVEL = 5;
+coverOpts.QUERY_MAX_LEVEL = 5;
+coverOpts.MAX_INDEX_CELLS = 100;
+coverOpts.INDEX_MIN_LEVEL = 5;
+coverOpts.INDEX_MAX_LEVEL = 5;
+coverOpts.INDEX_POINT_LEVEL = 15;
 
 module.exports = Cardboard;
 
@@ -38,7 +36,7 @@ function Cardboard(c) {
 }
 
 Cardboard.prototype.insert = function(primary, feature, layer, cb) {
-    var indexes = geojsonCover.geometryIndexes(feature.geometry);
+    var indexes = geojsonCover.geometryIndexes(feature.geometry, coverOpts);
     var s3 = this.s3;
     var bucket = this.bucket;
     var prefix = this.prefix;
@@ -94,7 +92,7 @@ Cardboard.prototype.insert = function(primary, feature, layer, cb) {
 // };
 
 Cardboard.prototype.bboxQuery = function(input, layer, callback) {
-    var indexes = geojsonCover.bboxQueryIndexes(input, false);
+    var indexes = geojsonCover.bboxQueryIndexes(input, false, coverOpts);
     var q = queue(100);
     var s3 = this.s3;
     var prefix = this.prefix;
