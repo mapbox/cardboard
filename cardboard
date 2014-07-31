@@ -11,8 +11,8 @@ var fs = require('fs'),
 require('dotenv').load();
 
 var config = {
-    awsKey: process.env.AWSKey || 'fake',
-    awsSecret:  process.env.AWSSecret || 'fake',
+    awsKey: process.env.AWSKey,
+    awsSecret:  process.env.AWSSecret,
     bucket: process.env.Bucket || 'mapbox-s2',
     region: process.env.Region,
     prefix: process.env.Prefix || 'dev',
