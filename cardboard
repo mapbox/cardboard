@@ -15,8 +15,17 @@ var config = {
     awsSecret:  process.env.AWSSecret || 'fake',
     bucket: process.env.Bucket || 'mapbox-s2',
     region: process.env.Region,
-    prefix: process.env.Prefix || 'dev'
+    prefix: process.env.Prefix || 'dev',
+    coverOpts: {}
 };
+
+config.coverOpts.max_query_cells = process.env.MAX_QUERY_CELLS || 100;
+config.coverOpts.query_min_level = process.env.QUERY_MIN_LEVEL || 5;
+config.coverOpts.query_max_level = process.env.QUERY_MAX_LEVEL || 5;
+config.coverOpts.max_index_cells = process.env.MAX_INDEX_CELLS || 100;
+config.coverOpts.index_min_level = process.env.INDEX_MIN_LEVEL || 5;
+config.coverOpts.index_max_level = process.env.INDEX_MAX_LEVEL || 5;
+config.coverOpts.index_point_level = process.env.INDEX_POINT_LEVEL || 15;
 
 var cardboard = new Cardboard(config);
 ready();

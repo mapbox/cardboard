@@ -11,13 +11,13 @@ var s2 = require('s2'),
     AWS = require('aws-sdk');
 
 var coverOpts = {};
-coverOpts.MAX_QUERY_CELLS = 100;
-coverOpts.QUERY_MIN_LEVEL = 5;
-coverOpts.QUERY_MAX_LEVEL = 5;
-coverOpts.MAX_INDEX_CELLS = 100;
-coverOpts.INDEX_MIN_LEVEL = 5;
-coverOpts.INDEX_MAX_LEVEL = 5;
-coverOpts.INDEX_POINT_LEVEL = 15;
+coverOpts.max_query_cells = 100;
+coverOpts.query_min_level = 5;
+coverOpts.query_max_level = 5;
+coverOpts.max_index_cells = 100;
+coverOpts.index_min_level = 5;
+coverOpts.index_max_level = 5;
+coverOpts.index_point_level = 5;
 
 module.exports = Cardboard;
 
@@ -30,6 +30,9 @@ function Cardboard(c) {
         region: c.region || 'us-east-1',
 
     });
+    if(c.coverOpts) {
+        coverOpts = c.coverOpts
+    }
     this.bucket = c.bucket || 'mapbox-s2';
     this.prefix = c.prefix || 'dev';
     this.s3 = new AWS.S3();
