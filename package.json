@@ -26,13 +26,14 @@
   "homepage": "https://github.com/mapbox/cardboard",
   "dependencies": {
     "JSONStream": "~0.7.3",
+    "aws-sdk": "^2.0.11",
     "concat-stream": "~1.4.5",
     "debug": "~1.0.3",
     "dotenv": "^0.4.0",
-    "dyno": "^0.4.2",
+    "dyno": "^0.4.3",
     "geobuf": "0.2.1",
     "geojson-cover": "^0.1.0",
-    "geojson-extent": "0.1.0",
+    "geojson-extent": "^0.1.0",
     "geojson-normalize": "0.0.0",
     "geojson-stream": "0.0.0",
     "hat": "0.0.3",
@@ -42,12 +43,15 @@
     "rw": "~0.1.1",
     "s2": "^0.3.5",
     "through2": "~0.4.1",
+    "turf-distance": "^0.1.5",
+    "turf-point": "^0.1.6",
     "uniq": "~1.0.0"
   },
   "devDependencies": {
     "dynalite": "~0.3.6",
     "faucet": "0.0.1",
-    "tap": "~0.4.9",
-    "geojson-fixtures": "0.1.0"
+    "geojson-fixtures": "0.1.0",
+    "mock-aws-s3": "^0.2.1",
+    "tap": "~0.4.9"
   }
 }

@@ -1,11 +1,11 @@
 {
     "TableName": "geo",
     "AttributeDefinitions": [
-        {"AttributeName": "layer", "AttributeType": "S"},
+        {"AttributeName": "dataset", "AttributeType": "S"},
         {"AttributeName": "id", "AttributeType": "S"}
     ],
     "KeySchema": [
-        {"AttributeName": "layer", "KeyType": "HASH"},
+        {"AttributeName": "dataset", "KeyType": "HASH"},
         {"AttributeName": "id", "KeyType": "RANGE"}
     ],
     "ProvisionedThroughput": {
