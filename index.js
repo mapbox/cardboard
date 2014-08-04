@@ -12,11 +12,6 @@ var s2 = require('s2'),
 
 var MAX_ENTRY_BYTES = 64 * 1000; // 64KB
 
-var emptyFeatureCollection = {
-    type: 'FeatureCollection',
-    features: []
-};
-
 module.exports = Cardboard;
 
 function Cardboard(c) {
@@ -121,8 +116,7 @@ Cardboard.prototype.bboxQuery = function(input, layer, callback) {
     log('querying with ' + indexes.length + ' indexes');
     indexes.forEach(function(idx) {
         q.defer(
-            dyno.query,
-            {
+            dyno.query, {
                 id: { 'BETWEEN': [ 'cell!' + idx[0], 'cell!' + idx[1] ] },
                 layer: { 'EQ': layer }
             },
@@ -131,7 +125,6 @@ Cardboard.prototype.bboxQuery = function(input, layer, callback) {
     });
     q.awaitAll(function(err, res) {
         if (err) return callback(err);
-
         callback(err, parseQueryResponse(res));
     });
 };

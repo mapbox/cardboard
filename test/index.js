@@ -71,6 +71,18 @@ test('dump', function(t) {
 teardown(test);
 
 setup(test);
+test('no new', function(t) {
+    var cardboard = Cardboard(config);
+
+    cardboard.dumpGeoJSON(function(err, data) {
+        t.deepEqual(data, emptyFeatureCollection, 'no results with a new database');
+        t.equal(err, null);
+        t.end();
+    });
+});
+teardown(test);
+
+setup(test);
 test('dumpGeoJSON', function(t) {
     var cardboard = new Cardboard(config);
 
