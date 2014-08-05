@@ -109,6 +109,16 @@ Cardboard.prototype.get = function(primary, layer, callback) {
     });
 };
 
+Cardboard.prototype.list = function(layer, callback) {
+    var dyno = this.dyno;
+    dyno.query({
+        layer: { 'EQ': layer }
+    }, function(err, res) {
+        if (err) return callback(err);
+        callback(err, parseQueryResponse([res]));
+    });
+};
+
 Cardboard.prototype.bboxQuery = function(input, layer, callback) {
     var indexes = geojsonCover.bboxQueryIndexes(input);
     var q = queue(100);
