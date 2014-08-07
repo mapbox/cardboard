@@ -116,7 +116,7 @@ Cardboard.prototype.list = function(layer, callback) {
         id: { 'BEGINS_WITH': 'id!' }
     }, function(err, res) {
         if (err) return callback(err);
-        callback(err, parseQueryResponse([res]));
+        callback(err, parseQueryResponseId([res]));
     });
 };
 
@@ -139,6 +139,43 @@ Cardboard.prototype.bboxQuery = function(input, layer, callback) {
         callback(err, parseQueryResponse(res));
     });
 };
+
+function parseQueryResponseId(res) {
+    res = res.map(function(r) {
+        return r.items.map(function(i) {
+            i.id_parts = i.id.split('!');
+            return i;
+        });
+    });
+
+    var flat = _(res).chain().flatten().sortBy(function(a) {
+        return a.id_parts[1];
+    }).value();
+
+    flat = uniq(flat, function(a, b) {
+        return a.id_parts[1] !== b.id_parts[1] ||
+            a.id_parts[2] !== b.id_parts[2];
+    }, true);
+
+    flat = _.groupBy(flat, function(_) {
+        return _.id_parts[1];
+    });
+
+    flat = _.values(flat);
+
+    flat = flat.map(function(_) {
+        var concatted = Buffer.concat(_.map(function(i) {
+            return i.val;
+        }));
+        _[0].val = concatted;
+        return _[0];
+    });
+
+    return flat.map(function(i) {
+        i.val = geobuf.geobufToFeature(i.val);
+        return i;
+    });
+}
 
 function parseQueryResponse(res) {
     res = res.map(function(r) {
