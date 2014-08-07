@@ -112,7 +112,8 @@ Cardboard.prototype.get = function(primary, layer, callback) {
 Cardboard.prototype.list = function(layer, callback) {
     var dyno = this.dyno;
     dyno.query({
-        layer: { 'EQ': layer }
+        layer: { 'EQ': layer },
+        id: { 'BEGINS_WITH': 'id!' }
     }, function(err, res) {
         if (err) return callback(err);
         callback(err, parseQueryResponse([res]));
