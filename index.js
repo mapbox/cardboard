@@ -120,6 +120,22 @@ Cardboard.prototype.list = function(layer, callback) {
     });
 };
 
+Cardboard.prototype.listLayers = function(callback) {
+    var dyno = this.dyno;
+    dyno.scan(
+        {
+            attributes: ['layer']
+        },
+        function(err, res) {
+            if (err) return callback(err);
+            var layers = _.uniq(res.items.map(function(item){
+                return item.layer;
+            }));
+            callback(err, layers);
+        }
+    );
+};
+
 Cardboard.prototype.bboxQuery = function(input, layer, callback) {
     var indexes = geojsonCover.bboxQueryIndexes(input);
     var q = queue(100);

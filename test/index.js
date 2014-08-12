@@ -300,3 +300,34 @@ test('insert idaho', function(t) {
     }
 });
 teardown(test);
+
+
+setup(test);
+test('insert layers and listLayers', function(t) {
+    var cardboard = new Cardboard(config);
+    var q = queue(1);
+    q.defer(function(cb) {
+        cardboard.insert('us', fixtures.haiti, 'haiti', function(){
+            cb();
+        });
+    });
+    q.defer(function(cb) {
+        cardboard.insert('us', fixtures.dc, 'dc', function(){
+            cb()
+        });
+    });
+
+    q.awaitAll(getLayers)
+
+    function getLayers(){
+        cardboard.listLayers(function(err, res){
+            t.notOk(err, 'should not return an error')
+            t.ok(res, 'should return a array of layers');
+            t.equal(res.length, 2)
+            t.equal(res[0], 'dc')
+            t.equal(res[1], 'haiti')
+            t.end();
+        })
+    }
+});
+teardown(test);
