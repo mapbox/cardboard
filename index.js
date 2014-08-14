@@ -146,8 +146,7 @@ Cardboard.prototype.list = function(layer, callback) {
 Cardboard.prototype.listIds = function(layer, callback) {
     var dyno = this.dyno;
     dyno.query({
-        layer: { 'EQ': layer },
-        id: { 'BEGINS_WITH': 'id!' }
+        layer: { 'EQ': layer }
     }, {
         attributes: ['id']
     }, function(err, res) {

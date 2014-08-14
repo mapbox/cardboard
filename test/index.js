@@ -189,7 +189,7 @@ test('listIds', function(t) {
             t.equal(data.length, 1, 'get by index');
             t.deepEqual(data[0].val, fixtures.nullIsland);
             cardboard.listIds('default', function(err, data) {
-                t.deepEqual(data, ['id!hello!0']);
+                t.deepEqual(data, ["cell!100000004!hello!0", 'id!hello!0']);
                 t.end();
             });
         });
