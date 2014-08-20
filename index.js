@@ -93,6 +93,22 @@ Cardboard.prototype.del = function(primary, layer, callback) {
     });
 };
 
+Cardboard.prototype.delLayer = function(layer, callback) {
+    var dyno = this.dyno;
+    this.listIds(layer, function(err, res) {
+        var keys = res.map(function(id){
+            return {
+                layer: layer,
+                id: id 
+            };
+        });
+
+        dyno.deleteItems(keys, function(err, res) {
+            callback(err);
+        });
+    });
+};
+
 function partsRequired(feature) {
     var buf = geobuf.featureToGeobuf(feature).toBuffer();
     return Math.ceil(buf.length / MAX_ENTRY_BYTES);
@@ -117,6 +133,20 @@ Cardboard.prototype.list = function(layer, callback) {
     }, function(err, res) {
         if (err) return callback(err);
         callback(err, parseQueryResponseId([res]));
+    });
+};
+
+Cardboard.prototype.listIds = function(layer, callback) {
+    var dyno = this.dyno;
+    dyno.query({
+        layer: { 'EQ': layer }
+    }, {
+        attributes: ['id']
+    }, function(err, res) {
+        if (err) return callback(err);
+        callback(err, res.items.map(function(_) {
+            return _.id;
+        }));
     });
 };
 
