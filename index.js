@@ -96,21 +96,14 @@ Cardboard.prototype.del = function(primary, layer, callback) {
 Cardboard.prototype.delLayer = function(layer, callback) {
     var dyno = this.dyno;
     this.listIds(layer, function(err, res) {
-        var params = {
-            RequestItems: {
-                geo: res.map(function(id) {
-                    return {
-                        DeleteRequest: {
-                            Key: {
-                                layer: { S: layer },
-                                id: { S: id }
-                            }
-                        }
-                    }
-                })
-            }
-        };
-        dyno.batchWriteItem(params, function(err, res) {
+        var keys = res.map(function(id){
+            return {
+                layer: layer,
+                id: id 
+            };
+        });
+
+        dyno.deleteItems(keys, function(err, res) {
             callback(err);
         });
     });
