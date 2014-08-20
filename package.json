@@ -29,7 +29,7 @@
     "concat-stream": "~1.4.5",
     "debug": "~1.0.3",
     "dotenv": "^0.4.0",
-    "dyno": "^0.4.0",
+    "dyno": "^0.4.1",
     "geobuf": "0.2.1",
     "geojson-cover": "^0.1.0",
     "geojson-extent": "0.1.0",
