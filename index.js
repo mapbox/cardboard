@@ -124,7 +124,8 @@ Cardboard.prototype.listLayers = function(callback) {
     var dyno = this.dyno;
     dyno.scan(
         {
-            attributes: ['layer']
+            attributes: ['layer'],
+            pages:0
         },
         function(err, res) {
             if (err) return callback(err);
