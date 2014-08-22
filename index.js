@@ -70,26 +70,16 @@ Cardboard.prototype.del = function(primary, layer, callback) {
         var params = {
             RequestItems: {}
         };
-        function deleteId(id) {
-            return {
-                DeleteRequest: {
-                    Key: { id: { S: id }, layer: { S: layer } }
-                }
-            };
-        }
-        // TODO: how to get table name properly here.
-        params.RequestItems.geo = [
-            deleteId('id!' + primary + '!0')
-        ];
-        var parts = partsRequired(res[0].val);
+
+        var keys = [{ id: 'id!' + primary + '!0', layer: layer }];
+
+         var parts = partsRequired(res[0].val);
         for (var i = 0; i < indexes.length; i++) {
             for (var j = 0; j < parts; j++) {
-                params.RequestItems.geo.push(deleteId('cell!' + indexes[i] + '!' + primary + '!' + j));
+                keys.push({id: 'cell!' + indexes[i] + '!' + primary + '!' + j, layer: layer});
             }
         }
-        dyno.batchWriteItem(params, function(err, res) {
-            callback(null);
-        });
+        dyno.deleteItems(keys, callback);
     });
 };
 
@@ -99,7 +89,7 @@ Cardboard.prototype.delLayer = function(layer, callback) {
         var keys = res.map(function(id){
             return {
                 layer: layer,
-                id: id 
+                id: id
             };
         });
 
