@@ -15,11 +15,22 @@ bindings and higher level code for interfaces.
 ## api
 
 ```js
-var c = Cardboard(config)
+var c = Cardboard({
+    awsKey: config.awsKey,
+    awsSecret: config.awsSecret,
+    table: config.DynamoDBTable,
+    endpoint: 'http://localhost:4567'
+});
 ```
 
 Initialize a new cardboard database connector given a config object that is
 sent to dyno.
+
+```js
+c.createTable(tableName, callback);
+```
+
+Create a cardboard table with the specified name.
 
 ```js
 c.insert(primarykey: string, feature: object, layer: string, callback: fn);
