@@ -17,7 +17,7 @@ var point = require('turf-point');
 var cuid = require('cuid');
 
 var MAX_GEOMETRY_SIZE = 1024*10;  //10KB
-
+var LARGE_INDEX_DISTANCE = 100; //bbox more then 100 miles corner to corner.
 module.exports = Cardboard;
 
 function Cardboard(c) {
@@ -42,7 +42,7 @@ function indexLevel(feature) {
     var sw = point(bbox[0], bbox[1]);
     var ne = point(bbox[2], bbox[3]);
     var dist = distance(sw, ne, 'miles');
-    return dist >= 100 ? 0 : 1;
+    return dist >= LARGE_INDEX_DISTANCE ? 0 : 1;
 }
 
 Cardboard.prototype.insert = function(feature, dataset, cb) {
@@ -73,6 +73,12 @@ Cardboard.prototype.insert = function(feature, dataset, cb) {
         items.push(item('cell!' + level + '!' + indexes[i] + '!' + primary));
     }
     items.push(item('id!' + primary));
+
+    // If the user specified an id in properties, index it.
+    if(feature.properties && feature.properties.id) {
+        items.push(item('usid!' + feature.properties.id + '!' + primary));
+    }
+
     q.defer(dyno.putItems, items, {errors:{throughput:10}});
 
     q.defer(s3.putObject.bind(s3), {
@@ -124,7 +130,30 @@ Cardboard.prototype.delDataset = function(dataset, callback) {
         });
     });
 };
+Cardboard.prototype.getBySecondaryId = function(id, dataset, callback) {
+    var dyno = this.dyno;
+    dyno.query({
+        id: { 'BEGINS_WITH': 'usid!' + id },
+        dataset: { 'EQ': dataset }
+    }, function(err, res) {
+        if (err) return callback(err);
+        var res = parseQueryResponse([res]);
+        this.getFeatures(dataset, res, featuresResp);
 
+        function featuresResp(err, data) {
+            data = data.map(function(i) {
+                i.val = geobuf.geobufToFeature(i.val);
+                i.val.id = i.geometryid;
+                return i;
+            });
+            res.forEach(function(i){
+                i.val =  _(data).findWhere({geometryid: i.geometryid}).val;
+            });
+            callback(err, res);
+        }
+    }.bind(this));
+
+}
 Cardboard.prototype.get = function(primary, dataset, callback) {
     var dyno = this.dyno;
     dyno.query({

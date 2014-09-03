@@ -27,7 +27,7 @@ var emptyFeatureCollection = {
 
 var dynalite, client, db;
 
-function setup(t) {
+function setup() {
     test('setup', function(t) {
         dynalite = require('dynalite')({
             createTableMs: 0,
@@ -45,7 +45,7 @@ function setup(t) {
     });
 }
 
-function teardown(cb) {
+function teardown() {
     test('teardown', function(t) {
         dynalite.close(function() {
             t.end();
@@ -53,7 +53,7 @@ function teardown(cb) {
     });
 }
 
-setup(test);
+setup();
 test('tables', function(t) {
     dyno.listTables(function(err, res) {
         t.equal(err, null);
@@ -61,9 +61,9 @@ test('tables', function(t) {
         t.end();
     });
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('dump', function(t) {
     var cardboard = new Cardboard(config);
     cardboard.dump(function(err, data) {
@@ -72,9 +72,9 @@ test('dump', function(t) {
         t.end();
     });
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('no new', function(t) {
     var cardboard = Cardboard(config);
 
@@ -84,9 +84,9 @@ test('no new', function(t) {
         t.end();
     });
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('dumpGeoJSON', function(t) {
     var cardboard = new Cardboard(config);
 
@@ -96,9 +96,9 @@ test('dumpGeoJSON', function(t) {
         t.end();
     });
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('insert & dump', function(t) {
     var cardboard = new Cardboard(config);
 
@@ -112,9 +112,9 @@ test('insert & dump', function(t) {
         });
     });
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('insert & get by index', function(t) {
     var cardboard = new Cardboard(config);
 
@@ -130,9 +130,9 @@ test('insert & get by index', function(t) {
         });
     });
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('insert & delete', function(t) {
     var cardboard = new Cardboard(config);
 
@@ -155,10 +155,10 @@ test('insert & delete', function(t) {
         });
     });
 });
-teardown(test);
+teardown();
 
 
-setup(test);
+setup();
 test('insert & delDataset', function(t) {
     var cardboard = new Cardboard(config);
 
@@ -181,11 +181,11 @@ test('insert & delDataset', function(t) {
         });
     });
 });
-teardown(test);
+teardown();
 
 
 
-setup(test);
+setup();
 test('listIds', function(t) {
     var cardboard = new Cardboard(config);
 
@@ -204,9 +204,9 @@ test('listIds', function(t) {
         });
     });
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('insert & query', function(t) {
     var queries = [
         {
@@ -252,9 +252,9 @@ test('insert & query', function(t) {
         });
     }
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('insert polygon', function(t) {
     var cardboard = new Cardboard(config);
     cardboard.insert(fixtures.haiti, 'default', inserted);
@@ -284,9 +284,9 @@ test('insert polygon', function(t) {
         q.awaitAll(function() { t.end(); });
     }
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('insert linestring', function(t) {
     var cardboard = new Cardboard(config);
     cardboard.insert(fixtures.haitiLine, 'default', inserted);
@@ -316,9 +316,9 @@ test('insert linestring', function(t) {
         q.awaitAll(function() { t.end(); });
     }
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('insert idaho', function(t) {
     var cardboard = new Cardboard(config);
     var q = queue(1);
@@ -353,10 +353,10 @@ test('insert idaho', function(t) {
         q.awaitAll(function() { t.end(); });
     }
 });
-teardown(test);
+teardown();
 
 
-setup(test);
+setup();
 test('insert datasets and listDatasets', function(t) {
     var cardboard = new Cardboard(config);
     var q = queue(1);
@@ -384,4 +384,30 @@ test('insert datasets and listDatasets', function(t) {
         })
     }
 });
-teardown(test);
+teardown();
+
+setup();
+test('insert feature with user specified id.', function(t) {
+    var cardboard = new Cardboard(config);
+    var q = queue(1);
+
+    q.defer(cardboard.insert.bind(cardboard), fixtures.haiti, 'haiti');
+    q.defer(cardboard.insert.bind(cardboard), fixtures.haiti, 'haiti');
+    q.defer(cardboard.insert.bind(cardboard), fixtures.haitiLine, 'haiti');
+
+    q.awaitAll(getByUserSpecifiedId)
+
+    function getByUserSpecifiedId(err, ids){
+        cardboard.getBySecondaryId(fixtures.haiti.properties.id, 'haiti', function(err, res){
+            t.notOk(err, 'should not return an error');
+            t.ok(res, 'should return a array of features');
+            t.equal(res.length, 2);
+            t.equal(res[0].val.properties.id, 'haitipolygonid');
+            t.equal(res[0].val.id, ids[0]);
+            t.equal(res[1].val.properties.id, 'haitipolygonid');
+            t.equal(res[1].val.id, ids[1]);
+            t.end();
+        });
+    }
+});
+teardown();
