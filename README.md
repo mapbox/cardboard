@@ -2,7 +2,7 @@
 
 [![build status](https://secure.travis-ci.org/mapbox/cardboard.png)](http://travis-ci.org/mapbox/cardboard)
 
-Demo platform for [s2](https://github.com/mapbox/node-s2) on DynamoDB.
+[S2](https://github.com/mapbox/node-s2) on DynamoDB / S3.
 This provides query, indexing, and storage logic. Look to `node-s2` for
 bindings and higher level code for interfaces.
 
@@ -19,12 +19,14 @@ var c = Cardboard({
     awsKey: config.awsKey,
     awsSecret: config.awsSecret,
     table: config.DynamoDBTable,
-    endpoint: 'http://localhost:4567'
+    endpoint: 'http://localhost:4567',
+    bucket: 'test',
+    prefix: 'test'
 });
 ```
 
 Initialize a new cardboard database connector given a config object that is
-sent to dyno.
+sent to [dyno](http://github.com/mapbox/dyno).
 
 ```js
 c.createTable(tableName, callback);
@@ -55,6 +57,8 @@ This project aims to create a simple, fast geospatial index as a layer on top
 of [DynamoDB](https://aws.amazon.com/dynamodb/). This
 means that the index will not be built into the database or
 contained in a single R-Tree - it will be baked into the indexes by which data is stored.
+
+While the whole index in kept in DynamoDB, the larger geometries are stored on S3.
 
 Support target:
 
