@@ -19,13 +19,27 @@ if (!argv._.length) {
 
 var tableName = argv._[0];
 
+console.log('endpoint', process.env.Endpoint)
+
 var config = {
-    awsKey: process.env.AWSKey || 'fake',
-    awsSecret:  process.env.AWSSecret || 'fake',
+    awsKey: process.env.AWSKey,
+    awsSecret:  process.env.AWSSecret,
     table: tableName,
-    endpoint:  process.env.Endpoint || 'http://localhost:4567',
-    region: process.env.Region
+    endpoint:  process.env.Endpoint,
+    region: process.env.Region,
+    bucket: process.env.Bucket || 'mapbox-s2',
+    prefix: tableName
 };
+
+config.coverOpts ={};
+
+config.coverOpts.max_query_cells = process.env.MAX_QUERY_CELLS || 100;
+config.coverOpts.query_min_level = process.env.QUERY_MIN_LEVEL || 1;
+config.coverOpts.query_max_level = process.env.QUERY_MAX_LEVEL || 5;
+config.coverOpts.max_index_cells = process.env.MAX_INDEX_CELLS || 100;
+config.coverOpts.index_min_level = process.env.INDEX_MIN_LEVEL || 5;
+config.coverOpts.index_max_level = process.env.INDEX_MAX_LEVEL || 8;
+config.coverOpts.index_point_level = process.env.INDEX_POINT_LEVEL || 15;
 
 var cardboard = new Cardboard(config);
 
@@ -47,7 +61,7 @@ function ready() {
             gj.features.forEach(function(feature) {
                 var id = (((feature.id !== undefined) ?
                     feature.id : feature.properties.id)) || hat();
-                q.defer(cardboard.insert.bind(cardboard), id, feature, argv.layer || 'default');
+                q.defer(cardboard.insert.bind(cardboard), id, feature, argv.dataset || 'default');
             });
             q.awaitAll(function(err, res) {
                 if (err) console.error(err);
@@ -69,7 +83,7 @@ function ready() {
     } else if (argv.query) {
         cardboard.bboxQuery(
             argv.query.split(',').map(function(q) { return parseFloat(q); }),
-            argv.layer || 'default',
+            argv.dataset || 'default',
             function(err, data) {
                 if (err) return console.log(err);
                 data.forEach(function(d) {

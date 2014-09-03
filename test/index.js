@@ -5,13 +5,17 @@ var test = require('tap').test,
     Cardboard = require('../'),
     geojsonExtent = require('geojson-extent'),
     geojsonFixtures = require('geojson-fixtures'),
-    fixtures = require('./fixtures');
+    fixtures = require('./fixtures'),
+    fakeAWS = require('mock-aws-s3');
 
 var config = {
     awsKey: 'fake',
     awsSecret: 'fake',
     table: 'geo',
-    endpoint: 'http://localhost:4567'
+    endpoint: 'http://localhost:4567',
+    bucket: 'test',
+    prefix: 'test',
+    s3: fakeAWS.S3() // only for mocking s3
 };
 
 var dyno = require('dyno')(config);
@@ -151,8 +155,9 @@ test('insert & delete', function(t) {
 });
 teardown(test);
 
+
 setup(test);
-test('insert & delLayer', function(t) {
+test('insert & delDataset', function(t) {
     var cardboard = new Cardboard(config);
 
     cardboard.insert('hello', fixtures.nullIsland, 'default', function(err) {
@@ -162,7 +167,7 @@ test('insert & delLayer', function(t) {
             t.equal(err, null);
             t.equal(data.length, 1, 'get by index');
             t.deepEqual(data[0].val, fixtures.nullIsland);
-            cardboard.delLayer('default', function(err, data) {
+            cardboard.delDataset('default', function(err, data) {
                 t.equal(err, null);
                 cardboard.get('hello', 'default', function(err, data) {
                     t.equal(err, null);
@@ -189,7 +194,7 @@ test('listIds', function(t) {
             t.equal(data.length, 1, 'get by index');
             t.deepEqual(data[0].val, fixtures.nullIsland);
             cardboard.listIds('default', function(err, data) {
-                t.deepEqual(data, ["cell!100000004!hello!0", 'id!hello!0']);
+                t.deepEqual(data, ['cell!1!100000004!hello', 'id!hello']);
                 t.end();
             });
         });
@@ -231,9 +236,9 @@ test('insert & query', function(t) {
         var q = queue(1);
         queries.forEach(function(query) {
             q.defer(function(query, callback) {
-                t.equal(cardboard.bboxQuery(query.query, 'default', function(err, data) {
+                t.equal(cardboard.bboxQuery(query.query, 'default', function(err, resp) {
                     t.equal(err, null, 'no error for ' + query.query.join(','));
-                    t.equal(data.length, query.length, 'finds ' + query.length + ' data with a query');
+                    t.equal(resp.length, query.length, 'finds ' + query.length + ' data with a query');
                     callback();
                 }), undefined, '.bboxQuery');
             }, query);
@@ -265,9 +270,9 @@ test('insert polygon', function(t) {
         var q = queue(1);
         queries.forEach(function(query) {
             q.defer(function(query, callback) {
-                t.equal(cardboard.bboxQuery(query.query, 'default', function(err, data) {
+                t.equal(cardboard.bboxQuery(query.query, 'default', function(err, resp) {
                     t.equal(err, null, 'no error for ' + query.query.join(','));
-                    t.equal(data.length, query.length, 'finds ' + query.length + ' data with a query');
+                    t.equal(resp.length, query.length, 'finds ' + query.length + ' data with a query');
                     callback();
                 }), undefined, '.bboxQuery');
             }, query);
@@ -297,9 +302,9 @@ test('insert linestring', function(t) {
         var q = queue(1);
         queries.forEach(function(query) {
             q.defer(function(query, callback) {
-                t.equal(cardboard.bboxQuery(query.query, 'default', function(err, data) {
+                t.equal(cardboard.bboxQuery(query.query, 'default', function(err, resp) {
                     t.equal(err, null, 'no error for ' + query.query.join(','));
-                    t.equal(data.length, query.length, 'finds ' + query.length + ' data with a query');
+                    t.equal(resp.length, query.length, 'finds ' + query.length + ' data with a query');
                     callback();
                 }), undefined, '.bboxQuery');
             }, query);
@@ -335,9 +340,9 @@ test('insert idaho', function(t) {
         var q = queue(1);
         queries.forEach(function(query) {
             q.defer(function(query, callback) {
-                t.equal(cardboard.bboxQuery(query.query, 'default', function(err, data) {
+                t.equal(cardboard.bboxQuery(query.query, 'default', function(err, resp) {
                     t.equal(err, null, 'no error for ' + query.query.join(','));
-                    t.equal(data.length, query.length, 'finds ' + query.length + ' data with a query');
+                    t.equal(resp.length, query.length, 'finds ' + query.length + ' data with a query');
                     callback();
                 }), undefined, '.bboxQuery');
             }, query);
@@ -349,7 +354,7 @@ teardown(test);
 
 
 setup(test);
-test('insert layers and listLayers', function(t) {
+test('insert datasets and listDatasets', function(t) {
     var cardboard = new Cardboard(config);
     var q = queue(1);
     q.defer(function(cb) {
@@ -363,12 +368,12 @@ test('insert layers and listLayers', function(t) {
         });
     });
 
-    q.awaitAll(getLayers)
+    q.awaitAll(getDatasets)
 
-    function getLayers(){
-        cardboard.listLayers(function(err, res){
+    function getDatasets(){
+        cardboard.listDatasets(function(err, res){
             t.notOk(err, 'should not return an error')
-            t.ok(res, 'should return a array of layers');
+            t.ok(res, 'should return a array of datasets');
             t.equal(res.length, 2)
             t.equal(res[0], 'dc')
             t.equal(res[1], 'haiti')
