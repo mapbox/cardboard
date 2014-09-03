@@ -27,7 +27,7 @@ var emptyFeatureCollection = {
 
 var dynalite, client, db;
 
-function setup(t) {
+function setup() {
     test('setup', function(t) {
         dynalite = require('dynalite')({
             createTableMs: 0,
@@ -45,7 +45,7 @@ function setup(t) {
     });
 }
 
-function teardown(cb) {
+function teardown() {
     test('teardown', function(t) {
         dynalite.close(function() {
             t.end();
@@ -53,7 +53,7 @@ function teardown(cb) {
     });
 }
 
-setup(test);
+setup();
 test('tables', function(t) {
     dyno.listTables(function(err, res) {
         t.equal(err, null);
@@ -61,9 +61,9 @@ test('tables', function(t) {
         t.end();
     });
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('dump', function(t) {
     var cardboard = new Cardboard(config);
     cardboard.dump(function(err, data) {
@@ -72,9 +72,9 @@ test('dump', function(t) {
         t.end();
     });
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('no new', function(t) {
     var cardboard = Cardboard(config);
 
@@ -84,9 +84,9 @@ test('no new', function(t) {
         t.end();
     });
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('dumpGeoJSON', function(t) {
     var cardboard = new Cardboard(config);
 
@@ -96,13 +96,13 @@ test('dumpGeoJSON', function(t) {
         t.end();
     });
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('insert & dump', function(t) {
     var cardboard = new Cardboard(config);
 
-    cardboard.insert('hello', fixtures.nullIsland, 'default', function(err) {
+    cardboard.insert(fixtures.nullIsland, 'default', function(err) {
         t.equal(err, null);
         t.pass('inserted');
         cardboard.dump(function(err, data) {
@@ -112,39 +112,41 @@ test('insert & dump', function(t) {
         });
     });
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('insert & get by index', function(t) {
     var cardboard = new Cardboard(config);
 
-    cardboard.insert('hello', fixtures.nullIsland, 'default', function(err) {
+    cardboard.insert(fixtures.nullIsland, 'default', function(err, primary) {
         t.equal(err, null);
         t.pass('inserted');
-        cardboard.get('hello', 'default', function(err, data) {
+        cardboard.get(primary, 'default', function(err, data) {
             t.equal(err, null);
-            t.equal(data.length, 1, 'get by index');
-            t.deepEqual(data[0].val, fixtures.nullIsland);
+            fixtures.nullIsland.id = primary;
+            t.deepEqual(data.val, fixtures.nullIsland);
+            delete fixtures.nullIsland.id;
             t.end();
         });
     });
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('insert & delete', function(t) {
     var cardboard = new Cardboard(config);
 
-    cardboard.insert('hello', fixtures.nullIsland, 'default', function(err) {
+    cardboard.insert(fixtures.nullIsland, 'default', function(err, primary) {
         t.equal(err, null);
         t.pass('inserted');
-        cardboard.get('hello', 'default', function(err, data) {
+        cardboard.get(primary, 'default', function(err, data) {
             t.equal(err, null);
-            t.equal(data.length, 1, 'get by index');
-            t.deepEqual(data[0].val, fixtures.nullIsland);
-            cardboard.del('hello', 'default', function(err, data) {
+            fixtures.nullIsland.id = primary;
+            t.deepEqual(data.val, fixtures.nullIsland);
+            delete fixtures.nullIsland.id;
+            cardboard.del(primary, 'default', function(err, data) {
                 t.equal(err, null);
-                cardboard.get('hello', 'default', function(err, data) {
+                cardboard.get(primary, 'default', function(err, data) {
                     t.equal(err, null);
                     t.deepEqual(data, []);
                     t.end();
@@ -153,23 +155,24 @@ test('insert & delete', function(t) {
         });
     });
 });
-teardown(test);
+teardown();
 
 
-setup(test);
+setup();
 test('insert & delDataset', function(t) {
     var cardboard = new Cardboard(config);
 
-    cardboard.insert('hello', fixtures.nullIsland, 'default', function(err) {
+    cardboard.insert(fixtures.nullIsland, 'default', function(err, primary) {
         t.equal(err, null);
         t.pass('inserted');
-        cardboard.get('hello', 'default', function(err, data) {
+        cardboard.get(primary, 'default', function(err, data) {
             t.equal(err, null);
-            t.equal(data.length, 1, 'get by index');
-            t.deepEqual(data[0].val, fixtures.nullIsland);
+            fixtures.nullIsland.id = primary;
+            t.deepEqual(data.val, fixtures.nullIsland);
+            delete fixtures.nullIsland.id;
             cardboard.delDataset('default', function(err, data) {
                 t.equal(err, null);
-                cardboard.get('hello', 'default', function(err, data) {
+                cardboard.get(primary, 'default', function(err, data) {
                     t.equal(err, null);
                     t.deepEqual(data, []);
                     t.end();
@@ -178,31 +181,32 @@ test('insert & delDataset', function(t) {
         });
     });
 });
-teardown(test);
+teardown();
 
 
 
-setup(test);
+setup();
 test('listIds', function(t) {
     var cardboard = new Cardboard(config);
 
-    cardboard.insert('hello', fixtures.nullIsland, 'default', function(err) {
+    cardboard.insert(fixtures.nullIsland, 'default', function(err, primary) {
         t.equal(err, null);
         t.pass('inserted');
-        cardboard.get('hello', 'default', function(err, data) {
+        cardboard.get(primary, 'default', function(err, data) {
             t.equal(err, null);
-            t.equal(data.length, 1, 'get by index');
-            t.deepEqual(data[0].val, fixtures.nullIsland);
+            fixtures.nullIsland.id = primary;
+            t.deepEqual(data.val, fixtures.nullIsland);
+            delete fixtures.nullIsland.id;
             cardboard.listIds('default', function(err, data) {
-                t.deepEqual(data, ['cell!1!100000004!hello', 'id!hello']);
+                t.deepEqual(data, ['cell!1!100000004!'+primary, 'id!'+primary]);
                 t.end();
             });
         });
     });
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('insert & query', function(t) {
     var queries = [
         {
@@ -225,9 +229,9 @@ test('insert & query', function(t) {
     var cardboard = new Cardboard(config);
     var insertQueue = queue(1);
 
-    [['nullisland', fixtures.nullIsland],
-    ['dc', fixtures.dc]].forEach(function(fix) {
-        insertQueue.defer(cardboard.insert.bind(cardboard), fix[0], fix[1], 'default');
+    [fixtures.nullIsland,
+    fixtures.dc].forEach(function(fix) {
+        insertQueue.defer(cardboard.insert.bind(cardboard), fix, 'default');
     });
 
     insertQueue.awaitAll(inserted);
@@ -248,12 +252,12 @@ test('insert & query', function(t) {
         });
     }
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('insert polygon', function(t) {
     var cardboard = new Cardboard(config);
-    cardboard.insert('us', fixtures.haiti, 'default', inserted);
+    cardboard.insert(fixtures.haiti, 'default', inserted);
 
     function inserted(err, res) {
         t.notOk(err, 'no error returned');
@@ -280,12 +284,12 @@ test('insert polygon', function(t) {
         q.awaitAll(function() { t.end(); });
     }
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('insert linestring', function(t) {
     var cardboard = new Cardboard(config);
-    cardboard.insert('us', fixtures.haitiLine, 'default', inserted);
+    cardboard.insert(fixtures.haitiLine, 'default', inserted);
 
     function inserted(err, res) {
         t.notOk(err, 'no error returned');
@@ -312,18 +316,17 @@ test('insert linestring', function(t) {
         q.awaitAll(function() { t.end(); });
     }
 });
-teardown(test);
+teardown();
 
-setup(test);
+setup();
 test('insert idaho', function(t) {
     var cardboard = new Cardboard(config);
     var q = queue(1);
     t.pass('inserting idaho');
-    var i = 0;
     geojsonFixtures.featurecollection.idaho.features.filter(function(f) {
         return f.properties.GEOID === '16049960100';
     }).forEach(function(block) {
-        q.defer(cardboard.insert.bind(cardboard), (i++).toString(), block, 'default');
+        q.defer(cardboard.insert.bind(cardboard), block, 'default');
     });
     q.awaitAll(inserted);
 
@@ -350,20 +353,20 @@ test('insert idaho', function(t) {
         q.awaitAll(function() { t.end(); });
     }
 });
-teardown(test);
+teardown();
 
 
-setup(test);
+setup();
 test('insert datasets and listDatasets', function(t) {
     var cardboard = new Cardboard(config);
     var q = queue(1);
     q.defer(function(cb) {
-        cardboard.insert('us', fixtures.haiti, 'haiti', function(){
+        cardboard.insert(fixtures.haiti, 'haiti', function(){
             cb();
         });
     });
     q.defer(function(cb) {
-        cardboard.insert('us', fixtures.dc, 'dc', function(){
+        cardboard.insert(fixtures.dc, 'dc', function(){
             cb()
         });
     });
@@ -381,4 +384,30 @@ test('insert datasets and listDatasets', function(t) {
         })
     }
 });
-teardown(test);
+teardown();
+
+setup();
+test('insert feature with user specified id.', function(t) {
+    var cardboard = new Cardboard(config);
+    var q = queue(1);
+
+    q.defer(cardboard.insert.bind(cardboard), fixtures.haiti, 'haiti');
+    q.defer(cardboard.insert.bind(cardboard), fixtures.haiti, 'haiti');
+    q.defer(cardboard.insert.bind(cardboard), fixtures.haitiLine, 'haiti');
+
+    q.awaitAll(getByUserSpecifiedId)
+
+    function getByUserSpecifiedId(err, ids){
+        cardboard.getBySecondaryId(fixtures.haiti.properties.id, 'haiti', function(err, res){
+            t.notOk(err, 'should not return an error');
+            t.ok(res, 'should return a array of features');
+            t.equal(res.length, 2);
+            t.equal(res[0].val.properties.id, 'haitipolygonid');
+            t.equal(res[0].val.id, ids[0]);
+            t.equal(res[1].val.properties.id, 'haitipolygonid');
+            t.equal(res[1].val.id, ids[1]);
+            t.end();
+        });
+    }
+});
+teardown();

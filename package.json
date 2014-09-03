@@ -28,6 +28,7 @@
     "JSONStream": "~0.7.3",
     "aws-sdk": "^2.0.11",
     "concat-stream": "~1.4.5",
+    "cuid": "^1.2.4",
     "debug": "~1.0.3",
     "dotenv": "^0.4.0",
     "dyno": "^0.4.3",

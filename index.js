@@ -13,10 +13,11 @@ var Dyno = require('dyno');
 var AWS = require('aws-sdk');
 var extent = require('geojson-extent');
 var distance = require('turf-distance');
-var point = require('turf-point')
+var point = require('turf-point');
+var cuid = require('cuid');
 
 var MAX_GEOMETRY_SIZE = 1024*10;  //10KB
-
+var LARGE_INDEX_DISTANCE = 100; //bbox more then 100 miles corner to corner.
 module.exports = Cardboard;
 
 function Cardboard(c) {
@@ -41,14 +42,16 @@ function indexLevel(feature) {
     var sw = point(bbox[0], bbox[1]);
     var ne = point(bbox[2], bbox[3]);
     var dist = distance(sw, ne, 'miles');
-    return dist >= 100 ? 0 : 1;
+    return dist >= LARGE_INDEX_DISTANCE ? 0 : 1;
 }
 
-Cardboard.prototype.insert = function(primary, feature, dataset, cb) {
+Cardboard.prototype.insert = function(feature, dataset, cb) {
     var level = indexLevel(feature);
     var indexes = geojsonCover.geometryIndexes(feature.geometry, coverOpts[level]);
     var dyno = this.dyno;
     var s3 = this.s3;
+    var primary = cuid();
+
     log(primary, dataset, 'level:', level, 'indexes:', indexes.length);
     var q = queue(50);
     var buf = geobuf.featureToGeobuf(feature).toBuffer();
@@ -70,6 +73,12 @@ Cardboard.prototype.insert = function(primary, feature, dataset, cb) {
         items.push(item('cell!' + level + '!' + indexes[i] + '!' + primary));
     }
     items.push(item('id!' + primary));
+
+    // If the user specified an id in properties, index it.
+    if(feature.properties && feature.properties.id) {
+        items.push(item('usid!' + feature.properties.id + '!' + primary));
+    }
+
     q.defer(dyno.putItems, items, {errors:{throughput:10}});
 
     q.defer(s3.putObject.bind(s3), {
@@ -78,7 +87,7 @@ Cardboard.prototype.insert = function(primary, feature, dataset, cb) {
         Body: buf
     })
     q.awaitAll(function(err, res) {
-        cb(err);
+        cb(err, primary);
     });
 };
 
@@ -92,7 +101,7 @@ Cardboard.prototype.del = function(primary, dataset, callback) {
     var dyno = this.dyno;
     this.get(primary, dataset, function(err, res) {
         if (err) return callback(err);
-        var indexes = geojsonCover.geometryIndexes(res[0].val.geometry, coverOpts);
+        var indexes = geojsonCover.geometryIndexes(res.val.geometry, coverOpts);
         var params = {
             RequestItems: {}
         };
@@ -121,7 +130,30 @@ Cardboard.prototype.delDataset = function(dataset, callback) {
         });
     });
 };
+Cardboard.prototype.getBySecondaryId = function(id, dataset, callback) {
+    var dyno = this.dyno;
+    dyno.query({
+        id: { 'BEGINS_WITH': 'usid!' + id },
+        dataset: { 'EQ': dataset }
+    }, function(err, res) {
+        if (err) return callback(err);
+        var res = parseQueryResponse([res]);
+        this.getFeatures(dataset, res, featuresResp);
 
+        function featuresResp(err, data) {
+            data = data.map(function(i) {
+                i.val = geobuf.geobufToFeature(i.val);
+                i.val.id = i.geometryid;
+                return i;
+            });
+            res.forEach(function(i){
+                i.val =  _(data).findWhere({geometryid: i.geometryid}).val;
+            });
+            callback(err, res);
+        }
+    }.bind(this));
+
+}
 Cardboard.prototype.get = function(primary, dataset, callback) {
     var dyno = this.dyno;
     dyno.query({
@@ -130,12 +162,26 @@ Cardboard.prototype.get = function(primary, dataset, callback) {
     }, function(err, res) {
         if (err) return callback(err);
         var res = parseQueryResponse([res]);
-        for(var i=0; i< res.length; i++) {
-            if(res[i].val)
-                res[i].val = geobuf.geobufToFeature(res[i].val);
+
+        if(res.length === 0) return callback(null, res);
+
+        if(res[0].val) {
+            respond(res[0]);
+        } else {
+            this.getFeatures(dataset, res, function(err, result){
+                if(err) return callback(err);
+                respond(result[0]);
+            });
         }
-        callback(err, res);
-    });
+
+        function respond(feature) {
+            feature.val = geobuf.geobufToFeature(feature.val);
+            feature.val.id = feature.geometryid;
+            return callback(err, feature);
+
+        }
+
+    }.bind(this));
 };
 
 Cardboard.prototype.getFeatures = function(dataset, features, callback) {
@@ -233,6 +279,7 @@ Cardboard.prototype.bboxQuery = function(input, dataset, callback) {
         function featuresResp(err, data) {
             data = data.map(function(i) {
                 i.val = geobuf.geobufToFeature(i.val);
+                i.val.id = i.geometryid;
                 return i;
             });
             res.forEach(function(i){

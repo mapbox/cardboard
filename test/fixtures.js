@@ -53,7 +53,9 @@ module.exports.dc = {
 
 module.exports.haiti = {
   "type": "Feature",
-  "properties": {},
+  "properties": {
+      "id": "haitipolygonid"
+  },
   "geometry": {
     "type": "Polygon",
     "coordinates": [
