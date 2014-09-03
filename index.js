@@ -65,12 +65,12 @@ Cardboard.prototype.insert = function(primary, feature, dataset, cb) {
         }
         return obj;
     }
-
-    indexes.forEach(writeIndex);
-    function writeIndex(index) {
-        q.defer(dyno.putItem, item('cell!' + level + '!' + index + '!' + primary), {errors:{throughput:10}});
+    var items = [];
+    for(var i=0; i < indexes.length; i++) {
+        items.push(item('cell!' + level + '!' + indexes[i] + '!' + primary));
     }
-    q.defer(dyno.putItem, item('id!' + primary), {errors:{throughput:10}});
+    items.push(item('id!' + primary));
+    q.defer(dyno.putItems, items, {errors:{throughput:10}});
 
     q.defer(s3.putObject.bind(s3), {
         Key: [this.prefix, dataset, primary].join('/'),
