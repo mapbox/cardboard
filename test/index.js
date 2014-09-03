@@ -36,7 +36,7 @@ function setup() {
         });
         dynalite.listen(4567, function() {
             t.pass('dynalite listening');
-            var cardboard = new Cardboard(config);
+            var cardboard = Cardboard(config);
             cardboard.createTable(config.table, function(err, resp){
                 t.pass('table created');
                 t.end();
@@ -65,7 +65,7 @@ teardown();
 
 setup();
 test('dump', function(t) {
-    var cardboard = new Cardboard(config);
+    var cardboard = Cardboard(config);
     cardboard.dump(function(err, data) {
         t.equal(err, null);
         t.deepEqual(data.items, [], 'no results with a new database');
@@ -88,7 +88,7 @@ teardown();
 
 setup();
 test('dumpGeoJSON', function(t) {
-    var cardboard = new Cardboard(config);
+    var cardboard = Cardboard(config);
 
     cardboard.dumpGeoJSON(function(err, data) {
         t.deepEqual(data, emptyFeatureCollection, 'no results with a new database');
@@ -100,7 +100,7 @@ teardown();
 
 setup();
 test('insert & dump', function(t) {
-    var cardboard = new Cardboard(config);
+    var cardboard = Cardboard(config);
 
     cardboard.insert(fixtures.nullIsland, 'default', function(err) {
         t.equal(err, null);
@@ -116,7 +116,7 @@ teardown();
 
 setup();
 test('insert & get by index', function(t) {
-    var cardboard = new Cardboard(config);
+    var cardboard = Cardboard(config);
 
     cardboard.insert(fixtures.nullIsland, 'default', function(err, primary) {
         t.equal(err, null);
@@ -134,7 +134,7 @@ teardown();
 
 setup();
 test('insert & delete', function(t) {
-    var cardboard = new Cardboard(config);
+    var cardboard = Cardboard(config);
 
     cardboard.insert(fixtures.nullIsland, 'default', function(err, primary) {
         t.equal(err, null);
@@ -144,7 +144,7 @@ test('insert & delete', function(t) {
             fixtures.nullIsland.id = primary;
             t.deepEqual(data.val, fixtures.nullIsland);
             delete fixtures.nullIsland.id;
-            cardboard.del(primary, 'default', function(err, data) {
+            cardboard.delFeature(primary, 'default', function(err, data) {
                 t.equal(err, null);
                 cardboard.get(primary, 'default', function(err, data) {
                     t.equal(err, null);
@@ -160,7 +160,7 @@ teardown();
 
 setup();
 test('insert & delDataset', function(t) {
-    var cardboard = new Cardboard(config);
+    var cardboard = Cardboard(config);
 
     cardboard.insert(fixtures.nullIsland, 'default', function(err, primary) {
         t.equal(err, null);
@@ -187,7 +187,7 @@ teardown();
 
 setup();
 test('listIds', function(t) {
-    var cardboard = new Cardboard(config);
+    var cardboard = Cardboard(config);
 
     cardboard.insert(fixtures.nullIsland, 'default', function(err, primary) {
         t.equal(err, null);
@@ -226,7 +226,7 @@ test('insert & query', function(t) {
             length: 1
         }
     ];
-    var cardboard = new Cardboard(config);
+    var cardboard = Cardboard(config);
     var insertQueue = queue(1);
 
     [fixtures.nullIsland,
@@ -256,7 +256,7 @@ teardown();
 
 setup();
 test('insert polygon', function(t) {
-    var cardboard = new Cardboard(config);
+    var cardboard = Cardboard(config);
     cardboard.insert(fixtures.haiti, 'default', inserted);
 
     function inserted(err, res) {
@@ -288,7 +288,7 @@ teardown();
 
 setup();
 test('insert linestring', function(t) {
-    var cardboard = new Cardboard(config);
+    var cardboard = Cardboard(config);
     cardboard.insert(fixtures.haitiLine, 'default', inserted);
 
     function inserted(err, res) {
@@ -320,7 +320,7 @@ teardown();
 
 setup();
 test('insert idaho', function(t) {
-    var cardboard = new Cardboard(config);
+    var cardboard = Cardboard(config);
     var q = queue(1);
     t.pass('inserting idaho');
     geojsonFixtures.featurecollection.idaho.features.filter(function(f) {
@@ -358,7 +358,7 @@ teardown();
 
 setup();
 test('insert datasets and listDatasets', function(t) {
-    var cardboard = new Cardboard(config);
+    var cardboard = Cardboard(config);
     var q = queue(1);
     q.defer(function(cb) {
         cardboard.insert(fixtures.haiti, 'haiti', function(){
@@ -388,7 +388,7 @@ teardown();
 
 setup();
 test('insert feature with user specified id.', function(t) {
-    var cardboard = new Cardboard(config);
+    var cardboard = Cardboard(config);
     var q = queue(1);
 
     q.defer(cardboard.insert.bind(cardboard), fixtures.haiti, 'haiti');
