@@ -5,6 +5,7 @@ var test = require('tap').test,
     Cardboard = require('../'),
     geojsonExtent = require('geojson-extent'),
     geojsonFixtures = require('geojson-fixtures'),
+    geojsonNormalize = require('geojson-normalize'),
     fixtures = require('./fixtures'),
     fakeAWS = require('mock-aws-s3');
 
@@ -102,7 +103,7 @@ setup();
 test('insert & dump', function(t) {
     var cardboard = Cardboard(config);
 
-    cardboard.insert(fixtures.nullIsland, 'default', function(err) {
+    cardboard.put(fixtures.nullIsland, 'default', function(err) {
         t.equal(err, null);
         t.pass('inserted');
         cardboard.dump(function(err, data) {
@@ -118,13 +119,13 @@ setup();
 test('insert & get by index', function(t) {
     var cardboard = Cardboard(config);
 
-    cardboard.insert(fixtures.nullIsland, 'default', function(err, primary) {
+    cardboard.put(fixtures.nullIsland, 'default', function(err, primary) {
         t.equal(err, null);
         t.pass('inserted');
         cardboard.get(primary, 'default', function(err, data) {
             t.equal(err, null);
             fixtures.nullIsland.id = primary;
-            t.deepEqual(data.val, fixtures.nullIsland);
+            t.deepEqual(data, geojsonNormalize(fixtures.nullIsland));
             delete fixtures.nullIsland.id;
             t.end();
         });
@@ -132,17 +133,41 @@ test('insert & get by index', function(t) {
 });
 teardown();
 
+
+setup();
+test('insert & and update', function(t) {
+    var cardboard = Cardboard(config);
+
+    cardboard.put(fixtures.haitiLine, 'default', function(err, primary) {
+        t.equal(err, null);
+        t.ok(primary, 'got id');
+        t.pass('inserted');
+        fixtures.haitiLine.id = primary;
+        fixtures.haitiLine.geometry.coordinates[0][0] = -73.588671875;
+        cardboard.put(fixtures.haitiLine, 'default', function(err, id) {
+            t.equal(err, null);
+            t.equal(id, primary);
+            delete fixtures.haitiLine.id;
+            t.end();
+        });
+    });
+});
+teardown();
+
+
+
+
 setup();
 test('insert & delete', function(t) {
     var cardboard = Cardboard(config);
 
-    cardboard.insert(fixtures.nullIsland, 'default', function(err, primary) {
+    cardboard.put(fixtures.nullIsland, 'default', function(err, primary) {
         t.equal(err, null);
         t.pass('inserted');
         cardboard.get(primary, 'default', function(err, data) {
             t.equal(err, null);
             fixtures.nullIsland.id = primary;
-            t.deepEqual(data.val, fixtures.nullIsland);
+            t.deepEqual(data, geojsonNormalize(fixtures.nullIsland));
             delete fixtures.nullIsland.id;
             cardboard.delFeature(primary, 'default', function(err, data) {
                 t.equal(err, null);
@@ -162,13 +187,13 @@ setup();
 test('insert & delDataset', function(t) {
     var cardboard = Cardboard(config);
 
-    cardboard.insert(fixtures.nullIsland, 'default', function(err, primary) {
+    cardboard.put(fixtures.nullIsland, 'default', function(err, primary) {
         t.equal(err, null);
         t.pass('inserted');
         cardboard.get(primary, 'default', function(err, data) {
             t.equal(err, null);
             fixtures.nullIsland.id = primary;
-            t.deepEqual(data.val, fixtures.nullIsland);
+            t.deepEqual(data, geojsonNormalize(fixtures.nullIsland));
             delete fixtures.nullIsland.id;
             cardboard.delDataset('default', function(err, data) {
                 t.equal(err, null);
@@ -189,13 +214,13 @@ setup();
 test('listIds', function(t) {
     var cardboard = Cardboard(config);
 
-    cardboard.insert(fixtures.nullIsland, 'default', function(err, primary) {
+    cardboard.put(fixtures.nullIsland, 'default', function(err, primary) {
         t.equal(err, null);
         t.pass('inserted');
         cardboard.get(primary, 'default', function(err, data) {
             t.equal(err, null);
             fixtures.nullIsland.id = primary;
-            t.deepEqual(data.val, fixtures.nullIsland);
+            t.deepEqual(data, geojsonNormalize(fixtures.nullIsland));
             delete fixtures.nullIsland.id;
             cardboard.listIds('default', function(err, data) {
                 t.deepEqual(data, ['cell!1!100000004!'+primary, 'id!'+primary]);
@@ -231,7 +256,7 @@ test('insert & query', function(t) {
 
     [fixtures.nullIsland,
     fixtures.dc].forEach(function(fix) {
-        insertQueue.defer(cardboard.insert.bind(cardboard), fix, 'default');
+        insertQueue.defer(cardboard.put.bind(cardboard), fix, 'default');
     });
 
     insertQueue.awaitAll(inserted);
@@ -257,7 +282,7 @@ teardown();
 setup();
 test('insert polygon', function(t) {
     var cardboard = Cardboard(config);
-    cardboard.insert(fixtures.haiti, 'default', inserted);
+    cardboard.put(fixtures.haiti, 'default', inserted);
 
     function inserted(err, res) {
         t.notOk(err, 'no error returned');
@@ -289,7 +314,7 @@ teardown();
 setup();
 test('insert linestring', function(t) {
     var cardboard = Cardboard(config);
-    cardboard.insert(fixtures.haitiLine, 'default', inserted);
+    cardboard.put(fixtures.haitiLine, 'default', inserted);
 
     function inserted(err, res) {
         t.notOk(err, 'no error returned');
@@ -326,7 +351,7 @@ test('insert idaho', function(t) {
     geojsonFixtures.featurecollection.idaho.features.filter(function(f) {
         return f.properties.GEOID === '16049960100';
     }).forEach(function(block) {
-        q.defer(cardboard.insert.bind(cardboard), block, 'default');
+        q.defer(cardboard.put.bind(cardboard), block, 'default');
     });
     q.awaitAll(inserted);
 
@@ -361,12 +386,12 @@ test('insert datasets and listDatasets', function(t) {
     var cardboard = Cardboard(config);
     var q = queue(1);
     q.defer(function(cb) {
-        cardboard.insert(fixtures.haiti, 'haiti', function(){
+        cardboard.put(fixtures.haiti, 'haiti', function(){
             cb();
         });
     });
     q.defer(function(cb) {
-        cardboard.insert(fixtures.dc, 'dc', function(){
+        cardboard.put(fixtures.dc, 'dc', function(){
             cb()
         });
     });
@@ -391,9 +416,9 @@ test('insert feature with user specified id.', function(t) {
     var cardboard = Cardboard(config);
     var q = queue(1);
 
-    q.defer(cardboard.insert.bind(cardboard), fixtures.haiti, 'haiti');
-    q.defer(cardboard.insert.bind(cardboard), fixtures.haiti, 'haiti');
-    q.defer(cardboard.insert.bind(cardboard), fixtures.haitiLine, 'haiti');
+    q.defer(cardboard.put.bind(cardboard), fixtures.haiti, 'haiti');
+    q.defer(cardboard.put.bind(cardboard), fixtures.haiti, 'haiti');
+    q.defer(cardboard.put.bind(cardboard), fixtures.haitiLine, 'haiti');
 
     q.awaitAll(getByUserSpecifiedId)
 
