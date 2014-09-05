@@ -19,8 +19,6 @@ var config = {
     s3: fakeAWS.S3() // only for mocking s3
 };
 
-var dyno = require('dyno')(config);
-
 var emptyFeatureCollection = {
     type: 'FeatureCollection',
     features: []
@@ -56,6 +54,7 @@ function teardown() {
 
 setup();
 test('tables', function(t) {
+    var dyno = require('dyno')(config);
     dyno.listTables(function(err, res) {
         t.equal(err, null);
         t.deepEqual(res, { TableNames: ['geo'] });
@@ -267,7 +266,7 @@ test('insert & query', function(t) {
             q.defer(function(query, callback) {
                 t.equal(cardboard.bboxQuery(query.query, 'default', function(err, resp) {
                     t.equal(err, null, 'no error for ' + query.query.join(','));
-                    t.equal(resp.length, query.length, 'finds ' + query.length + ' data with a query');
+                    t.equal(resp.features.length, query.length, 'finds ' + query.length + ' data with a query');
                     callback();
                 }), undefined, '.bboxQuery');
             }, query);
@@ -301,7 +300,7 @@ test('insert polygon', function(t) {
             q.defer(function(query, callback) {
                 t.equal(cardboard.bboxQuery(query.query, 'default', function(err, resp) {
                     t.equal(err, null, 'no error for ' + query.query.join(','));
-                    t.equal(resp.length, query.length, 'finds ' + query.length + ' data with a query');
+                    t.equal(resp.features.length, query.length, 'finds ' + query.length + ' data with a query');
                     callback();
                 }), undefined, '.bboxQuery');
             }, query);
@@ -333,7 +332,7 @@ test('insert linestring', function(t) {
             q.defer(function(query, callback) {
                 t.equal(cardboard.bboxQuery(query.query, 'default', function(err, resp) {
                     t.equal(err, null, 'no error for ' + query.query.join(','));
-                    t.equal(resp.length, query.length, 'finds ' + query.length + ' data with a query');
+                    t.equal(resp.features.length, query.length, 'finds ' + query.length + ' data with a query');
                     callback();
                 }), undefined, '.bboxQuery');
             }, query);
@@ -370,7 +369,7 @@ test('insert idaho', function(t) {
             q.defer(function(query, callback) {
                 t.equal(cardboard.bboxQuery(query.query, 'default', function(err, resp) {
                     t.equal(err, null, 'no error for ' + query.query.join(','));
-                    t.equal(resp.length, query.length, 'finds ' + query.length + ' data with a query');
+                    t.equal(resp.features.length, query.length, 'finds ' + query.length + ' data with a query');
                     callback();
                 }), undefined, '.bboxQuery');
             }, query);
@@ -426,11 +425,11 @@ test('insert feature with user specified id.', function(t) {
         cardboard.getBySecondaryId(fixtures.haiti.properties.id, 'haiti', function(err, res){
             t.notOk(err, 'should not return an error');
             t.ok(res, 'should return a array of features');
-            t.equal(res.length, 2);
-            t.equal(res[0].val.properties.id, 'haitipolygonid');
-            t.equal(res[0].val.id, ids[0]);
-            t.equal(res[1].val.properties.id, 'haitipolygonid');
-            t.equal(res[1].val.id, ids[1]);
+            t.equal(res.features.length, 2);
+            t.equal(res.features[0].properties.id, 'haitipolygonid');
+            t.equal(res.features[0].id, ids[0]);
+            t.equal(res.features[1].properties.id, 'haitipolygonid');
+            t.equal(res.features[1].id, ids[1]);
             t.end();
         });
     }

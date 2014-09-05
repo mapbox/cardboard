@@ -32,7 +32,7 @@ module.exports = function Cardboard(c) {
     });
 
     // allow for passed in config object to override s3 object for mocking in tests
-    var s3 = c.s3 || new AWS.S3({region:'us-east-1'});
+    var s3 = c.s3 || new AWS.S3();
     if(!c.bucket) throw new Error('No bucket set');
     var bucket = c.bucket;
     if(!c.prefix) throw new Error('No s3 prefix set');
@@ -54,7 +54,7 @@ module.exports = function Cardboard(c) {
         var primary = cuid();
 
         log('insert', primary, (feature.properties ? feature.properties.id : 'undefined'), dataset, 'level:', level, 'indexes:', indexes.length);
-        var q = queue(50);
+        var q = queue();
         var buf = geobuf.featureToGeobuf(feature).toBuffer();
 
         function item(id) {
@@ -112,7 +112,7 @@ module.exports = function Cardboard(c) {
             var toDelete = _.difference(existingIndexes, indexes);
             var toInsert = _.difference(indexes, existingIndexes);
             var toUpdate = _.intersection(existingIndexes, indexes);
-            var q = queue();
+            var q = queue(50);
 
             var deleteKeys = toDelete.map(function(id){
                 return {
@@ -253,10 +253,14 @@ module.exports = function Cardboard(c) {
                     i.val.id = i.geometryid;
                     return i;
                 });
+                var fc = {
+                    type: 'FeatureCollection',
+                    features: []
+                };
                 res.forEach(function(i){
-                    i.val =  _(data).findWhere({geometryid: i.geometryid}).val;
+                    fc.features.push(_(data).findWhere({geometryid: i.geometryid}).val);
                 });
-                callback(err, res);
+                callback(err, fc);
             }
         });
 
@@ -289,7 +293,7 @@ module.exports = function Cardboard(c) {
     };
 
     function getFeatures(dataset, features, callback) {
-        var q = queue(1000);
+        var q = queue(100);
         features.forEach(function(f) {
             q.defer(fetch, f);
         });
@@ -376,10 +380,16 @@ module.exports = function Cardboard(c) {
                     i.val.id = i.geometryid;
                     return i;
                 });
+
+                var fc = {
+                    type: 'FeatureCollection',
+                    features: []
+                };
+
                 res.forEach(function(i){
-                    i.val =  _(data).findWhere({geometryid: i.geometryid}).val;
+                    fc.features.push(_(data).findWhere({geometryid: i.geometryid}).val);
                 });
-                callback(err, res);
+                callback(err, fc);
             }
         });
     };
