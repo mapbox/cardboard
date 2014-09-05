@@ -223,7 +223,7 @@ test('listIds', function(t) {
             t.deepEqual(data, geojsonNormalize(fixtures.nullIsland));
             delete fixtures.nullIsland.id;
             cardboard.listIds('default', function(err, data) {
-                t.deepEqual(data, ['cell!1!100000004!'+primary, 'id!'+primary]);
+                t.deepEqual(data, ['cell!1!10000000001!'+primary, 'id!'+primary]);
                 t.end();
             });
         });
