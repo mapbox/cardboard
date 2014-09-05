@@ -132,7 +132,6 @@ test('insert & get by index', function(t) {
 });
 teardown();
 
-
 setup();
 test('insert & and update', function(t) {
     var cardboard = Cardboard(config);
@@ -153,9 +152,6 @@ test('insert & and update', function(t) {
 });
 teardown();
 
-
-
-
 setup();
 test('insert & delete', function(t) {
     var cardboard = Cardboard(config);
@@ -172,7 +168,7 @@ test('insert & delete', function(t) {
                 t.equal(err, null);
                 cardboard.get(primary, 'default', function(err, data) {
                     t.equal(err, null);
-                    t.deepEqual(data, []);
+                    t.deepEqual(data, emptyFeatureCollection);
                     t.end();
                 });
             });
@@ -198,7 +194,7 @@ test('insert & delDataset', function(t) {
                 t.equal(err, null);
                 cardboard.get(primary, 'default', function(err, data) {
                     t.equal(err, null);
-                    t.deepEqual(data, []);
+                    t.deepEqual(data.features.length, 0);
                     t.end();
                 });
             });
@@ -415,9 +411,9 @@ test('insert feature with user specified id.', function(t) {
     var cardboard = Cardboard(config);
     var q = queue(1);
 
-    q.defer(cardboard.put.bind(cardboard), fixtures.haiti, 'haiti');
-    q.defer(cardboard.put.bind(cardboard), fixtures.haiti, 'haiti');
-    q.defer(cardboard.put.bind(cardboard), fixtures.haitiLine, 'haiti');
+    q.defer(cardboard.put, fixtures.haiti, 'haiti');
+    q.defer(cardboard.put, fixtures.haiti, 'haiti');
+    q.defer(cardboard.put, fixtures.haitiLine, 'haiti');
 
     q.awaitAll(getByUserSpecifiedId)
 
@@ -432,6 +428,24 @@ test('insert feature with user specified id.', function(t) {
             t.equal(res.features[1].id, ids[1]);
             t.end();
         });
+    }
+});
+teardown();
+
+setup();
+test('update feature that doesnt exist.', function(t) {
+    var cardboard = Cardboard(config);
+    var q = queue(1);
+
+    fixtures.haiti.id = 'doesntexist';
+
+    cardboard.put(fixtures.haiti, 'default', failUpdate);
+
+    function failUpdate(err, ids) {
+        t.ok(err, 'should return an error');
+        t.notOk(ids, 'should return an empty of ids');
+        t.equal(err.message, 'Update failed. Feature does not exist');
+        t.end();
     }
 });
 teardown();

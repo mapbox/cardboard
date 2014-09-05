@@ -103,6 +103,7 @@ module.exports = function Cardboard(c) {
         cardboard.get(feature.id, dataset, gotFeature);
         function gotFeature(err, existingFeature) {
             if(err) return callback(err, null);
+            if(existingFeature.features.length === 0) return callback(new Error('Update failed. Feature does not exist'));
             var existingLevel = indexLevel(existingFeature);
             var existingIndexes = geojsonCover.geometryIndexes(existingFeature.features[0], coverOpts[existingLevel]);
             var existingBuf = geobuf.featureToGeobuf(existingFeature.features[0]).toBuffer();
@@ -253,10 +254,7 @@ module.exports = function Cardboard(c) {
                     i.val.id = i.geometryid;
                     return i;
                 });
-                var fc = {
-                    type: 'FeatureCollection',
-                    features: []
-                };
+                var fc = featureCollection();
                 res.forEach(function(i){
                     fc.features.push(_(data).findWhere({geometryid: i.geometryid}).val);
                 });
@@ -273,7 +271,7 @@ module.exports = function Cardboard(c) {
             if (err) return callback(err);
             var res = parseQueryResponse([res]);
 
-            if(res.length === 0) return callback(null, res);
+            if(res.length === 0) return callback(null, featureCollection());
 
             if(res[0].val) {
                 respond(res[0]);
@@ -287,7 +285,7 @@ module.exports = function Cardboard(c) {
             function respond(feature) {
                 feature.val = geobuf.geobufToFeature(feature.val);
                 feature.val.id = feature.geometryid;
-                return callback(err, geojsonNormalize(feature.val));
+                return callback(err, featureCollection([feature.val]));
             }
         });
     };
@@ -381,11 +379,7 @@ module.exports = function Cardboard(c) {
                     return i;
                 });
 
-                var fc = {
-                    type: 'FeatureCollection',
-                    features: []
-                };
-
+                var fc = featureCollection();
                 res.forEach(function(i){
                     fc.features.push(_(data).findWhere({geometryid: i.geometryid}).val);
                 });
@@ -491,4 +485,11 @@ function indexLevel(feature) {
     var ne = point(bbox[2], bbox[3]);
     var dist = distance(sw, ne, 'miles');
     return dist >= LARGE_INDEX_DISTANCE ? 0 : 1;
+}
+
+function featureCollection(features) {
+    return {
+        type: 'FeatureCollection',
+        features: features || []
+    };
 }
