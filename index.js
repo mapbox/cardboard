@@ -18,7 +18,7 @@ var point = require('turf-point');
 var cuid = require('cuid');
 
 var MAX_GEOMETRY_SIZE = 1024*10;  //10KB
-var LARGE_INDEX_DISTANCE = 100; //bbox more then 100 miles corner to corner.
+var LARGE_INDEX_DISTANCE = 50; //bbox more then 100 miles corner to corner.
 
 
 module.exports = function Cardboard(c) {
@@ -32,10 +32,11 @@ module.exports = function Cardboard(c) {
     });
 
     // allow for passed in config object to override s3 object for mocking in tests
-    var s3 = c.s3 || new AWS.S3();
+    var s3 = c.s3 || new AWS.S3({region:'us-east-1'});
+    if(!c.bucket) throw new Error('No bucket set');
     var bucket = c.bucket;
+    if(!c.prefix) throw new Error('No s3 prefix set');
     var prefix = c.prefix;
-    coverOpts = c.coverOpts || coverOpts;
 
     // If feature.id isnt set, this works like an insert, and assigns an id
     // if feature.id is set, its an update, if the feature doesnt exist it will fail.
@@ -52,7 +53,7 @@ module.exports = function Cardboard(c) {
         var indexes = geojsonCover.geometryIndexes(feature.geometry, coverOpts[level]);
         var primary = cuid();
 
-        log('insert', primary, dataset, 'level:', level, 'indexes:', indexes.length);
+        log('insert', primary, (feature.properties ? feature.properties.id : 'undefined'), dataset, 'level:', level, 'indexes:', indexes.length);
         var q = queue(50);
         var buf = geobuf.featureToGeobuf(feature).toBuffer();
 
