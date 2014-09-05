@@ -6,6 +6,7 @@ var geojsonNormalize = require('geojson-normalize')
 var concat = require('concat-stream');
 var geojsonCover = require('geojson-cover');
 var coverOpts = require('./lib/coveropts');
+var Metadata = require('./lib/metadata');
 var uniq = require('uniq');
 var geobuf = require('geobuf');
 var log = require('debug')('cardboard');
@@ -52,6 +53,7 @@ module.exports = function Cardboard(c) {
         var level = indexLevel(feature);
         var indexes = geojsonCover.geometryIndexes(feature.geometry, coverOpts[level]);
         var primary = cuid();
+        var metadata = Metadata(dyno, dataset);
 
         log('insert', primary, (feature.properties ? feature.properties.id : 'undefined'), dataset, 'level:', level, 'indexes:', indexes.length);
         var q = queue();
@@ -86,7 +88,8 @@ module.exports = function Cardboard(c) {
             Key: [prefix, dataset, primary].join('/'),
             Bucket: bucket,
             Body: buf
-        })
+        });
+        // q.defer(metadata.addFeature, feature);
         q.awaitAll(function(err, res) {
             callback(err, primary);
         });

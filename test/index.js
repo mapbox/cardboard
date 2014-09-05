@@ -472,3 +472,221 @@ test('update feature that doesnt exist.', function(t) {
     }
 });
 teardown();
+
+// Metadata tests
+var dataset = 'metadatatest';
+var metadata = require('../lib/metadata')(dyno, dataset);
+var initial = {
+        id: 'metadata!' + dataset,
+        dataset: dataset,
+        count: 12,
+        size: 1024,
+        west: -10,
+        south: -10,
+        east: 10,
+        north: 10
+    };
+
+setup();
+test('metadata: get', function(t) {
+
+    metadata.getInfo(noMetadataYet);
+
+    function noMetadataYet(err, info) {
+        t.ifError(err, 'get non-extistent metadata');
+        t.deepEqual({}, info, 'returned blank obj when no info exists');
+        dyno.putItem(initial, withMetadata);
+    }
+
+    function withMetadata(err, res) {
+        t.ifError(err, 'put test metadata');
+        metadata.getInfo(function(err, info) {
+            t.ifError(err, 'get metadata');
+            t.deepEqual(info, initial, 'valid metadata');
+            t.end();
+        })
+    }
+});
+teardown();
+
+setup();
+test('metadata: defaultInfo', function(t) {
+
+    metadata.defaultInfo(function(err, res) {
+        t.ifError(err, 'no error when creating record');
+        t.ok(res, 'response indicates record was created');
+        dyno.putItem(initial, overwrite);
+    });
+
+    function overwrite(err, res) {
+        t.ifError(err, 'overwrote default record');
+        metadata.defaultInfo(applyDefaults);
+    }
+
+    function applyDefaults(err, res) {
+        t.ifError(err, 'no error when defaultInfo would overwrite');
+        t.notOk(res, 'response indicates no adjustments were made');
+        metadata.getInfo(checkRecord);
+    }
+
+    function checkRecord(err, info) {
+        t.ifError(err, 'got metadata');
+        t.deepEqual(info, initial, 'existing metadata not adjusted by defaultInfo');
+        t.end();
+    }
+});
+teardown();
+
+setup();
+test('metadata: adjust size or count', function(t) {
+
+    metadata.adjustProperty('count', 10, function(err, res) {
+        t.ifError(err, 'graceful if no metadata exists');
+        metadata.getInfo(checkEmpty);
+    });
+
+    function checkRecord(attr, expected, callback) {
+        metadata.getInfo(function(err, info) {
+            t.ifError(err, 'get metadata');
+            t.equal(info[attr], expected, 'expected value');
+            callback();
+        });
+    }
+
+    function checkEmpty(err, info) {
+        t.ifError(err, 'gets empty record');
+        t.deepEqual(info, {}, 'no record created by adjustProperty routine');
+        dyno.putItem(initial, addCount);
+    }
+
+    function addCount(err, res) {
+        t.ifError(err, 'put metadata record');
+        metadata.adjustProperty('count', 1, function(err, res) {
+            t.ifError(err, 'incremented count by 1');
+            checkRecord('count', initial.count + 1, subtractCount);
+        });
+    }
+
+    function subtractCount() {
+        metadata.adjustProperty('count', -1, function(err, res) {
+            t.ifError(err, 'decrement count by 1');
+            checkRecord('count', initial.count, addSize);
+        });
+    }
+
+    function addSize() {
+        metadata.adjustProperty('size', 1024, function(err, res) {
+            t.ifError(err, 'incremented size by 1024');
+            checkRecord('size', initial.size + 1024, subtractSize);
+        });
+    }
+
+    function subtractSize() {
+        metadata.adjustProperty('size', -1024, function(err, res) {
+            t.ifError(err, 'decrement size by 1024');
+            checkRecord('size', initial.size, function() {
+                t.end();
+            });
+        });
+    }
+
+});
+teardown();
+
+setup();
+test('metadata: adjust bounds', function(t) {
+    var bbox = [-12, -9, 9, 12];
+
+    metadata.adjustBounds(bbox, function(err) {
+        t.ifError(err, 'graceful if no metadata exists');
+        metadata.getInfo(checkEmpty);
+    });
+
+    function checkEmpty(err, info) {
+        t.ifError(err, 'gets empty record');
+        t.deepEqual(info, {}, 'no record created by adjustBounds routine');
+        dyno.putItem(initial, adjust);
+    }
+
+    function adjust(err, res) {
+        t.ifError(err, 'put metadata record');
+        metadata.adjustBounds(bbox, adjusted);
+    }
+
+    function adjusted(err, res) {
+        t.ifError(err, 'adjusted bounds without error');
+        metadata.getInfo(checkNewInfo);
+    }
+
+    function checkNewInfo(err, info) {
+        t.ifError(err, 'get new metadata');
+        var expected = {
+            id: 'metadata!' + dataset, 
+            dataset: dataset,
+            west: initial.west < bbox[0] ? initial.west : bbox[0],
+            south: initial.south < bbox[1] ? initial.south : bbox[1],
+            east: initial.east > bbox[2] ? initial.east : bbox[2],
+            north: initial.north > bbox[3] ? initial.north : bbox[3],
+            count: initial.count,
+            size: initial.size
+        };
+        t.deepEqual(info, expected, 'updated metadata correctly');
+        t.end();
+    }
+});
+teardown();
+
+setup();
+test('metadata: add a feature', function(t) {
+    var feature = geojsonFixtures.feature.one;
+    var expectedSize = JSON.stringify(feature).length;
+    var expectedBounds = geojsonExtent(feature);
+
+    metadata.addFeature(feature, brandNew);
+
+    function brandNew(err) {
+        t.ifError(err, 'used feature to make new metadata');
+        metadata.getInfo(function(err, info) {
+            t.ifError(err, 'got metadata');
+            t.equal(info.count, 1, 'correct feature count');
+            t.equal(info.size, expectedSize, 'correct size');
+            t.equal(info.west, expectedBounds[0], 'correct west');
+            t.equal(info.south, expectedBounds[1], 'correct south');
+            t.equal(info.east, expectedBounds[2], 'correct east');
+            t.equal(info.north, expectedBounds[3], 'correct north');
+
+            dyno.putItem(initial, replacedMetadata);
+        });
+    }
+
+    function replacedMetadata(err) {
+        t.ifError(err, 'replaced metadata');
+        metadata.addFeature(feature, adjusted);
+    }
+
+    function adjusted(err) {
+        t.ifError(err, 'adjusted existing metadata');
+        metadata.getInfo(function(err, info) {
+            t.ifError(err, 'got metadata');
+            t.equal(info.count, initial.count + 1, 'correct feature count');
+            t.equal(info.size, initial.size + expectedSize, 'correct size');
+
+            var expectedWest = expectedBounds[0] < initial.west ? 
+                    expectedBounds[0] : initial.west,
+                expectedSouth = expectedBounds[1] < initial.south ? 
+                    expectedBounds[1] : initial.south,
+                expectedEast = expectedBounds[2] > initial.east ? 
+                    expectedBounds[2] : initial.east,
+                expectedNorth = expectedBounds[3] > initial.north ? 
+                    expectedBounds[3] : initial.north;
+
+            t.equal(info.west, expectedWest, 'correct west');
+            t.equal(info.south, expectedSouth, 'correct south');
+            t.equal(info.east, expectedEast, 'correct east');
+            t.equal(info.north, expectedNorth, 'correct north');
+
+            t.end();
+        });
+    }
+});
+teardown();
