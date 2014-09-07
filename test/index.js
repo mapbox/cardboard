@@ -483,7 +483,7 @@ teardown();
 var dataset = 'metadatatest';
 var metadata = Metadata(dyno, dataset);
 var initial = {
-        id: 'metadata!' + dataset,
+        id: metadata.recordId,
         dataset: dataset,
         count: 12,
         size: 1024,
@@ -851,6 +851,25 @@ test('insert many idaho features, delete one & check metadata', function(t) {
         }
         t.deepEqual(info, expected, 'expected metadata');
         t.end();
+    }
+});
+teardown();
+
+setup();
+test('delDataset removes metadata', function(t) {
+    var cardboard = new Cardboard(config);
+    dyno.putItem(initial, function(err) {
+        t.ifError(err, 'put initial metadata');
+        cardboard.delDataset(dataset, removed);
+    });
+
+    function removed(err) {
+        t.ifError(err, 'removed dataset');
+        metadata.getInfo(function(err, info) {
+            t.ifError(err, 'looked for metadata');
+            t.deepEqual(info, {}, 'metadata was removed');
+            t.end();
+        });
     }
 });
 teardown();
