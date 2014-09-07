@@ -3,6 +3,7 @@ var test = require('tap').test,
     queue = require('queue-async'),
     concat = require('concat-stream'),
     Cardboard = require('../'),
+    Metadata = require('../lib/metadata'),
     geojsonExtent = require('geojson-extent'),
     geojsonFixtures = require('geojson-fixtures'),
     geojsonNormalize = require('geojson-normalize'),
@@ -108,7 +109,7 @@ test('insert & dump', function(t) {
         t.pass('inserted');
         cardboard.dump(function(err, data) {
             t.equal(err, null);
-            t.equal(data.items.length, 2, 'creates data');
+            t.equal(data.items.length, 3, 'creates data and metadata');
             t.end();
         });
     });
@@ -241,7 +242,12 @@ test('listIds', function(t) {
             t.deepEqual(data, geojsonNormalize(fixtures.nullIsland));
             delete fixtures.nullIsland.id;
             cardboard.listIds('default', function(err, data) {
-                t.deepEqual(data, ['cell!1!10000000001!'+primary, 'id!'+primary]);
+                var expected = [
+                    'cell!1!100000004!' + primary,
+                    'id!' + primary,
+                    'metadata!default'
+                ];
+                t.deepEqual(data, expected);
                 t.end();
             });
         });
@@ -475,7 +481,7 @@ teardown();
 
 // Metadata tests
 var dataset = 'metadatatest';
-var metadata = require('../lib/metadata')(dyno, dataset);
+var metadata = Metadata(dyno, dataset);
 var initial = {
         id: 'metadata!' + dataset,
         dataset: dataset,
@@ -595,7 +601,7 @@ teardown();
 
 setup();
 test('metadata: adjust bounds', function(t) {
-    var bbox = [-12, -9, 9, 12];
+    var bbox = [-12.01, -9, 9, 12.01];
 
     metadata.adjustBounds(bbox, function(err) {
         t.ifError(err, 'graceful if no metadata exists');
@@ -687,6 +693,84 @@ test('metadata: add a feature', function(t) {
 
             t.end();
         });
+    }
+});
+teardown();
+
+setup();
+test('insert idaho & check metadata', function(t) {
+    var cardboard = new Cardboard(config);
+    var q = queue();
+    t.pass('inserting idaho');
+    geojsonFixtures.featurecollection.idaho.features.filter(function(f) {
+        return f.properties.GEOID === '16049960100';
+    }).forEach(function(block) {
+        q.defer(cardboard.insert.bind(cardboard), block, dataset);
+    });
+    q.awaitAll(inserted);
+
+    function inserted(err, res) {
+        if (err) console.error(err);
+        t.notOk(err, 'no error returned');
+        t.pass('inserted idaho');
+        metadata.getInfo(checkInfo);
+    }
+
+    function checkInfo(err, info) {
+        t.ifError(err, 'got idaho metadata');
+        var expected = {
+          id : "metadata!" + dataset,
+          dataset : dataset,
+          west : -116.108998,
+          south : 45.196187,
+          east : -114.320252,
+          north : 46.671061,
+          count : 1,
+          size : 298712
+        }
+        t.deepEqual(info, expected, 'expected metadata');
+        t.end();
+    }
+});
+teardown();
+
+setup();
+test('insert many idaho features & check metadata', function(t) {
+    var cardboard = new Cardboard(config);
+    var features = geojsonFixtures.featurecollection.idaho.features.slice(0, 50);
+    var expectedBounds = geojsonExtent({ type: 'FeatureCollection', features: features });
+    var expectedSize = features.reduce(function(memo, feature) {
+        memo = memo + JSON.stringify(feature).length;
+        return memo;
+    }, 0);
+
+    var q = queue();
+    features.forEach(function(block) {
+        q.defer(cardboard.insert.bind(cardboard), block, dataset);
+    });
+    q.awaitAll(inserted);
+
+    function inserted(err, res) {
+        if (err) console.error(err);
+        t.notOk(err, 'no error returned');
+        t.pass('inserted idaho features');
+        metadata.getInfo(checkInfo);
+    }
+
+    function checkInfo(err, info) {
+        t.ifError(err, 'got idaho metadata');
+        var expected = {
+          id : "metadata!" + dataset,
+          dataset : dataset,
+          west : expectedBounds[0],
+          south : expectedBounds[1],
+          east : expectedBounds[2],
+          north : expectedBounds[3],
+          count : features.length,
+          size : expectedSize
+        }
+        t.deepEqual(info, expected, 'expected metadata');
+        t.end();
     }
 });
 teardown();

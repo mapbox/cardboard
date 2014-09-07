@@ -89,7 +89,7 @@ module.exports = function Cardboard(c) {
             Bucket: bucket,
             Body: buf
         });
-        // q.defer(metadata.addFeature, feature);
+        q.defer(metadata.addFeature, feature);
         q.awaitAll(function(err, res) {
             callback(err, primary);
         });
