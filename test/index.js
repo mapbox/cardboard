@@ -698,6 +698,43 @@ test('metadata: add a feature', function(t) {
 teardown();
 
 setup();
+test('metadata: remove a feature', function(t) {
+    var feature = geojsonFixtures.feature.one;
+    var expectedSize = JSON.stringify(feature).length;
+
+    metadata.deleteFeature(feature, function(err) {
+        t.ifError(err, 'graceful exit if no metadata exists');
+        metadata.getInfo(checkEmpty);
+    });
+
+    function checkEmpty(err, info) {
+        t.ifError(err, 'gets empty record');
+        t.deepEqual(info, {}, 'no record created by adjustBounds routine');
+        dyno.putItem(initial, del);
+    }
+
+    function del(err) {
+        t.ifError(err, 'put default metadata');
+        metadata.deleteFeature(feature, checkInfo);
+    }
+
+    function checkInfo(err) {
+        t.ifError(err, 'updated metadata');
+        metadata.getInfo(function(err, info) {
+            t.ifError(err, 'got info');
+            t.equal(info.count, initial.count - 1, 'correct feature count');
+            t.equal(info.size, initial.size - expectedSize, 'correct size');
+            t.equal(info.west, initial.west, 'correct west');
+            t.equal(info.south, initial.south, 'correct south');
+            t.equal(info.east, initial.east, 'correct east');
+            t.equal(info.north, initial.north, 'correct north');
+            t.end();
+        });
+    }
+});
+teardown();
+
+setup();
 test('insert idaho & check metadata', function(t) {
     var cardboard = new Cardboard(config);
     var q = queue();
@@ -767,6 +804,49 @@ test('insert many idaho features & check metadata', function(t) {
           east : expectedBounds[2],
           north : expectedBounds[3],
           count : features.length,
+          size : expectedSize
+        }
+        t.deepEqual(info, expected, 'expected metadata');
+        t.end();
+    }
+});
+teardown();
+
+setup();
+test('insert many idaho features, delete one & check metadata', function(t) {
+    var cardboard = new Cardboard(config);
+    var features = geojsonFixtures.featurecollection.idaho.features.slice(0, 50);
+    var deleteThis = features[9];
+    var expectedBounds = geojsonExtent({ type: 'FeatureCollection', features: features });
+    var expectedSize = features.reduce(function(memo, feature) {
+        memo = memo + JSON.stringify(feature).length;
+        return memo;
+    }, 0) - JSON.stringify(deleteThis).length;
+
+    var q = queue();
+    features.forEach(function(block) {
+        q.defer(cardboard.insert.bind(cardboard), block, dataset);
+    });
+    q.defer(metadata.deleteFeature, deleteThis);
+    q.awaitAll(inserted);
+
+    function inserted(err, res) {
+        if (err) console.error(err);
+        t.notOk(err, 'no error returned');
+        t.pass('inserted idaho features and deleted one');
+        metadata.getInfo(checkInfo);
+    }
+
+    function checkInfo(err, info) {
+        t.ifError(err, 'got idaho metadata');
+        var expected = {
+          id : "metadata!" + dataset,
+          dataset : dataset,
+          west : expectedBounds[0],
+          south : expectedBounds[1],
+          east : expectedBounds[2],
+          north : expectedBounds[3],
+          count : features.length - 1,
           size : expectedSize
         }
         t.deepEqual(info, expected, 'expected metadata');

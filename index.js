@@ -210,6 +210,7 @@ module.exports = function Cardboard(c) {
     cardboard.delFeature = function(primary, dataset, callback) {
         cardboard.get(primary, dataset, function(err, res) {
             if (err) return callback(err);
+            var metadata = Metadata(dyno, dataset);
             var indexes = geojsonCover.geometryIndexes(res.features[0], coverOpts);
             var params = {
                 RequestItems: {}
@@ -224,7 +225,11 @@ module.exports = function Cardboard(c) {
             for (var i = 0; i < indexes.length; i++) {
                 keys.push({id: 'cell!' + indexes[i] + '!' + primary, dataset: dataset});
             }
-            dyno.deleteItems(keys, callback);
+            
+            queue()
+                .defer(dyno.deleteItems, keys)
+                .defer(metadata.deleteFeature, res.val)
+                .awaitAll(callback);
         });
     };
 
