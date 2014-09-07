@@ -873,3 +873,19 @@ test('delDataset removes metadata', function(t) {
     }
 });
 teardown();
+
+setup();
+test('getDatasetInfo', function(t) {
+    var cardboard = new Cardboard(config);
+    dyno.putItem(initial, function(err) {
+        t.ifError(err, 'put initial metadata');
+        cardboard.getDatasetInfo(dataset, checkInfo);
+    });
+
+    function checkInfo(err, info) {
+        t.ifError(err, 'got metadata');
+        t.deepEqual(info, initial, 'metadata is correct');
+        t.end();
+    }
+});
+teardown();

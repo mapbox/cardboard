@@ -49,6 +49,8 @@ c.dumpGeoJSON(callback: fn);
 c.del(primarykey: string, layer: string, callback: fn);
 c.dump(); // -> stream
 c.export(); // -> stream
+// get information about a dataset (feature count, size, extent)
+c.getDatasetInfo(dataset: string, callback: fn);
 ```
 
 ## Approach

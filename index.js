@@ -356,6 +356,10 @@ module.exports = function Cardboard(c) {
         });
     };
 
+    cardboard.getDatasetInfo = function(dataset, callback) {
+        Metadata(dyno, dataset).getInfo(callback);
+    };
+
     cardboard.bboxQuery = function(input, dataset, callback) {
         var q = queue(100);
 
