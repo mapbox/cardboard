@@ -49,7 +49,7 @@
     "uniq": "~1.0.0"
   },
   "devDependencies": {
-    "dynalite": "~0.3.6",
+    "dynalite": "~0.4.0",
     "faucet": "0.0.1",
     "geojson-fixtures": "0.1.0",
     "mock-aws-s3": "^0.2.1",

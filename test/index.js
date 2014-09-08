@@ -2,7 +2,9 @@ var test = require('tap').test,
     fs = require('fs'),
     queue = require('queue-async'),
     concat = require('concat-stream'),
+    _ = require('lodash'),
     Cardboard = require('../'),
+    Metadata = require('../lib/metadata'),
     geojsonExtent = require('geojson-extent'),
     geojsonFixtures = require('geojson-fixtures'),
     geojsonNormalize = require('geojson-normalize'),
@@ -108,7 +110,7 @@ test('insert & dump', function(t) {
         t.pass('inserted');
         cardboard.dump(function(err, data) {
             t.equal(err, null);
-            t.equal(data.items.length, 2, 'creates data');
+            t.equal(data.items.length, 3, 'creates data and metadata');
             t.end();
         });
     });
@@ -241,7 +243,12 @@ test('listIds', function(t) {
             t.deepEqual(data, geojsonNormalize(fixtures.nullIsland));
             delete fixtures.nullIsland.id;
             cardboard.listIds('default', function(err, data) {
-                t.deepEqual(data, ['cell!1!10000000001!'+primary, 'id!'+primary]);
+                var expected = [
+                    'cell!1!10000000001!' + primary,
+                    'id!' + primary,
+                    'metadata!default'
+                ];
+                t.deepEqual(data, expected);
                 t.end();
             });
         });
@@ -468,6 +475,512 @@ test('update feature that doesnt exist.', function(t) {
         t.ok(err, 'should return an error');
         t.notOk(ids, 'should return an empty of ids');
         t.equal(err.message, 'Update failed. Feature does not exist');
+        t.end();
+    }
+});
+teardown();
+
+// Metadata tests
+var dataset = 'metadatatest';
+var metadata = Metadata(dyno, dataset);
+var initial = {
+        id: metadata.recordId,
+        dataset: dataset,
+        count: 12,
+        size: 1024,
+        west: -10,
+        south: -10,
+        east: 10,
+        north: 10
+    };
+
+setup();
+test('metadata: get', function(t) {
+
+    metadata.getInfo(noMetadataYet);
+
+    function noMetadataYet(err, info) {
+        t.ifError(err, 'get non-extistent metadata');
+        t.deepEqual({}, info, 'returned blank obj when no info exists');
+        dyno.putItem(initial, withMetadata);
+    }
+
+    function withMetadata(err, res) {
+        t.ifError(err, 'put test metadata');
+        metadata.getInfo(function(err, info) {
+            t.ifError(err, 'get metadata');
+            t.deepEqual(info, initial, 'valid metadata');
+            t.end();
+        })
+    }
+});
+teardown();
+
+setup();
+test('metadata: defaultInfo', function(t) {
+
+    metadata.defaultInfo(function(err, res) {
+        t.ifError(err, 'no error when creating record');
+        t.ok(res, 'response indicates record was created');
+        dyno.putItem(initial, overwrite);
+    });
+
+    function overwrite(err, res) {
+        t.ifError(err, 'overwrote default record');
+        metadata.defaultInfo(applyDefaults);
+    }
+
+    function applyDefaults(err, res) {
+        t.ifError(err, 'no error when defaultInfo would overwrite');
+        t.notOk(res, 'response indicates no adjustments were made');
+        metadata.getInfo(checkRecord);
+    }
+
+    function checkRecord(err, info) {
+        t.ifError(err, 'got metadata');
+        t.deepEqual(info, initial, 'existing metadata not adjusted by defaultInfo');
+        t.end();
+    }
+});
+teardown();
+
+setup();
+test('metadata: adjust size or count', function(t) {
+
+    metadata.adjustProperties({ count: 10 }, function(err, res) {
+        t.ifError(err, 'graceful if no metadata exists');
+        metadata.getInfo(checkEmpty);
+    });
+
+    function checkRecord(attr, expected, callback) {
+        metadata.getInfo(function(err, info) {
+            t.ifError(err, 'get metadata');
+            t.equal(info[attr], expected, 'expected value');
+            callback();
+        });
+    }
+
+    function checkEmpty(err, info) {
+        t.ifError(err, 'gets empty record');
+        t.deepEqual(info, {}, 'no record created by adjustProperties routine');
+        dyno.putItem(initial, addCount);
+    }
+
+    function addCount(err, res) {
+        t.ifError(err, 'put metadata record');
+        metadata.adjustProperties({ count: 1 }, function(err, res) {
+            t.ifError(err, 'incremented count by 1');
+            checkRecord('count', initial.count + 1, subtractCount);
+        });
+    }
+
+    function subtractCount() {
+        metadata.adjustProperties({ count: -1 }, function(err, res) {
+            t.ifError(err, 'decrement count by 1');
+            checkRecord('count', initial.count, addSize);
+        });
+    }
+
+    function addSize() {
+        metadata.adjustProperties({ size: 1024 }, function(err, res) {
+            t.ifError(err, 'incremented size by 1024');
+            checkRecord('size', initial.size + 1024, subtractSize);
+        });
+    }
+
+    function subtractSize() {
+        metadata.adjustProperties({ size: -1024 }, function(err, res) {
+            t.ifError(err, 'decrement size by 1024');
+            checkRecord('size', initial.size, addBoth);
+        });
+    }
+
+    function addBoth() {
+        metadata.adjustProperties({ count: 1, size: 1024 }, function(err, res) {
+            t.ifError(err, 'increment size and count');
+            checkRecord('size', initial.size + 1024, function() {
+                checkRecord('count', initial.count + 1, function() {
+                    t.end();
+                });
+            });
+        });
+    }
+
+});
+teardown();
+
+setup();
+test('metadata: adjust bounds', function(t) {
+    var bbox = [-12.01, -9, 9, 12.01];
+
+    metadata.adjustBounds(bbox, function(err) {
+        t.ifError(err, 'graceful if no metadata exists');
+        metadata.getInfo(checkEmpty);
+    });
+
+    function checkEmpty(err, info) {
+        t.ifError(err, 'gets empty record');
+        t.deepEqual(info, {}, 'no record created by adjustBounds routine');
+        dyno.putItem(initial, adjust);
+    }
+
+    function adjust(err, res) {
+        t.ifError(err, 'put metadata record');
+        metadata.adjustBounds(bbox, adjusted);
+    }
+
+    function adjusted(err, res) {
+        t.ifError(err, 'adjusted bounds without error');
+        metadata.getInfo(checkNewInfo);
+    }
+
+    function checkNewInfo(err, info) {
+        t.ifError(err, 'get new metadata');
+        var expected = {
+            id: 'metadata!' + dataset, 
+            dataset: dataset,
+            west: initial.west < bbox[0] ? initial.west : bbox[0],
+            south: initial.south < bbox[1] ? initial.south : bbox[1],
+            east: initial.east > bbox[2] ? initial.east : bbox[2],
+            north: initial.north > bbox[3] ? initial.north : bbox[3],
+            count: initial.count,
+            size: initial.size
+        };
+        t.deepEqual(info, expected, 'updated metadata correctly');
+        t.end();
+    }
+});
+teardown();
+
+setup();
+test('metadata: add a feature', function(t) {
+    var feature = geojsonFixtures.feature.one;
+    var expectedSize = JSON.stringify(feature).length;
+    var expectedBounds = geojsonExtent(feature);
+
+    metadata.addFeature(feature, brandNew);
+
+    function brandNew(err) {
+        t.ifError(err, 'used feature to make new metadata');
+        metadata.getInfo(function(err, info) {
+            t.ifError(err, 'got metadata');
+            t.equal(info.count, 1, 'correct feature count');
+            t.equal(info.size, expectedSize, 'correct size');
+            t.equal(info.west, expectedBounds[0], 'correct west');
+            t.equal(info.south, expectedBounds[1], 'correct south');
+            t.equal(info.east, expectedBounds[2], 'correct east');
+            t.equal(info.north, expectedBounds[3], 'correct north');
+
+            dyno.putItem(initial, replacedMetadata);
+        });
+    }
+
+    function replacedMetadata(err) {
+        t.ifError(err, 'replaced metadata');
+        metadata.addFeature(feature, adjusted);
+    }
+
+    function adjusted(err) {
+        t.ifError(err, 'adjusted existing metadata');
+        metadata.getInfo(function(err, info) {
+            t.ifError(err, 'got metadata');
+            t.equal(info.count, initial.count + 1, 'correct feature count');
+            t.equal(info.size, initial.size + expectedSize, 'correct size');
+
+            var expectedWest = expectedBounds[0] < initial.west ? 
+                    expectedBounds[0] : initial.west,
+                expectedSouth = expectedBounds[1] < initial.south ? 
+                    expectedBounds[1] : initial.south,
+                expectedEast = expectedBounds[2] > initial.east ? 
+                    expectedBounds[2] : initial.east,
+                expectedNorth = expectedBounds[3] > initial.north ? 
+                    expectedBounds[3] : initial.north;
+
+            t.equal(info.west, expectedWest, 'correct west');
+            t.equal(info.south, expectedSouth, 'correct south');
+            t.equal(info.east, expectedEast, 'correct east');
+            t.equal(info.north, expectedNorth, 'correct north');
+
+            t.end();
+        });
+    }
+});
+teardown();
+
+setup();
+test('metadata: update a feature', function(t) {
+    var original = geojsonFixtures.feature.one;
+    var edited = geojsonFixtures.featurecollection.idaho.features[0];
+    var expectedSize = JSON.stringify(edited).length - JSON.stringify(original).length;
+    var expectedBounds = geojsonExtent(edited);
+
+    metadata.updateFeature(original, edited, function(err) {
+        t.ifError(err, 'graceful exit if no metadata exists');
+        metadata.getInfo(checkEmpty);
+    });
+
+    function checkEmpty(err, info) {
+        t.ifError(err, 'gets empty record');
+        t.deepEqual(info, {}, 'no record created by updateFeature routine');
+        metadata.defaultInfo(andThen);
+    }
+
+    function andThen(err) {
+        t.ifError(err, 'default metadata');
+        metadata.updateFeature(original, edited, checkInfo);
+    }
+
+    function checkInfo(err) {
+        t.ifError(err, 'updated metadata');
+        metadata.getInfo(function(err, info) {
+            t.ifError(err, 'got metadata');
+            t.equal(info.count, 0, 'correct feature count');
+            t.equal(info.size, expectedSize, 'correct size');
+            t.equal(info.west, expectedBounds[0], 'correct west');
+            t.equal(info.south, expectedBounds[1], 'correct south');
+            t.equal(info.east, expectedBounds[2], 'correct east');
+            t.equal(info.north, expectedBounds[3], 'correct north');
+            t.end();
+        });
+    }
+
+});
+teardown();
+
+setup();
+test('metadata: remove a feature', function(t) {
+    var feature = geojsonFixtures.feature.one;
+    var expectedSize = JSON.stringify(feature).length;
+
+    metadata.deleteFeature(feature, function(err) {
+        t.ifError(err, 'graceful exit if no metadata exists');
+        metadata.getInfo(checkEmpty);
+    });
+
+    function checkEmpty(err, info) {
+        t.ifError(err, 'gets empty record');
+        t.deepEqual(info, {}, 'no record created by adjustBounds routine');
+        dyno.putItem(initial, del);
+    }
+
+    function del(err) {
+        t.ifError(err, 'put default metadata');
+        metadata.deleteFeature(feature, checkInfo);
+    }
+
+    function checkInfo(err) {
+        t.ifError(err, 'updated metadata');
+        metadata.getInfo(function(err, info) {
+            t.ifError(err, 'got info');
+            t.equal(info.count, initial.count - 1, 'correct feature count');
+            t.equal(info.size, initial.size - expectedSize, 'correct size');
+            t.equal(info.west, initial.west, 'correct west');
+            t.equal(info.south, initial.south, 'correct south');
+            t.equal(info.east, initial.east, 'correct east');
+            t.equal(info.north, initial.north, 'correct north');
+            t.end();
+        });
+    }
+});
+teardown();
+
+setup();
+test('insert idaho & check metadata', function(t) {
+    var cardboard = new Cardboard(config);
+    var q = queue();
+    t.pass('inserting idaho');
+    geojsonFixtures.featurecollection.idaho.features.filter(function(f) {
+        return f.properties.GEOID === '16049960100';
+    }).forEach(function(block) {
+        q.defer(cardboard.put, block, dataset);
+    });
+    q.awaitAll(inserted);
+
+    function inserted(err, res) {
+        if (err) console.error(err);
+        t.notOk(err, 'no error returned');
+        t.pass('inserted idaho');
+        metadata.getInfo(checkInfo);
+    }
+
+    function checkInfo(err, info) {
+        t.ifError(err, 'got idaho metadata');
+        var expected = {
+          id : "metadata!" + dataset,
+          dataset : dataset,
+          west : -116.108998,
+          south : 45.196187,
+          east : -114.320252,
+          north : 46.671061,
+          count : 1,
+          size : 298712
+        }
+        t.deepEqual(info, expected, 'expected metadata');
+        t.end();
+    }
+});
+teardown();
+
+setup();
+test('insert many idaho features & check metadata', function(t) {
+    var cardboard = new Cardboard(config);
+    var features = geojsonFixtures.featurecollection.idaho.features.slice(0, 50);
+    var expectedBounds = geojsonExtent({ type: 'FeatureCollection', features: features });
+    var expectedSize = features.reduce(function(memo, feature) {
+        memo = memo + JSON.stringify(feature).length;
+        return memo;
+    }, 0);
+
+    var q = queue();
+    features.forEach(function(block) {
+        q.defer(cardboard.put, block, dataset);
+    });
+    q.awaitAll(inserted);
+
+    function inserted(err, res) {
+        if (err) console.error(err);
+        t.notOk(err, 'no error returned');
+        t.pass('inserted idaho features');
+        metadata.getInfo(checkInfo);
+    }
+
+    function checkInfo(err, info) {
+        t.ifError(err, 'got idaho metadata');
+        var expected = {
+          id : "metadata!" + dataset,
+          dataset : dataset,
+          west : expectedBounds[0],
+          south : expectedBounds[1],
+          east : expectedBounds[2],
+          north : expectedBounds[3],
+          count : features.length,
+          size : expectedSize
+        }
+        t.deepEqual(info, expected, 'expected metadata');
+        t.end();
+    }
+});
+teardown();
+
+setup();
+test('insert many idaho features, delete one & check metadata', function(t) {
+    var cardboard = new Cardboard(config);
+    var features = geojsonFixtures.featurecollection.idaho.features.slice(0, 50);
+    var deleteThis = features[9];
+    var expectedBounds = geojsonExtent({ type: 'FeatureCollection', features: features });
+    var expectedSize = features.reduce(function(memo, feature) {
+        memo = memo + JSON.stringify(feature).length;
+        return memo;
+    }, 0) - JSON.stringify(deleteThis).length;
+
+    var q = queue();
+    features.forEach(function(block) {
+        q.defer(cardboard.put, block, dataset);
+    });
+    q.defer(metadata.deleteFeature, deleteThis);
+    q.awaitAll(inserted);
+
+    function inserted(err, res) {
+        if (err) console.error(err);
+        t.notOk(err, 'no error returned');
+        t.pass('inserted idaho features and deleted one');
+        metadata.getInfo(checkInfo);
+    }
+
+    function checkInfo(err, info) {
+        t.ifError(err, 'got idaho metadata');
+        var expected = {
+          id : "metadata!" + dataset,
+          dataset : dataset,
+          west : expectedBounds[0],
+          south : expectedBounds[1],
+          east : expectedBounds[2],
+          north : expectedBounds[3],
+          count : features.length - 1,
+          size : expectedSize
+        }
+        t.deepEqual(info, expected, 'expected metadata');
+        t.end();
+    }
+});
+teardown();
+
+setup();
+test('insert idaho feature, update & check metadata', function(t) {
+    var cardboard = new Cardboard(config);
+    var original = geojsonFixtures.featurecollection.idaho.features[0];
+    var edited = geojsonFixtures.feature.one;
+
+    var expectedSize;
+    var expectedBounds = geojsonExtent({
+        type: 'FeatureCollection', 
+        features: [original, edited]
+    });
+
+    cardboard.put(original, dataset, inserted);
+
+    function inserted(err, res) {
+        t.notOk(err, 'no error returned');
+        t.pass('inserted idaho feature');
+
+        var update = _.extend({ id: res }, edited);
+        expectedSize = JSON.stringify(edited).length;
+        cardboard.put(update, dataset, updated);
+    }
+
+    function updated(err, res) {
+        t.ifError(err, 'updated feature');
+        metadata.getInfo(checkInfo);
+    }
+
+    function checkInfo(err, info) {
+        t.ifError(err, 'got idaho metadata');
+        var expected = {
+          id : "metadata!" + dataset,
+          dataset : dataset,
+          west : expectedBounds[0],
+          south : expectedBounds[1],
+          east : expectedBounds[2],
+          north : expectedBounds[3],
+          count : 1,
+          size : expectedSize
+        }
+        t.deepEqual(info, expected, 'expected metadata');
+        t.end();
+    }
+});
+teardown();
+
+setup();
+test('delDataset removes metadata', function(t) {
+    var cardboard = new Cardboard(config);
+    dyno.putItem(initial, function(err) {
+        t.ifError(err, 'put initial metadata');
+        cardboard.delDataset(dataset, removed);
+    });
+
+    function removed(err) {
+        t.ifError(err, 'removed dataset');
+        metadata.getInfo(function(err, info) {
+            t.ifError(err, 'looked for metadata');
+            t.deepEqual(info, {}, 'metadata was removed');
+            t.end();
+        });
+    }
+});
+teardown();
+
+setup();
+test('getDatasetInfo', function(t) {
+    var cardboard = new Cardboard(config);
+    dyno.putItem(initial, function(err) {
+        t.ifError(err, 'put initial metadata');
+        cardboard.getDatasetInfo(dataset, checkInfo);
+    });
+
+    function checkInfo(err, info) {
+        t.ifError(err, 'got metadata');
+        t.deepEqual(info, initial, 'metadata is correct');
         t.end();
     }
 });

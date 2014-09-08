@@ -6,6 +6,7 @@ var geojsonNormalize = require('geojson-normalize')
 var concat = require('concat-stream');
 var geojsonCover = require('geojson-cover');
 var coverOpts = require('./lib/coveropts');
+var Metadata = require('./lib/metadata');
 var uniq = require('uniq');
 var geobuf = require('geobuf');
 var log = require('debug')('cardboard');
@@ -52,6 +53,7 @@ module.exports = function Cardboard(c) {
         var level = indexLevel(feature);
         var indexes = geojsonCover.geometryIndexes(feature.geometry, coverOpts[level]);
         var primary = cuid();
+        var metadata = Metadata(dyno, dataset);
 
         log('insert', primary, (feature.properties ? feature.properties.id : 'undefined'), dataset, 'level:', level, 'indexes:', indexes.length);
         var q = queue();
@@ -86,7 +88,8 @@ module.exports = function Cardboard(c) {
             Key: [prefix, dataset, primary].join('/'),
             Bucket: bucket,
             Body: buf
-        })
+        });
+        q.defer(metadata.addFeature, feature);
         q.awaitAll(function(err, res) {
             callback(err, primary);
         });
@@ -101,12 +104,14 @@ module.exports = function Cardboard(c) {
 
         // load existing feature.
         cardboard.get(feature.id, dataset, gotFeature);
-        function gotFeature(err, existingFeature) {
+        function gotFeature(err, featureCollection) {
             if(err) return callback(err, null);
-            if(existingFeature.features.length === 0) return callback(new Error('Update failed. Feature does not exist'));
+            if(featureCollection.features.length === 0) return callback(new Error('Update failed. Feature does not exist'));
+
+            var existingFeature = featureCollection.features[0];
             var existingLevel = indexLevel(existingFeature);
-            var existingIndexes = geojsonCover.geometryIndexes(existingFeature.features[0], coverOpts[existingLevel]);
-            var existingBuf = geobuf.featureToGeobuf(existingFeature.features[0]).toBuffer();
+            var existingIndexes = geojsonCover.geometryIndexes(existingFeature, coverOpts[existingLevel]);
+            var existingBuf = geobuf.featureToGeobuf(existingFeature).toBuffer();
             // If existingLevel and level dont match, the feature crossed into a diff
             // sized index. Delete them all and insert again.
 
@@ -165,15 +170,19 @@ module.exports = function Cardboard(c) {
                         updateDoc,
                         { errors: { throughput: 10 } }
                     );
-                } else if(existingFeature.features[0].properties && existingFeature.features[0].properties.id) {
+                } else if(existingFeature.properties && existingFeature.properties.id) {
                     // they used to have a properties id. It was removed. Remove the item from the index
                     deleteKeys.push({
                         dataset: dataset,
-                        id: 'usid!' + existingFeature.features[0].properties.id + '!' + feature.id
+                        id: 'usid!' + existingFeature.properties.id + '!' + feature.id
                     })
                 }
             }
             q.defer(dyno.deleteItems, deleteKeys, {errors:{throughput:10}});
+
+            var metadata = Metadata(dyno, dataset);
+            q.defer(metadata.updateFeature, existingFeature, feature);
+
             q.defer(s3.putObject.bind(s3), {
                 Key: [prefix, dataset, feature.id].join('/'),
                 Bucket: bucket,
@@ -207,6 +216,7 @@ module.exports = function Cardboard(c) {
     cardboard.delFeature = function(primary, dataset, callback) {
         cardboard.get(primary, dataset, function(err, res) {
             if (err) return callback(err);
+            var metadata = Metadata(dyno, dataset);
             var indexes = geojsonCover.geometryIndexes(res.features[0], coverOpts);
             var params = {
                 RequestItems: {}
@@ -221,7 +231,11 @@ module.exports = function Cardboard(c) {
             for (var i = 0; i < indexes.length; i++) {
                 keys.push({id: 'cell!' + indexes[i] + '!' + primary, dataset: dataset});
             }
-            dyno.deleteItems(keys, callback);
+            
+            queue()
+                .defer(dyno.deleteItems, keys)
+                .defer(metadata.deleteFeature, res.features[0])
+                .awaitAll(callback);
         });
     };
 
@@ -346,6 +360,10 @@ module.exports = function Cardboard(c) {
             }));
             callback(err, datasets);
         });
+    };
+
+    cardboard.getDatasetInfo = function(dataset, callback) {
+        Metadata(dyno, dataset).getInfo(callback);
     };
 
     cardboard.bboxQuery = function(input, dataset, callback) {
