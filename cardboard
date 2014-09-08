@@ -7,8 +7,7 @@ var fs = require('fs'),
     queue = require('queue-async'),
     geojsonNormalize = require('geojson-normalize'),
     JSONStream = require('JSONStream'),
-    argv = require('minimist')(process.argv.slice(2)),
-    dyno = require('dyno');
+    argv = require('minimist')(process.argv.slice(2));
 
 require('dotenv').load();
 
@@ -31,16 +30,6 @@ var config = {
     prefix: tableName
 };
 
-config.coverOpts ={};
-
-config.coverOpts.max_query_cells = process.env.MAX_QUERY_CELLS || 100;
-config.coverOpts.query_min_level = process.env.QUERY_MIN_LEVEL || 1;
-config.coverOpts.query_max_level = process.env.QUERY_MAX_LEVEL || 5;
-config.coverOpts.max_index_cells = process.env.MAX_INDEX_CELLS || 100;
-config.coverOpts.index_min_level = process.env.INDEX_MIN_LEVEL || 5;
-config.coverOpts.index_max_level = process.env.INDEX_MAX_LEVEL || 8;
-config.coverOpts.index_point_level = process.env.INDEX_POINT_LEVEL || 15;
-
 var cardboard = new Cardboard(config);
 
 cardboard.createTable(tableName, function(err){
@@ -59,9 +48,9 @@ function ready() {
             var q = queue(10);
             var gj = geojsonNormalize(JSON.parse(buf));
             gj.features.forEach(function(feature) {
-                var id = (((feature.id !== undefined) ?
-                    feature.id : feature.properties.id)) || hat();
-                q.defer(cardboard.insert.bind(cardboard), id, feature, argv.dataset || 'default');
+                feature.properties.id = feature.id;
+                delete feature.id;
+                q.defer(cardboard.put, feature, argv.dataset || 'default');
             });
             q.awaitAll(function(err, res) {
                 if (err) console.error(err);
