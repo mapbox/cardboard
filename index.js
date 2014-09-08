@@ -104,12 +104,14 @@ module.exports = function Cardboard(c) {
 
         // load existing feature.
         cardboard.get(feature.id, dataset, gotFeature);
-        function gotFeature(err, existingFeature) {
+        function gotFeature(err, featureCollection) {
             if(err) return callback(err, null);
-            if(existingFeature.features.length === 0) return callback(new Error('Update failed. Feature does not exist'));
+            if(featureCollection.features.length === 0) return callback(new Error('Update failed. Feature does not exist'));
+
+            var existingFeature = featureCollection.features[0];
             var existingLevel = indexLevel(existingFeature);
-            var existingIndexes = geojsonCover.geometryIndexes(existingFeature.features[0], coverOpts[existingLevel]);
-            var existingBuf = geobuf.featureToGeobuf(existingFeature.features[0]).toBuffer();
+            var existingIndexes = geojsonCover.geometryIndexes(existingFeature, coverOpts[existingLevel]);
+            var existingBuf = geobuf.featureToGeobuf(existingFeature).toBuffer();
             // If existingLevel and level dont match, the feature crossed into a diff
             // sized index. Delete them all and insert again.
 
@@ -168,15 +170,19 @@ module.exports = function Cardboard(c) {
                         updateDoc,
                         { errors: { throughput: 10 } }
                     );
-                } else if(existingFeature.features[0].properties && existingFeature.features[0].properties.id) {
+                } else if(existingFeature.properties && existingFeature.properties.id) {
                     // they used to have a properties id. It was removed. Remove the item from the index
                     deleteKeys.push({
                         dataset: dataset,
-                        id: 'usid!' + existingFeature.features[0].properties.id + '!' + feature.id
+                        id: 'usid!' + existingFeature.properties.id + '!' + feature.id
                     })
                 }
             }
             q.defer(dyno.deleteItems, deleteKeys, {errors:{throughput:10}});
+
+            var metadata = Metadata(dyno, dataset);
+            q.defer(metadata.updateFeature, existingFeature, feature);
+
             q.defer(s3.putObject.bind(s3), {
                 Key: [prefix, dataset, feature.id].join('/'),
                 Bucket: bucket,
