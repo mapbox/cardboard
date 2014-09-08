@@ -546,7 +546,7 @@ teardown();
 setup();
 test('metadata: adjust size or count', function(t) {
 
-    metadata.adjustProperty('count', 10, function(err, res) {
+    metadata.adjustProperties({ count: 10 }, function(err, res) {
         t.ifError(err, 'graceful if no metadata exists');
         metadata.getInfo(checkEmpty);
     });
@@ -561,37 +561,46 @@ test('metadata: adjust size or count', function(t) {
 
     function checkEmpty(err, info) {
         t.ifError(err, 'gets empty record');
-        t.deepEqual(info, {}, 'no record created by adjustProperty routine');
+        t.deepEqual(info, {}, 'no record created by adjustProperties routine');
         dyno.putItem(initial, addCount);
     }
 
     function addCount(err, res) {
         t.ifError(err, 'put metadata record');
-        metadata.adjustProperty('count', 1, function(err, res) {
+        metadata.adjustProperties({ count: 1 }, function(err, res) {
             t.ifError(err, 'incremented count by 1');
             checkRecord('count', initial.count + 1, subtractCount);
         });
     }
 
     function subtractCount() {
-        metadata.adjustProperty('count', -1, function(err, res) {
+        metadata.adjustProperties({ count: -1 }, function(err, res) {
             t.ifError(err, 'decrement count by 1');
             checkRecord('count', initial.count, addSize);
         });
     }
 
     function addSize() {
-        metadata.adjustProperty('size', 1024, function(err, res) {
+        metadata.adjustProperties({ size: 1024 }, function(err, res) {
             t.ifError(err, 'incremented size by 1024');
             checkRecord('size', initial.size + 1024, subtractSize);
         });
     }
 
     function subtractSize() {
-        metadata.adjustProperty('size', -1024, function(err, res) {
+        metadata.adjustProperties({ size: -1024 }, function(err, res) {
             t.ifError(err, 'decrement size by 1024');
-            checkRecord('size', initial.size, function() {
-                t.end();
+            checkRecord('size', initial.size, addBoth);
+        });
+    }
+
+    function addBoth() {
+        metadata.adjustProperties({ count: 1, size: 1024 }, function(err, res) {
+            t.ifError(err, 'increment size and count');
+            checkRecord('size', initial.size + 1024, function() {
+                checkRecord('count', initial.count + 1, function() {
+                    t.end();
+                });
             });
         });
     }
