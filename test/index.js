@@ -26,6 +26,8 @@ var emptyFeatureCollection = {
 
 var dynalite, client, db;
 
+var dyno = require('dyno')(config);
+
 function setup() {
     test('setup', function(t) {
         dynalite = require('dynalite')({
@@ -54,7 +56,6 @@ function teardown() {
 
 setup();
 test('tables', function(t) {
-    var dyno = require('dyno')(config);
     dyno.listTables(function(err, res) {
         t.equal(err, null);
         t.deepEqual(res, { TableNames: ['geo'] });
@@ -141,13 +142,35 @@ test('insert & and update', function(t) {
         t.ok(primary, 'got id');
         t.pass('inserted');
         fixtures.haitiLine.id = primary;
-        fixtures.haitiLine.geometry.coordinates[0][0] = -73.588671875;
-        cardboard.put(fixtures.haitiLine, 'default', function(err, id) {
-            t.equal(err, null);
-            t.equal(id, primary);
-            delete fixtures.haitiLine.id;
-            t.end();
-        });
+        fixtures.haitiLine.geometry.coordinates[0][0] = -72.588671875;
+
+        dyno.query({
+            id: { 'BEGINS_WITH': [ 'cell!' ] },
+            dataset: { 'EQ': 'default' }
+        },
+        { pages: 0 },
+        function(err, data){
+            t.equal(data.items.length, 50, 'correct num of index entries');
+            updateFeature();
+        })
+
+        function updateFeature(){
+            cardboard.put(fixtures.haitiLine, 'default', function(err, id) {
+                t.equal(err, null);
+                t.equal(id, primary);
+                delete fixtures.haitiLine.id;
+                dyno.query({
+                    id: { 'BEGINS_WITH': [ 'cell!' ] },
+                    dataset: { 'EQ': 'default' }
+                },
+                { pages: 0 },
+                function(err, data){
+
+                    t.equal(data.items.length, 50, 'correct num of index entries');
+                    t.end();
+                });
+            });
+        }
     });
 });
 teardown();

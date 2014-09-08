@@ -50,7 +50,7 @@ function ready() {
             gj.features.forEach(function(feature) {
                 feature.properties.id = feature.id;
                 delete feature.id;
-                q.defer(cardboard.put.bind(cardboard), feature, argv.dataset || 'default');
+                q.defer(cardboard.put, feature, argv.dataset || 'default');
             });
             q.awaitAll(function(err, res) {
                 if (err) console.error(err);
