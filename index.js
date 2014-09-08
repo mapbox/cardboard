@@ -228,7 +228,7 @@ module.exports = function Cardboard(c) {
             
             queue()
                 .defer(dyno.deleteItems, keys)
-                .defer(metadata.deleteFeature, res.val)
+                .defer(metadata.deleteFeature, res.features[0])
                 .awaitAll(callback);
         });
     };

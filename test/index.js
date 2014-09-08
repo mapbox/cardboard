@@ -243,7 +243,7 @@ test('listIds', function(t) {
             delete fixtures.nullIsland.id;
             cardboard.listIds('default', function(err, data) {
                 var expected = [
-                    'cell!1!100000004!' + primary,
+                    'cell!1!10000000001!' + primary,
                     'id!' + primary,
                     'metadata!default'
                 ];
@@ -751,7 +751,7 @@ test('insert idaho & check metadata', function(t) {
     geojsonFixtures.featurecollection.idaho.features.filter(function(f) {
         return f.properties.GEOID === '16049960100';
     }).forEach(function(block) {
-        q.defer(cardboard.insert.bind(cardboard), block, dataset);
+        q.defer(cardboard.put, block, dataset);
     });
     q.awaitAll(inserted);
 
@@ -792,7 +792,7 @@ test('insert many idaho features & check metadata', function(t) {
 
     var q = queue();
     features.forEach(function(block) {
-        q.defer(cardboard.insert.bind(cardboard), block, dataset);
+        q.defer(cardboard.put, block, dataset);
     });
     q.awaitAll(inserted);
 
@@ -834,7 +834,7 @@ test('insert many idaho features, delete one & check metadata', function(t) {
 
     var q = queue();
     features.forEach(function(block) {
-        q.defer(cardboard.insert.bind(cardboard), block, dataset);
+        q.defer(cardboard.put, block, dataset);
     });
     q.defer(metadata.deleteFeature, deleteThis);
     q.awaitAll(inserted);
