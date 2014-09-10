@@ -31,8 +31,8 @@
     "cuid": "^1.2.4",
     "debug": "~1.0.3",
     "dotenv": "^0.4.0",
-    "dyno": "^0.4.6",
-    "geobuf": "0.2.1",
+    "dyno": "^0.4.7",
+    "geobuf": "0.2.2",
     "geojson-cover": "^0.1.0",
     "geojson-extent": "^0.1.0",
     "geojson-normalize": "0.0.0",
@@ -49,6 +49,7 @@
     "uniq": "~1.0.0"
   },
   "devDependencies": {
+    "buffer-equal": "0.0.1",
     "dynalite": "~0.4.0",
     "faucet": "0.0.1",
     "geojson-fixtures": "0.1.0",

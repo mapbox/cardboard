@@ -25,187 +25,99 @@ var LARGE_INDEX_DISTANCE = 50; //bbox more then 100 miles corner to corner.
 module.exports = function Cardboard(c) {
     var cardboard = {};
 
-    var dyno = Dyno(c);
     AWS.config.update({
         accessKeyId: c.awsKey,
         secretAccessKey: c.awsSecret,
         region: c.region || 'us-east-1',
     });
 
-    // allow for passed in config object to override s3 object for mocking in tests
+    // allow for passed in config object to override s3 objects for mocking in tests
     var s3 = c.s3 || new AWS.S3();
+    var dyno = Dyno(c);
     if(!c.bucket) throw new Error('No bucket set');
     var bucket = c.bucket;
     if(!c.prefix) throw new Error('No s3 prefix set');
     var prefix = c.prefix;
 
-    // If feature.id isnt set, this works like an insert, and assigns an id
-    // if feature.id is set, its an update, if the feature doesnt exist it will fail.
     cardboard.put = function(feature, dataset, callback) {
-        if(!feature.id){
-            insert(feature, dataset, callback);
-        } else {
-            update(feature, dataset, callback);
-        }
-    };
-
-    function insert(feature, dataset, callback) {
-        var level = indexLevel(feature);
-        var indexes = geojsonCover.geometryIndexes(feature.geometry, coverOpts[level]);
-        var primary = cuid();
-        var metadata = Metadata(dyno, dataset);
-
-        log('insert', primary, (feature.properties ? feature.properties.id : 'undefined'), dataset, 'level:', level, 'indexes:', indexes.length);
-        var q = queue();
-        var buf = geobuf.featureToGeobuf(feature).toBuffer();
-
-        function item(id) {
-            var obj = {
-                id: id,
-                dataset: dataset,
-                geometryid: primary
-            };
-
-            if(buf.length <= MAX_GEOMETRY_SIZE){
-                obj.val = buf;
-            }
-            return obj;
-        }
-        var items = [];
-        for(var i=0; i < indexes.length; i++) {
-            items.push(item('cell!' + level + '!' + indexes[i] + '!' + primary));
-        }
-        items.push(item('id!' + primary));
-
-        // If the user specified an id in properties, index it.
-        if(feature.properties && feature.properties.id) {
-            items.push(item('usid!' + feature.properties.id + '!' + primary));
-        }
-
-        q.defer(dyno.putItems, items, {errors:{throughput:10}});
-
-        q.defer(s3.putObject.bind(s3), {
-            Key: [prefix, dataset, primary].join('/'),
-            Bucket: bucket,
-            Body: buf
-        });
-        q.defer(metadata.addFeature, feature);
-        q.awaitAll(function(err, res) {
-            callback(err, primary);
-        });
-    }
-
-    function update(feature, dataset, callback) {
-        var level = indexLevel(feature);
-        var indexes = geojsonCover.geometryIndexes(feature.geometry, coverOpts[level]);
-        var buf = geobuf.featureToGeobuf(feature).toBuffer();
-
-        log('update', feature.id, dataset, 'level:', level, 'indexes:', indexes.length);
-
-        // load existing feature.
-        cardboard.get(feature.id, dataset, gotFeature);
-        function gotFeature(err, featureCollection) {
-            if(err) return callback(err, null);
-            if(featureCollection.features.length === 0) return callback(new Error('Update failed. Feature does not exist'));
-
-            var existingFeature = featureCollection.features[0];
-            var existingLevel = indexLevel(existingFeature);
-            var existingIndexes = geojsonCover.geometryIndexes(existingFeature, coverOpts[existingLevel]);
-            var existingBuf = geobuf.featureToGeobuf(existingFeature).toBuffer();
-            // If existingLevel and level dont match, the feature crossed into a diff
-            // sized index. Delete them all and insert again.
-
-            var toDelete = _.difference(existingIndexes, indexes);
-            var toInsert = _.difference(indexes, existingIndexes);
-            var toUpdate = _.intersection(existingIndexes, indexes);
-            var q = queue(50);
-
-            var deleteKeys = toDelete.map(function(id){
-                return {
-                    dataset: dataset,
-                    id: 'cell!' + existingLevel + '!' + id + '!' + feature.id
-                };
-            });
-
-            var insertItems = [];
-            for(var i=0; i < toInsert.length; i++) {
-                insertItems.push(item('cell!' + level + '!' + toInsert[i] + '!' + feature.id));
-            }
-            q.defer(dyno.putItems, insertItems, {errors:{throughput:10}});
-
-            var updateDoc;
-            if(buf.length <= MAX_GEOMETRY_SIZE){
-                updateDoc = { put: {val: buf }};
-            }else if(buf.length > MAX_GEOMETRY_SIZE && existingBuf <= MAX_GEOMETRY_SIZE) {
-                updateDoc = { delete: {val: buf }};
-            }
-            if(updateDoc){
-                for(var i=0; i < toUpdate.length; i++) {
-                    q.defer(dyno.updateItem,
-                        {
-                            id: 'cell!' + level + '!' + toUpdate[i] + '!' + feature.id,
-                            dataset: dataset
-                        },
-                        updateDoc,
-                        { errors: { throughput: 10 } }
-                    );
-                }
-
-                q.defer(dyno.updateItem,
-                    {
-                        id: 'id!' + feature.id,
-                        dataset: dataset
-                    },
-                    updateDoc,
-                    { errors: { throughput: 10 } }
-                );
-
-                // If the user specified an id in properties, index it.
-                if(feature.properties && feature.properties.id) {
-                    q.defer(dyno.updateItem,
-                        {
-                            id: 'usid!' + feature.properties.id + '!' + feature.id,
-                            dataset: dataset
-                        },
-                        updateDoc,
-                        { errors: { throughput: 10 } }
-                    );
-                } else if(existingFeature.properties && existingFeature.properties.id) {
-                    // they used to have a properties id. It was removed. Remove the item from the index
-                    deleteKeys.push({
-                        dataset: dataset,
-                        id: 'usid!' + existingFeature.properties.id + '!' + feature.id
-                    })
-                }
-            }
-            q.defer(dyno.deleteItems, deleteKeys, {errors:{throughput:10}});
-
-            var metadata = Metadata(dyno, dataset);
-            q.defer(metadata.updateFeature, existingFeature, feature);
-
-            q.defer(s3.putObject.bind(s3), {
-                Key: [prefix, dataset, feature.id].join('/'),
-                Bucket: bucket,
-                Body: buf
-            })
-            q.awaitAll(function(err, res) {
-                callback(err, feature.id);
-            });
+        var isUpdate = feature.hasOwnProperty('id'),
+            f = isUpdate ? _.clone(feature) : _.extend({ id: cuid() }, feature),
+            metadata = Metadata(dyno, dataset),
+            info = metadata.getFeatureInfo(f),
+            timestamp = (+new Date()),
+            primary = f.id,
+            buf = geobuf.featureToGeobuf(f).toBuffer(),
+            cell = 'cell', // TODO: replace with function call that gets a single-cell index token 
+            useS3 = buf.length > MAX_GEOMETRY_SIZE,
+            s3Key = [prefix, dataset, primary, timestamp].join('/'),
+            s3Params = { Bucket: bucket, Key: s3Key, Body: buf };
+        
+        var item = {
+            dataset: dataset,
+            id: 'id!' + primary,
+            cell: cell,
+            size: info.size,
+            west: info.west,
+            south: info.south,
+            east: info.east,
+            north: info.north
         };
 
-        function item(id, update) {
-            var obj = {
-                id: id,
-                dataset: dataset,
-                geometryid: feature.id
-            };
+        if (f.properties.id) item.usid = f.properties.id;
+        if (useS3) item.geometryid = s3Key;
+        else item.val = buf;
 
-            if(buf.length < MAX_GEOMETRY_SIZE){
-                obj.val = buf;
+        var condition = { expected: {} };
+        condition.expected.id = {
+            ComparisonOperator: isUpdate ? 'NOT_NULL' : 'NULL'
+        };
+
+        var q = queue(1);
+        if (useS3) q.defer(s3.putObject.bind(s3), s3Params);
+        q.defer(dyno.putItem, item, condition);
+        q.await(function(err) {
+            if (err && err.code === 'ConditionalCheckFailedException') {
+                var msg = isUpdate ? 'Feature does not exist' : 'Feature already exists';
+                err = new Error(msg);
             }
-            return obj;
-        }
-    }
+            callback(err, primary);
+        });
+    };
+
+    cardboard.del = function(primary, dataset, callback) {
+        var key = { dataset: dataset, id: 'id!' + primary };
+
+        dyno.deleteItems([ key ], function(err) {
+            if (err) return callback(err, true);
+            else callback();
+        });
+    };
+
+    cardboard.get = function(primary, dataset, callback) {
+        var key = { dataset: dataset, id: 'id!' + primary };
+
+        dyno.getItem(key, function(err, res) {
+            if (err) return callback(err);
+            if (!res.Item) return callback(null, featureCollection());
+            resolveFeature(res.Item, function(err, feature) {
+                if (err) return callback(err);
+                callback(null, featureCollection([feature]));
+            });
+        });
+    };
+
+    cardboard.getBySecondaryId = function(id, dataset, callback) {
+        var query = { dataset: { EQ: dataset }, usid: { EQ: id } },
+            opts = { index: 'usid', attributes: ['val', 'geometryid'], pages: 0 };
+
+        dyno.query(query, opts, function(err, res) {
+            if (err) return callback(err);
+            resolveFeatures(res.items, function(err, features) {
+                if (err) return callback(err);
+                callback(null, featureCollection(features));
+            });
+        });
+    };
 
     cardboard.createTable = function(tableName, callback) {
         var table = require('./lib/table.json');
@@ -213,39 +125,10 @@ module.exports = function Cardboard(c) {
         dyno.createTable(table, callback);
     };
 
-    cardboard.delFeature = function(primary, dataset, callback) {
-        cardboard.get(primary, dataset, function(err, res) {
-            if (err) return callback(err);
-            var metadata = Metadata(dyno, dataset);
-            var indexes = geojsonCover.geometryIndexes(res.features[0], coverOpts);
-            var params = {
-                RequestItems: {}
-            };
-
-            var keys = [{ id: 'id!' + primary, dataset: dataset }];
-
-            if(res.features[0].properties && res.features[0].properties.id) {
-                keys.push({ id: 'usid!' + res.features[0].properties.id + '!' + primary, dataset: dataset })
-            }
-
-            for (var i = 0; i < indexes.length; i++) {
-                keys.push({id: 'cell!' + indexes[i] + '!' + primary, dataset: dataset});
-            }
-            
-            queue()
-                .defer(dyno.deleteItems, keys)
-                .defer(metadata.deleteFeature, res.features[0])
-                .awaitAll(callback);
-        });
-    };
-
     cardboard.delDataset = function(dataset, callback) {
         cardboard.listIds(dataset, function(err, res) {
             var keys = res.map(function(id){
-                return {
-                    dataset: dataset,
-                    id: id
-                };
+                return { dataset: dataset, id: id };
             });
 
             dyno.deleteItems(keys, function(err, res) {
@@ -253,95 +136,25 @@ module.exports = function Cardboard(c) {
             });
         });
     };
-    cardboard.getBySecondaryId = function(id, dataset, callback) {
-        dyno.query({
-            id: { 'BEGINS_WITH': 'usid!' + id },
-            dataset: { 'EQ': dataset }
-        }, function(err, res) {
-            if (err) return callback(err);
-            var res = parseQueryResponse([res]);
-            getFeatures(dataset, res, featuresResp);
-
-            function featuresResp(err, data) {
-                data = data.map(function(i) {
-                    i.val = geobuf.geobufToFeature(i.val);
-                    i.val.id = i.geometryid;
-                    return i;
-                });
-                var fc = featureCollection();
-                res.forEach(function(i){
-                    fc.features.push(_(data).findWhere({geometryid: i.geometryid}).val);
-                });
-                callback(err, fc);
-            }
-        });
-
-    };
-    cardboard.get = function(primary, dataset, callback) {
-        dyno.query({
-            id: { 'EQ': 'id!' + primary },
-            dataset: { 'EQ': dataset }
-        }, function(err, res) {
-            if (err) return callback(err);
-            var res = parseQueryResponse([res]);
-
-            if(res.length === 0) return callback(null, featureCollection());
-
-            if(res[0].val) {
-                respond(res[0]);
-            } else {
-                getFeatures(dataset, res, function(err, result) {
-                    if(err) return callback(err);
-                    respond(result[0]);
-                });
-            }
-
-            function respond(feature) {
-                feature.val = geobuf.geobufToFeature(feature.val);
-                feature.val.id = feature.geometryid;
-                return callback(err, featureCollection([feature.val]));
-            }
-        });
-    };
-
-    function getFeatures(dataset, features, callback) {
-        var q = queue(100);
-        features.forEach(function(f) {
-            q.defer(fetch, f);
-        });
-        function fetch(f, cb) {
-            var key = [prefix, dataset, f.geometryid].join('/');
-            if(f.val) {
-                return cb(null, { geometryid: f.geometryid, val: f.val });
-            }
-            s3.getObject({
-                Key: key,
-                Bucket: bucket
-            }, function(err, data) {
-                cb(err, { geometryid:f.geometryid, val:data.Body });
-            });
-        }
-        q.awaitAll(function(err, data) {
-            callback(err, data);
-        });
-    };
 
     cardboard.list = function(dataset, callback) {
-        dyno.query({
-            dataset: { 'EQ': dataset },
-            id: { 'BEGINS_WITH': 'id!' }
-        }, function(err, res) {
+        var query = { dataset: { EQ: dataset }, id: { BEGINS_WITH: 'id!' } },
+            opts = { pages: 0 };
+
+        dyno.query(query, opts, function(err, res) {
             if (err) return callback(err);
-            callback(err, parseQueryResponseId([res]));
+            resolveFeatures(res, function(err, features) {
+                if (err) return callback(err);
+                callback(null, featureCollection(features));
+            });
         });
     };
 
     cardboard.listIds = function(dataset, callback) {
-        dyno.query({
-            dataset: { 'EQ': dataset }
-        }, {
-            attributes: ['id']
-        }, function(err, res) {
+        var query = { dataset: { EQ: dataset } },
+            opts = { attributes: ['id'], pages: 0 };
+
+        dyno.query(query, opts, function(err, res) {
             if (err) return callback(err);
             callback(err, res.items.map(function(_) {
                 return _.id;
@@ -350,10 +163,9 @@ module.exports = function Cardboard(c) {
     };
 
     cardboard.listDatasets = function(callback) {
-        dyno.scan({
-            attributes: ['dataset'],
-            pages:0
-        }, function(err, res) {
+        var opts = { attributes: ['dataset'], pages:0 };
+
+        dyno.scan(opts, function(err, res) {
             if (err) return callback(err);
             var datasets = _.uniq(res.items.map(function(item){
                 return item.dataset;
@@ -364,6 +176,10 @@ module.exports = function Cardboard(c) {
 
     cardboard.getDatasetInfo = function(dataset, callback) {
         Metadata(dyno, dataset).getInfo(callback);
+    };
+
+    cardboard.calculateDatasetInfo = function(dataset, callback) {
+        Metadata(dyno, dataset).calculateInfo(callback);
     };
 
     cardboard.bboxQuery = function(input, dataset, callback) {
@@ -388,60 +204,57 @@ module.exports = function Cardboard(c) {
 
         q.awaitAll(function(err, res) {
             if (err) return callback(err);
+            
             var res = parseQueryResponse(res);
-            getFeatures(dataset, res, featuresResp);
-            function featuresResp(err, data) {
-                data = data.map(function(i) {
-                    i.val = geobuf.geobufToFeature(i.val);
-                    i.val.id = i.geometryid;
-                    return i;
-                });
-
-                var fc = featureCollection();
-                res.forEach(function(i){
-                    fc.features.push(_(data).findWhere({geometryid: i.geometryid}).val);
-                });
-                callback(err, fc);
-            }
+            resolveFeatures(res, function(err, data) {
+                if (err) return callback(err);
+                callback(err, featureCollection(data));
+            });
         });
     };
 
-    function parseQueryResponseId(res) {
-        res = res.map(function(r) {
-            return r.items.map(function(i) {
-                i.id_parts = i.id.split('!');
-                return i;
-            });
+    cardboard.dump = function(cb) {
+        return dyno.scan(cb);
+    };
+
+    cardboard.dumpGeoJSON = function(callback) {
+        var opts = { attributes: ['id', 'cell'], pages: 0 };
+
+        dyno.scan(opts, function(err, res) {
+            if (err) return callback(err);
+
+            var features = res.items.reduce(function(memo, item) {
+                if (item.id.indexOf('id!') === 0) memo.push(toFeature(item));
+                return memo;
+            }, []);
+
+            callback(null, featureCollection(features));
         });
 
-        var flat = _(res).chain().flatten().sortBy(function(a) {
-            return a.id_parts[1];
-        }).value();
+        function toFeature(item) {
+            return {
+                type: 'Feature',
+                properties: { key: item.key },
+                geometry: new s2.S2Cell(new s2.S2CellId()
+                    .fromToken(item.cell)).toGeoJSON()
+            };
+        }
+    };
 
-        flat = uniq(flat, function(a, b) {
-            return a.id_parts[1] !== b.id_parts[1] ||
-                a.id_parts[2] !== b.id_parts[2];
-        }, true);
-
-        flat = _.groupBy(flat, function(_) {
-            return _.id_parts[1];
-        });
-
-        flat = _.values(flat);
-
-        flat = flat.map(function(_) {
-            var concatted = Buffer.concat(_.map(function(i) {
-                return i.val;
-            }));
-            _[0].val = concatted;
-            return _[0];
-        });
-
-        return flat.map(function(i) {
-            i.val = geobuf.geobufToFeature(i.val);
-            return i;
-        });
-    }
+    cardboard.export = function(_) {
+        return dyno.scan()
+            .pipe(through({ objectMode: true }, function(data, enc, cb) {
+                var output = this.put.bind(this);
+                if (data.id.indexOf('id!') === 0) {
+                    return resolveFeature(data, function(err, feature) {
+                        output(feature);
+                        cb();
+                    });
+                }
+                cb();
+            }))
+            .pipe(geojsonStream.stringify());
+    };
 
     function parseQueryResponse(res) {
 
@@ -450,11 +263,11 @@ module.exports = function Cardboard(c) {
         });
 
         var flat = _(res).chain().flatten().sortBy(function(a) {
-            return a.geometryid;
+            return a.primary;
         }).value();
 
         flat = uniq(flat, function(a, b) {
-            return a.geometryid !== b.geometryid
+            return a.primary !== b.primary
         }, true);
 
         flat = _.values(flat);
@@ -462,38 +275,35 @@ module.exports = function Cardboard(c) {
         return flat;
     }
 
-    cardboard.dump = function(cb) {
-        return dyno.scan(cb);
-    };
+    function resolveFeature(item, callback) {
+        var val = item.val,
+            geometryid = item.geometryid;
 
-    cardboard.dumpGeoJSON = function(callback) {
-        return dyno.scan(function(err, res) {
-            if (err) return callback(err);
-            return callback(null, {
-                type: 'FeatureCollection',
-                features: res.items.map(function(f) {
-                    return {
-                        type: 'Feature',
-                        properties: {
-                            key: f.key
-                        },
-                        geometry: new s2.S2Cell(new s2.S2CellId()
-                            .fromToken(
-                                f.key.split('!')[1])).toGeoJSON()
-                    };
-                })
+        // Geobuf is stored in dynamo
+        if (val) return callback(null, geobuf.geobufToFeature(val));
+        
+        // Geobuf is stored on S3
+        if (geometryid) {
+            return s3.getObject({
+                Bucket: bucket,
+                Key: geometryid
+            }, function(err, data) {
+                if (err) return callback(err);
+                callback(null, geobuf.geobufToFeature(data.Body));
             });
-        });
-    };
+        }
+        
+        callback(new Error('No defined geometry'));
+    }
 
-    cardboard.export = function(_) {
-        return dyno.scan()
-            .pipe(through({ objectMode: true }, function(data, enc, cb) {
-                 this.push(geobuf.geobufToFeature(data.val));
-                 cb();
-            }))
-            .pipe(geojsonStream.stringify());
-    };
+    function resolveFeatures(items, callback) {
+        var q = queue(100);
+        items.forEach(function(item) {
+            q.defer(resolveFeature, item);
+        });
+        q.awaitAll(callback);
+    }
+
     return cardboard;
 };
 
