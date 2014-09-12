@@ -244,7 +244,7 @@ module.exports = function Cardboard(c) {
     cardboard.export = function(_) {
         return dyno.scan()
             .pipe(through({ objectMode: true }, function(data, enc, cb) {
-                var output = this.put.bind(this);
+                var output = this.push.bind(this);
                 if (data.id.indexOf('id!') === 0) {
                     return resolveFeature(data, function(err, feature) {
                         output(feature);

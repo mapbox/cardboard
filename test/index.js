@@ -264,6 +264,46 @@ test('listIds', function(t) {
 });
 teardown();
 
+setup();
+test('export', function(t) {
+    var cardboard = new Cardboard(config);
+    var first = geojsonFixtures.featurecollection.idaho.features.slice(0, 10);
+    var second = geojsonFixtures.featurecollection.idaho.features.slice(10, 20);
+
+    var q = queue();
+    first.forEach(function(f) {
+        q.defer(cardboard.put, f, 'first');
+    });
+    second.forEach(function(f) {
+        q.defer(cardboard.put, f, 'second');
+    });
+    q.defer(cardboard.calculateDatasetInfo, 'first');
+    q.defer(cardboard.calculateDatasetInfo, 'second');
+    q.awaitAll(function(err, ids) {
+        t.ifError(err, 'inserted and calc metadata');
+        first = first.map(function(f, i) {
+            return _.defaults({ id: ids[0] }, f);
+        });
+        second = second.map(function(f, i) {
+            return _.defaults({ id: ids[i + 10] }, f);
+        });
+        var expected = { type: 'FeatureCollection', features: _.union(first, second) };
+        var found = '';
+        cardboard.export()
+            .on('data', function(chunk) { found = found + chunk; })
+            .on('error', function(err) {
+                t.notOk(err, 'stream error');
+                t.end();
+            })
+            .on('end', function() {
+                found = JSON.parse(found);
+                t.equal(found.features.length, expected.features.length, 'expected number of features');
+                t.end();
+            });
+    });
+});
+teardown();
+
 // setup();
 // test('insert & query', function(t) {
 //     var queries = [
