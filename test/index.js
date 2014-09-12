@@ -80,30 +80,6 @@ test('dump', function(t) {
 teardown();
 
 setup();
-test('no new', function(t) {
-    var cardboard = Cardboard(config);
-
-    cardboard.dumpGeoJSON(function(err, data) {
-        t.deepEqual(data, emptyFeatureCollection, 'no results with a new database');
-        t.equal(err, null);
-        t.end();
-    });
-});
-teardown();
-
-setup();
-test('dumpGeoJSON', function(t) {
-    var cardboard = Cardboard(config);
-
-    cardboard.dumpGeoJSON(function(err, data) {
-        t.deepEqual(data, emptyFeatureCollection, 'no results with a new database');
-        t.equal(err, null);
-        t.end();
-    });
-});
-teardown();
-
-setup();
 test('insert & dump', function(t) {
     var cardboard = Cardboard(config);
     var dataset = 'default';

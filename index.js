@@ -217,30 +217,6 @@ module.exports = function Cardboard(c) {
         return dyno.scan(cb);
     };
 
-    cardboard.dumpGeoJSON = function(callback) {
-        var opts = { attributes: ['id', 'cell'], pages: 0 };
-
-        dyno.scan(opts, function(err, res) {
-            if (err) return callback(err);
-
-            var features = res.items.reduce(function(memo, item) {
-                if (item.id.indexOf('id!') === 0) memo.push(toFeature(item));
-                return memo;
-            }, []);
-
-            callback(null, featureCollection(features));
-        });
-
-        function toFeature(item) {
-            return {
-                type: 'Feature',
-                properties: { key: item.key },
-                geometry: new s2.S2Cell(new s2.S2CellId()
-                    .fromToken(item.cell)).toGeoJSON()
-            };
-        }
-    };
-
     cardboard.export = function(_) {
         return dyno.scan()
             .pipe(through({ objectMode: true }, function(data, enc, cb) {
