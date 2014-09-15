@@ -18,7 +18,7 @@ if (!argv._.length) {
 
 var tableName = argv._[0];
 
-console.log('endpoint', process.env.Endpoint)
+console.error('endpoint', process.env.Endpoint)
 
 var config = {
     awsKey: process.env.AWSKey,
@@ -75,9 +75,7 @@ function ready() {
             argv.dataset || 'default',
             function(err, data) {
                 if (err) return console.log(err);
-                data.forEach(function(d) {
-                    console.log(JSON.stringify(d.val.properties, null, 2));
-                });
+                console.log(JSON.stringify(data));
             });
     }
 }

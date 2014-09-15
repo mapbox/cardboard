@@ -4,7 +4,6 @@ var _ = require('lodash');
 var geojsonStream = require('geojson-stream');
 var geojsonNormalize = require('geojson-normalize')
 var concat = require('concat-stream');
-var geojsonCover = require('geojson-cover');
 var coverOpts = require('./lib/coveropts');
 var Metadata = require('./lib/metadata');
 var uniq = require('uniq');
@@ -14,10 +13,9 @@ var queue = require('queue-async');
 var Dyno = require('dyno');
 var AWS = require('aws-sdk');
 var extent = require('geojson-extent');
-var distance = require('turf-distance');
-var point = require('turf-point');
 var cuid = require('cuid');
 var url = require('url');
+var tilebelt = require('tilebelt');
 
 var MAX_GEOMETRY_SIZE = 1024*10;  //10KB
 var LARGE_INDEX_DISTANCE = 50; //bbox more then 100 miles corner to corner.
@@ -48,10 +46,12 @@ module.exports = function Cardboard(c) {
             timestamp = (+new Date()),
             primary = f.id,
             buf = geobuf.featureToGeobuf(f).toBuffer(),
-            cell = 'cell', // TODO: replace with function call that gets a single-cell index token 
+            tile = tilebelt.bboxToTile([info.west, info.north, info.east, info.south]),
+            cell = tilebelt.tileToQuadkey(tile),
+            useS3 = buf.length > MAX_GEOMETRY_SIZE,
             s3Key = [prefix, dataset, primary, timestamp].join('/'),
             s3Params = { Bucket: bucket, Key: s3Key, Body: buf };
-        
+
         var item = {
             dataset: dataset,
             id: 'id!' + primary,
@@ -61,7 +61,7 @@ module.exports = function Cardboard(c) {
             south: info.south,
             east: info.east,
             north: info.north,
-            s3url: ['s3:/', bucket, s3Key].join('/') 
+            s3url: ['s3:/', bucket, s3Key].join('/')
         };
 
         if (f.properties.id) item.usid = f.properties.id;
@@ -184,27 +184,38 @@ module.exports = function Cardboard(c) {
 
     cardboard.bboxQuery = function(input, dataset, callback) {
         var q = queue(100);
+        var tile = tilebelt.bboxToTile(input);
+        var tileKey = tilebelt.tileToQuadkey(tile);
+        log('query', input, 'tile', tile, 'cell', tileKey);
 
-        function queryIndexLevel(level) {
-            var indexes = geojsonCover.bboxQueryIndexes(input, true, coverOpts[level]);
+        console.error('tile', tileKey);
+        q.defer(
+            dyno.query, {
+                cell: { 'BEGINS_WITH': tileKey },
+                dataset: { 'EQ': dataset }
+            },
+            { pages: 0, index: 'cell', attributes: ['val', 'geometryid'] }
+        );
 
-            log('querying level:', level, ' with ', indexes.length, 'indexes');
-            indexes.forEach(function(idx) {
-                q.defer(
-                    dyno.query, {
-                        id: { 'BETWEEN': [ 'cell!'+level+'!' + idx[0], 'cell!'+level+'!' + idx[1] ] },
-                        dataset: { 'EQ': dataset }
-                    },
-                    { pages: 0 }
-                );
-            });
+        var parentTile = tilebelt.getParent(tile);
+        while (parentTile[2] > 0) {
+            parentTileKey = tilebelt.tileToQuadkey(parentTile);
+            console.error('parent tile', parentTileKey);
+            q.defer(
+                dyno.query, {
+                    cell: { 'EQ': parentTileKey },
+                    dataset: { 'EQ': dataset }
+                },
+                { pages: 0,
+                  index: 'cell',
+                  attributes: ['val', 'geometryid'],
+                  QueryFilter: [] }
+            );
+            parentTile = tilebelt.getParent(parentTile);
         }
-
-        [0,1].forEach(queryIndexLevel);
 
         q.awaitAll(function(err, res) {
             if (err) return callback(err);
-            
             var res = parseQueryResponse(res);
             resolveFeatures(res, function(err, data) {
                 if (err) return callback(err);
@@ -242,10 +253,6 @@ module.exports = function Cardboard(c) {
             return a.primary;
         }).value();
 
-        flat = uniq(flat, function(a, b) {
-            return a.primary !== b.primary
-        }, true);
-
         flat = _.values(flat);
 
         return flat;
@@ -256,7 +263,7 @@ module.exports = function Cardboard(c) {
 
         // Geobuf is stored in dynamo
         if (val) return callback(null, geobuf.geobufToFeature(val));
-        
+
         // Get geobuf from S3
         var uri = url.parse(item.s3url);
         s3.getObject({

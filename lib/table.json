@@ -17,9 +17,9 @@
                 {"AttributeName": "dataset", "KeyType": "HASH"},
                 {"AttributeName": "cell", "KeyType": "RANGE"}
             ],
-            "Projection": { 
+            "Projection": {
                 "ProjectionType": "INCLUDE",
-                "NonKeyAttributes": [ "val", "s3url" ]
+                "NonKeyAttributes": [ "val", "s3url", "north", "east", "south", "west" ]
             },
             "ProvisionedThroughput": {
                 "ReadCapacityUnits": 5,
@@ -32,7 +32,7 @@
                 {"AttributeName": "dataset", "KeyType": "HASH"},
                 {"AttributeName": "usid", "KeyType": "RANGE"}
             ],
-            "Projection": { 
+            "Projection": {
                 "ProjectionType": "INCLUDE",
                 "NonKeyAttributes": [ "val", "s3url" ]
             },
