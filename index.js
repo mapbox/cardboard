@@ -46,7 +46,7 @@ module.exports = function Cardboard(c) {
             timestamp = (+new Date()),
             primary = f.id,
             buf = geobuf.featureToGeobuf(f).toBuffer(),
-            tile = tilebelt.bboxToTile([info.west, info.north, info.east, info.south]),
+            tile = tilebelt.bboxToTile([info.west, info.south, info.east, info.north]),
             cell = tilebelt.tileToQuadkey(tile),
             useS3 = buf.length > MAX_GEOMETRY_SIZE,
             s3Key = [prefix, dataset, primary, timestamp].join('/'),
@@ -55,7 +55,7 @@ module.exports = function Cardboard(c) {
         var item = {
             dataset: dataset,
             id: 'id!' + primary,
-            cell: cell,
+            cell: 'cell!' + cell,
             size: info.size,
             west: info.west,
             south: info.south,
@@ -191,7 +191,7 @@ module.exports = function Cardboard(c) {
         console.error('tile', tileKey);
         q.defer(
             dyno.query, {
-                cell: { 'BEGINS_WITH': tileKey },
+                cell: { 'BEGINS_WITH': 'cell!' + tileKey },
                 dataset: { 'EQ': dataset }
             },
             { pages: 0, index: 'cell', attributes: ['val', 'geometryid'] }
@@ -203,7 +203,7 @@ module.exports = function Cardboard(c) {
             console.error('parent tile', parentTileKey);
             q.defer(
                 dyno.query, {
-                    cell: { 'EQ': parentTileKey },
+                    cell: { 'EQ': 'cell!' + parentTileKey },
                     dataset: { 'EQ': dataset }
                 },
                 { pages: 0,
