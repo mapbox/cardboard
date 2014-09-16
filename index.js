@@ -17,6 +17,7 @@ var extent = require('geojson-extent');
 var distance = require('turf-distance');
 var point = require('turf-point');
 var cuid = require('cuid');
+var url = require('url');
 
 var MAX_GEOMETRY_SIZE = 1024*10;  //10KB
 var LARGE_INDEX_DISTANCE = 50; //bbox more then 100 miles corner to corner.
@@ -48,7 +49,6 @@ module.exports = function Cardboard(c) {
             primary = f.id,
             buf = geobuf.featureToGeobuf(f).toBuffer(),
             cell = 'cell', // TODO: replace with function call that gets a single-cell index token 
-            useS3 = buf.length > MAX_GEOMETRY_SIZE,
             s3Key = [prefix, dataset, primary, timestamp].join('/'),
             s3Params = { Bucket: bucket, Key: s3Key, Body: buf };
         
@@ -60,12 +60,12 @@ module.exports = function Cardboard(c) {
             west: info.west,
             south: info.south,
             east: info.east,
-            north: info.north
+            north: info.north,
+            s3url: ['s3:/', bucket, s3Key].join('/') 
         };
 
         if (f.properties.id) item.usid = f.properties.id;
-        if (useS3) item.geometryid = s3Key;
-        else item.val = buf;
+        if (buf.length < MAX_GEOMETRY_SIZE) item.val = buf;
 
         var condition = { expected: {} };
         condition.expected.id = {
@@ -73,7 +73,7 @@ module.exports = function Cardboard(c) {
         };
 
         var q = queue(1);
-        if (useS3) q.defer(s3.putObject.bind(s3), s3Params);
+        q.defer(s3.putObject.bind(s3), s3Params);
         q.defer(dyno.putItem, item, condition);
         q.await(function(err) {
             if (err && err.code === 'ConditionalCheckFailedException') {
@@ -108,7 +108,7 @@ module.exports = function Cardboard(c) {
 
     cardboard.getBySecondaryId = function(id, dataset, callback) {
         var query = { dataset: { EQ: dataset }, usid: { EQ: id } },
-            opts = { index: 'usid', attributes: ['val', 'geometryid'], pages: 0 };
+            opts = { index: 'usid', attributes: ['val', 's3url'], pages: 0 };
 
         dyno.query(query, opts, function(err, res) {
             if (err) return callback(err);
@@ -252,24 +252,20 @@ module.exports = function Cardboard(c) {
     }
 
     function resolveFeature(item, callback) {
-        var val = item.val,
-            geometryid = item.geometryid;
+        var val = item.val;
 
         // Geobuf is stored in dynamo
         if (val) return callback(null, geobuf.geobufToFeature(val));
         
-        // Geobuf is stored on S3
-        if (geometryid) {
-            return s3.getObject({
-                Bucket: bucket,
-                Key: geometryid
-            }, function(err, data) {
-                if (err) return callback(err);
-                callback(null, geobuf.geobufToFeature(data.Body));
-            });
-        }
-        
-        callback(new Error('No defined geometry'));
+        // Get geobuf from S3
+        var uri = url.parse(item.s3url);
+        s3.getObject({
+            Bucket: uri.host,
+            Key: uri.pathname.substr(1)
+        }, function(err, data) {
+            if (err) return callback(err);
+            callback(null, geobuf.geobufToFeature(data.Body));
+        });
     }
 
     function resolveFeatures(items, callback) {

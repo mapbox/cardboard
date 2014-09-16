@@ -19,7 +19,7 @@
             ],
             "Projection": { 
                 "ProjectionType": "INCLUDE",
-                "NonKeyAttributes": [ "val", "geometryid" ]
+                "NonKeyAttributes": [ "val", "s3url" ]
             },
             "ProvisionedThroughput": {
                 "ReadCapacityUnits": 5,
@@ -34,7 +34,7 @@
             ],
             "Projection": { 
                 "ProjectionType": "INCLUDE",
-                "NonKeyAttributes": [ "val", "geometryid" ]
+                "NonKeyAttributes": [ "val", "s3url" ]
             },
             "ProvisionedThroughput": {
                 "ReadCapacityUnits": 5,
