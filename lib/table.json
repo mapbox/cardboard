@@ -2,11 +2,45 @@
     "TableName": "geo",
     "AttributeDefinitions": [
         {"AttributeName": "dataset", "AttributeType": "S"},
-        {"AttributeName": "id", "AttributeType": "S"}
+        {"AttributeName": "id", "AttributeType": "S"},
+        {"AttributeName": "cell", "AttributeType": "S"},
+        {"AttributeName": "usid", "AttributeType": "S"}
     ],
     "KeySchema": [
         {"AttributeName": "dataset", "KeyType": "HASH"},
         {"AttributeName": "id", "KeyType": "RANGE"}
+    ],
+    "GlobalSecondaryIndexes": [
+        {
+            "IndexName": "cell",
+            "KeySchema": [
+                {"AttributeName": "dataset", "KeyType": "HASH"},
+                {"AttributeName": "cell", "KeyType": "RANGE"}
+            ],
+            "Projection": {
+                "ProjectionType": "INCLUDE",
+                "NonKeyAttributes": [ "val", "s3url", "north", "east", "south", "west" ]
+            },
+            "ProvisionedThroughput": {
+                "ReadCapacityUnits": 5,
+                "WriteCapacityUnits": 50
+            }
+        },
+        {
+            "IndexName": "usid",
+            "KeySchema": [
+                {"AttributeName": "dataset", "KeyType": "HASH"},
+                {"AttributeName": "usid", "KeyType": "RANGE"}
+            ],
+            "Projection": {
+                "ProjectionType": "INCLUDE",
+                "NonKeyAttributes": [ "val", "s3url" ]
+            },
+            "ProvisionedThroughput": {
+                "ReadCapacityUnits": 5,
+                "WriteCapacityUnits": 50
+            }
+        }
     ],
     "ProvisionedThroughput": {
         "ReadCapacityUnits": 5,
