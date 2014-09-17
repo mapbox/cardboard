@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "tap --tap test/*.js | ./node_modules/.bin/faucet"
+    "test": "tap --tap test/*.js"
   },
   "bin": {
     "cardboard": "./cardboard"
@@ -51,7 +51,6 @@
   "devDependencies": {
     "buffer-equal": "0.0.1",
     "dynalite": "~0.4.0",
-    "faucet": "0.0.1",
     "geojson-fixtures": "0.1.0",
     "mock-aws-s3": "^0.2.1",
     "tap": "~0.4.9"
