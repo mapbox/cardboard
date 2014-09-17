@@ -27,15 +27,15 @@ module.exports = function Cardboard(c) {
     AWS.config.update({
         accessKeyId: c.awsKey,
         secretAccessKey: c.awsSecret,
-        region: c.region || 'us-east-1',
+        region: c.region || 'us-east-1'
     });
 
     // allow for passed in config object to override s3 objects for mocking in tests
     var s3 = c.s3 || new AWS.S3();
     var dyno = Dyno(c);
-    if(!c.bucket) throw new Error('No bucket set');
+    if (!c.bucket) throw new Error('No bucket set');
     var bucket = c.bucket;
-    if(!c.prefix) throw new Error('No s3 prefix set');
+    if (!c.prefix) throw new Error('No s3 prefix set');
     var prefix = c.prefix;
 
     cardboard.put = function(feature, dataset, callback) {
