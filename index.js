@@ -184,40 +184,80 @@ module.exports = function Cardboard(c) {
 
     cardboard.bboxQuery = function(input, dataset, callback) {
         var q = queue(100);
-        var tile = tilebelt.bboxToTile(input);
-        var tileKey = tilebelt.tileToQuadkey(tile);
-        log('query', input, 'tile', tile, 'cell', tileKey);
 
-        console.error('tile', tileKey);
-        q.defer(
-            dyno.query, {
+        // Force queries that touch the equator/prime meridian into one of
+        // four quadrants
+        var bbox = _.clone(input);
+        if (bbox[0] === 0) bbox[0] = 0.00000001;
+        if (bbox[1] === 0) bbox[1] = 0.00000001;
+        if (bbox[2] === 0) bbox[2] = -0.00000001;
+        if (bbox[3] === 0) bbox[3] = -0.00000001;
+
+        // If a query crosses the equator/prime meridian, we need to split it
+        // into separate queries. Otherwise we will end up querying the z0 tile
+        var bboxes = [bbox];
+        var splitX = bbox[0] < 0 && bbox[2] > 0;
+        var splitY = bbox[1] < 0 && bbox[3] > 0;
+
+        if (splitX) bboxes = bboxes.reduce(function(memo, bbox) {
+            memo.push([bbox[0], bbox[1], -0.0001, bbox[3]]);
+            memo.push([0.0001, bbox[1], bbox[2], bbox[3]]);
+            return memo;
+        }, []);
+
+        if (splitY) bboxes = bboxes.reduce(function(memo, bbox) {
+            memo.push([bbox[0], bbox[1], bbox[2], -0.0001]);
+            memo.push([bbox[0], 0.0001, bbox[2], bbox[3]]);
+            return memo;
+        }, []);
+
+        var tiles = bboxes.map(function(bbox) {
+            return tilebelt.bboxToTile(bbox);
+        });
+
+        tiles.forEach(function(tile) {
+            var tileKey = tilebelt.tileToQuadkey(tile);
+
+            // First find features indexed in children of this tile
+            var query = {
                 cell: { 'BEGINS_WITH': 'cell!' + tileKey },
                 dataset: { 'EQ': dataset }
-            },
-            { pages: 0, index: 'cell', attributes: ['val', 'geometryid'] }
-        );
+            };
 
-        var parentTile = tilebelt.getParent(tile);
-        while (parentTile[2] > 0) {
-            parentTileKey = tilebelt.tileToQuadkey(parentTile);
-            console.error('parent tile', parentTileKey);
-            q.defer(
-                dyno.query, {
-                    cell: { 'EQ': 'cell!' + parentTileKey },
-                    dataset: { 'EQ': dataset }
-                },
-                { pages: 0,
-                  index: 'cell',
-                  attributes: ['val', 'geometryid'],
-                  QueryFilter: [] }
-            );
-            parentTile = tilebelt.getParent(parentTile);
-        }
+            var options = {
+                pages: 0, 
+                index: 'cell', 
+                attributes: ['val', 'geometryid']
+            };
+
+            q.defer(dyno.query, query, options);
+
+            // Travel up the parent tiles, finding features indexed in each
+            var parentTile = tilebelt.getParent(tile);
+            options.QueryFilter = [];
+
+            while (parentTile[2] > -1) {
+                query.cell = { 'EQ': 'cell!' + tilebelt.tileToQuadkey(parentTile) };
+                q.defer(dyno.query, query, options);
+                parentTile = tilebelt.getParent(parentTile);
+            }
+        });
 
         q.awaitAll(function(err, res) {
             if (err) return callback(err);
             var res = parseQueryResponse(res);
-            resolveFeatures(res, function(err, data) {
+
+            // Temporary post-query bbox filter
+            var resp = res.reduce(function(memo, item) {
+                if (item.west <= input[2] &&
+                    item.east >= input[0] &&
+                    item.north >= input[1] &&
+                    item.south <= input[3])
+                    memo.push(item);
+                return memo;
+            }, []);
+
+            resolveFeatures(resp, function(err, data) {
                 if (err) return callback(err);
                 callback(err, featureCollection(data));
             });

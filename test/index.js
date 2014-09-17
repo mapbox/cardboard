@@ -280,152 +280,204 @@ test('export', function(t) {
 });
 teardown();
 
-// setup();
-// test('insert & query', function(t) {
-//     var queries = [
-//         {
-//             query: [-10, -10, 10, 10],
-//             length: 1
-//         },
-//         {
-//             query: [30, 30, 40, 40],
-//             length: 0
-//         },
-//         {
-//             query: [10, 10, 20, 20],
-//             length: 0
-//         },
-//         {
-//             query: [-76.0, 38.0, -79, 40],
-//             length: 1
-//         }
-//     ];
-//     var cardboard = Cardboard(config);
-//     var insertQueue = queue(1);
+setup();
+test('insert & query', function(t) {
+    var queries = [
+        {
+            query: [-10, -10, 10, 10],
+            length: 1
+        },
+        {
+            query: [30, 30, 40, 40],
+            length: 0
+        },
+        {
+            query: [10, 10, 20, 20],
+            length: 0
+        },
+        {
+            query: [-79.0, 38.0, -76, 40],
+            length: 1
+        }
+    ];
+    var cardboard = Cardboard(config);
+    var insertQueue = queue(1);
 
-//     [fixtures.nullIsland,
-//     fixtures.dc].forEach(function(fix) {
-//         insertQueue.defer(cardboard.put, fix, 'default');
-//     });
+    [fixtures.nullIsland,
+    fixtures.dc].forEach(function(fix) {
+        insertQueue.defer(cardboard.put, fix, 'default');
+    });
 
-//     insertQueue.awaitAll(function(err, res) {
-//         t.ifError(err, 'inserted');
-//         inserted();
-//     });
+    insertQueue.awaitAll(function(err, res) {
+        t.ifError(err, 'inserted');
+        inserted();
+    });
 
-//     function inserted() {
-//         var q = queue(1);
-//         queries.forEach(function(query) {
-//             q.defer(function(query, callback) {
-//                 t.equal(cardboard.bboxQuery(query.query, 'default', function(err, resp) {
-//                     t.ifError(err, 'no error for ' + query.query.join(','));
-//                     if (err) return callback(err);
+    function inserted() {
+        var q = queue(1);
+        queries.forEach(function(query) {
+            q.defer(function(query, callback) {
+                t.equal(cardboard.bboxQuery(query.query, 'default', function(err, resp) {
+                    t.ifError(err, 'no error for ' + query.query.join(','));
+                    if (err) return callback(err);
+                    
+                    t.equal(resp.features.length, query.length, query.query.join(',') + ' finds ' + query.length + ' data with a query');
+                    callback();
+                }), undefined, '.bboxQuery');
+            }, query);
+        });
+        q.awaitAll(function(err) {
+            t.ifError(err, 'queries passed');
+            t.end();
+        });
+    }
+});
+teardown();
 
-//                     t.equal(resp.features.length, query.length, 'finds ' + query.length + ' data with a query');
-//                     callback();
-//                 }), undefined, '.bboxQuery');
-//             }, query);
-//         });
-//         q.awaitAll(function(err) {
-//             t.ifError(err, 'queries passed');
-//             t.end();
-//         });
-//     }
-// });
-// teardown();
+setup();
+test('insert polygon', function(t) {
+    var cardboard = Cardboard(config);
+    cardboard.put(fixtures.haiti, 'default', inserted);
 
-// setup();
-// test('insert polygon', function(t) {
-//     var cardboard = Cardboard(config);
-//     cardboard.put(fixtures.haiti, 'default', inserted);
+    function inserted(err, res) {
+        t.notOk(err, 'no error returned');
+        var queries = [
+            {
+                query: [-10, -10, 10, 10],
+                length: 0
+            },
+            {
+                query: [-76.0, 38.0, -79, 40],
+                length: 0
+            }
+        ];
+        var q = queue(1);
+        queries.forEach(function(query) {
+            q.defer(function(query, callback) {
+                t.equal(cardboard.bboxQuery(query.query, 'default', function(err, resp) {
+                    t.equal(err, null, 'no error for ' + query.query.join(','));
+                    t.equal(resp.features.length, query.length, 'finds ' + query.length + ' data with a query');
+                    callback();
+                }), undefined, '.bboxQuery');
+            }, query);
+        });
+        q.awaitAll(function() { t.end(); });
+    }
+});
+teardown();
 
-//     function inserted(err, res) {
-//         t.notOk(err, 'no error returned');
-//         var queries = [
-//             {
-//                 query: [-10, -10, 10, 10],
-//                 length: 0
-//             },
-//             {
-//                 query: [-76.0, 38.0, -79, 40],
-//                 length: 0
-//             }
-//         ];
-//         var q = queue(1);
-//         queries.forEach(function(query) {
-//             q.defer(function(query, callback) {
-//                 t.equal(cardboard.bboxQuery(query.query, 'default', function(err, resp) {
-//                     t.equal(err, null, 'no error for ' + query.query.join(','));
-//                     t.equal(resp.features.length, query.length, 'finds ' + query.length + ' data with a query');
-//                     callback();
-//                 }), undefined, '.bboxQuery');
-//             }, query);
-//         });
-//         q.awaitAll(function() { t.end(); });
-//     }
-// });
-// teardown();
+setup();
+test('insert linestring', function(t) {
+    var cardboard = Cardboard(config);
+    cardboard.put(fixtures.haitiLine, 'default', inserted);
 
-// setup();
-// test('insert linestring', function(t) {
-//     var cardboard = Cardboard(config);
-//     cardboard.put(fixtures.haitiLine, 'default', inserted);
+    function inserted(err, res) {
+        t.notOk(err, 'no error returned');
+        var queries = [
+            {
+                query: [-10, -10, 10, 10],
+                length: 0
+            },
+            {
+                query: [-76.0, 38.0, -79, 40],
+                length: 0
+            }
+        ];
+        var q = queue(1);
+        queries.forEach(function(query) {
+            q.defer(function(query, callback) {
+                t.equal(cardboard.bboxQuery(query.query, 'default', function(err, resp) {
+                    t.equal(err, null, 'no error for ' + query.query.join(','));
+                    t.equal(resp.features.length, query.length, 'finds ' + query.length + ' data with a query');
+                    callback();
+                }), undefined, '.bboxQuery');
+            }, query);
+        });
+        q.awaitAll(function() { t.end(); });
+    }
+});
+teardown();
 
-//     function inserted(err, res) {
-//         t.notOk(err, 'no error returned');
-//         var queries = [
-//             {
-//                 query: [-10, -10, 10, 10],
-//                 length: 0
-//             },
-//             {
-//                 query: [-76.0, 38.0, -79, 40],
-//                 length: 0
-//             }
-//         ];
-//         var q = queue(1);
-//         queries.forEach(function(query) {
-//             q.defer(function(query, callback) {
-//                 t.equal(cardboard.bboxQuery(query.query, 'default', function(err, resp) {
-//                     t.equal(err, null, 'no error for ' + query.query.join(','));
-//                     t.equal(resp.features.length, query.length, 'finds ' + query.length + ' data with a query');
-//                     callback();
-//                 }), undefined, '.bboxQuery');
-//             }, query);
-//         });
-//         q.awaitAll(function() { t.end(); });
-//     }
-// });
-// teardown();
-
-// setup();
-// test('insert idaho', function(t) {
-//     var cardboard = Cardboard(config);
-//     t.pass('inserting idaho');
+setup();
+test('insert idaho', function(t) {
+    var cardboard = Cardboard(config);
+    t.pass('inserting idaho');
     
-//     var idaho = geojsonFixtures.featurecollection.idaho.features.filter(function(f) {
-//         return f.properties.GEOID === '16049960100';
-//     })[0];
-//     cardboard.put(idaho, 'default', function(err, res) {
-//         t.ifError(err, 'inserted');
-//         if (err) return t.end();
-//         cardboard.addFeatureIndexes(res.id, 'default', res.timestamp, inserted);
-//     });
+    var idaho = geojsonFixtures.featurecollection.idaho.features.filter(function(f) {
+        return f.properties.GEOID === '16049960100';
+    })[0];
+    cardboard.put(idaho, 'default', function(err) {
+        t.ifError(err, 'inserted');
+        if (err) return t.end();
 
-//     function inserted(err) {
-//         t.ifError(err, 'indexed');
-//         if (err) return t.end();
+        var bbox = [-115.09552001953124,45.719603972998634,-114.77691650390625,45.947330315089275];
+        cardboard.bboxQuery(bbox, 'default', function(err, res) {
+            t.ifError(err, 'no error for ' + bbox.join(','));
+            t.equal(res.features.length, 1, 'finds 1 data with a query');
+            t.end();
+        });
+    });
+});
+teardown();
 
-//         var bbox = [-115.09552001953124,45.719603972998634,-114.77691650390625,45.947330315089275];
-//         cardboard.bboxQuery(bbox, 'default', function(err, res) {
-//             t.ifError(err, 'no error for ' + bbox.join(','));
-//             t.equal(res.features.length, 1, 'finds 1 data with a query');
-//             t.end();
-//         });
-//     }
-// });
-// teardown();
+setup();
+test('queries along 0 lat/lon', function(t) {
+    var cardboard = Cardboard(config);
+    var dataset = 'default';
 
+    // Insert one feature per quadrant
+    var features = [[-1, 1], [1, 1], [1, -1], [-1, -1]].map(function(coords) {
+        return {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+                type: 'Point',
+                coordinates: coords
+            }
+        };
+    });
+
+    // Query in each quadrant + queries that just cross quadrant bounds
+    // all queries should return a single result
+    var queries = [
+        [-10, 0, 0, 10],
+        [-10, -0.5, 0.5, 10],
+        [0, 0, 10, 10],
+        [-0.5, -0.5, 10, 10],
+        [0, -10, 10, 0],
+        [-0.5, -10, 10, 0.5],
+        [-10, -10, 0, 0],
+        [-10, -10, 0.5, 0.5]
+    ];
+
+    var q = queue();
+    features.forEach(function(f) {
+        q.defer(cardboard.put, f, dataset);
+    });
+    q.awaitAll(function(err, res) {
+        t.ifError(err, 'inserted');
+        runQueries();
+    });
+
+    function runQueries() {
+        var q = queue();
+        queries.forEach(function(query) {
+            function deal(callback) {
+                cardboard.bboxQuery(query, dataset, function(err, res) {
+                    if (err) return callback(err);
+                    t.equal(res.features.length, 1, query.join(',') + ' returned one feature');
+                    callback();
+                });
+            }
+            q.defer(deal);
+        });
+        q.await(function(err) {
+            t.ifError(err, 'passed queries');
+            t.end();
+        })
+    }
+});
+teardown();
 
 setup();
 test('insert datasets and listDatasets', function(t) {

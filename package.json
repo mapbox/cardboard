@@ -43,7 +43,7 @@
     "rw": "~0.1.1",
     "s2": "^0.3.5",
     "through2": "~0.4.1",
-    "tilebelt": "^0.5.1",
+    "tilebelt": "^0.5.2",
     "turf-distance": "^0.1.5",
     "turf-point": "^0.1.6",
     "uniq": "~1.0.0"
