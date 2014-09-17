@@ -225,8 +225,8 @@ module.exports = function Cardboard(c) {
             };
 
             var options = {
-                pages: 0, 
-                index: 'cell', 
+                pages: 0,
+                index: 'cell',
                 attributes: ['val', 'geometryid']
             };
 
@@ -256,6 +256,11 @@ module.exports = function Cardboard(c) {
                     memo.push(item);
                 return memo;
             }, []);
+
+            // Reduce the response's records to the set of
+            // records with unique ids.
+            uniq(resp, function(a, b) {
+                return a.id !== b.id}, true);
 
             resolveFeatures(resp, function(err, data) {
                 if (err) return callback(err);
