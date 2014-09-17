@@ -27,7 +27,7 @@ module.exports = function Cardboard(c) {
     AWS.config.update({
         accessKeyId: c.awsKey,
         secretAccessKey: c.awsSecret,
-        region: c.region || 'us-east-1'
+        region: c.region
     });
 
     // allow for passed in config object to override s3 objects for mocking in tests
