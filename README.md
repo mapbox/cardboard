@@ -2,9 +2,8 @@
 
 [![build status](https://secure.travis-ci.org/mapbox/cardboard.png)](http://travis-ci.org/mapbox/cardboard)
 
-[S2](https://github.com/mapbox/node-s2) on DynamoDB / S3.
-This provides query, indexing, and storage logic. Look to `node-s2` for
-bindings and higher level code for interfaces.
+Cardboard provides the query, indexing, and storage logic for GeoJSON feature
+storage with CRUD on DynamoDB and S3.
 
 ## install
 
@@ -43,8 +42,6 @@ Insert a single feature, indexing it with a primary key in a given layer.
 ```js
 // query a bbox, callback-return array of geojson
 c.bboxQuery(bbox: array, layer: string, callback: fn);
-// dump all features as geojson
-c.dumpGeoJSON(callback: fn);
 // delete a feature
 c.del(primarykey: string, layer: string, callback: fn);
 c.dump(); // -> stream
@@ -56,13 +53,14 @@ c.getDatasetInfo(dataset: string, callback: fn);
 ## Approach
 
 This project aims to create a simple, fast geospatial index as a layer on top
-of [DynamoDB](https://aws.amazon.com/dynamodb/). This
-means that the index will not be built into the database or
-contained in a single R-Tree - it will be baked into the indexes by which data is stored.
+of [DynamoDB](https://aws.amazon.com/dynamodb/). This means that the index will
+not be built into the database or contained in a single R-Tree - it will be
+baked into the indexes by which data is stored.
 
-While the whole index in kept in DynamoDB, the larger geometries are stored on S3.
+While the whole index in kept in DynamoDB, the larger geometries are stored on
+S3.
 
 Support target:
 
-* [All GeoJSON geometry types](http://geojson.org/geojson-spec.html#geometry-objects) should be storable
+* [All GeoJSON geometry types](http://tools.ietf.org/html/draft-butler-geojson-04#section-2.1) should be storable
 * BBOX queries should be supported
