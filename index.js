@@ -225,7 +225,6 @@ module.exports = function Cardboard(c) {
             var options = {
                 pages: 0,
                 index: 'cell',
-                attributes: ['val', 'geometryid'],
                 filter : {
                     west: { 'LE': input[2] },
                     east: { 'GE': input[0] },
