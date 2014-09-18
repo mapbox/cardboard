@@ -264,7 +264,7 @@ module.exports = function Cardboard(c) {
             // records with unique ids.
             uniq(resp, function(a, b) {
                 return a.id !== b.id
-            }, true);
+            });
 
             resolveFeatures(resp, function(err, data) {
                 if (err) return callback(err);
