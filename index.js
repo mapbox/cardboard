@@ -225,8 +225,8 @@ module.exports = function Cardboard(c) {
             };
 
             var options = {
-                pages: 0, 
-                index: 'cell', 
+                pages: 0,
+                index: 'cell',
                 attributes: ['val', 'geometryid']
             };
 
@@ -245,7 +245,10 @@ module.exports = function Cardboard(c) {
 
         q.awaitAll(function(err, res) {
             if (err) return callback(err);
-            var res = parseQueryResponse(res);
+
+            res = _.flatten(res.map(function(r) {
+                return r.items;
+            }));
 
             // Temporary post-query bbox filter
             var resp = res.reduce(function(memo, item) {
@@ -256,6 +259,12 @@ module.exports = function Cardboard(c) {
                     memo.push(item);
                 return memo;
             }, []);
+
+            // Reduce the response's records to the set of
+            // records with unique ids.
+            uniq(resp, function(a, b) {
+                return a.id !== b.id
+            });
 
             resolveFeatures(resp, function(err, data) {
                 if (err) return callback(err);
@@ -282,21 +291,6 @@ module.exports = function Cardboard(c) {
             }))
             .pipe(geojsonStream.stringify());
     };
-
-    function parseQueryResponse(res) {
-
-        res = res.map(function(r) {
-            return r.items;
-        });
-
-        var flat = _(res).chain().flatten().sortBy(function(a) {
-            return a.primary;
-        }).value();
-
-        flat = _.values(flat);
-
-        return flat;
-    }
 
     function resolveFeature(item, callback) {
         var val = item.val;
