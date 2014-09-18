@@ -746,7 +746,7 @@ test('metadata: adjust bounds', function(t) {
             count: initial.count,
             size: initial.size
         };
-        t.deepEqual(info, expected, 'updated metadata correctly');
+        t.deepEqual(_.omit(info, 'updated'), expected, 'updated metadata correctly');
         t.end();
     }
 });
@@ -919,10 +919,12 @@ test('metadata: calculate dataset info', function(t) {
 
         metadata.calculateInfo(function(err, info) {
             t.ifError(err, 'calculated');
-            t.deepEqual(info, expected, 'returned expected info');
+            t.ok(info.updated, 'has updated date');
+            t.deepEqual(_.omit(info, 'updated'), expected, 'returned expected info');
             cardboard.getDatasetInfo(dataset, function(err, info) {
                 t.ifError(err, 'got metadata');
-                t.deepEqual(info, expected, 'got expected info from dynamo');
+                t.ok(info.updated, 'has updated date');
+                t.deepEqual(_.omit(info, 'updated'), expected, 'got expected info from dynamo');
                 t.end();
             });
         });
@@ -963,7 +965,8 @@ test('insert idaho & check metadata', function(t) {
             count : 1,
             size : info.size
         }
-        t.deepEqual(info, expected, 'expected metadata');
+        t.ok(info.updated, 'has updated date');
+        t.deepEqual(_.omit(info, 'updated'), expected, 'expected metadata');
         t.end();
     }
 });
@@ -1005,7 +1008,8 @@ test('insert many idaho features & check metadata', function(t) {
           count : features.length,
           size : expectedSize
         }
-        t.deepEqual(info, expected, 'expected metadata');
+        t.ok(info.updated, 'has updated date');
+        t.deepEqual(_.omit(info, 'updated'), expected, 'expected metadata');
         t.end();
     }
 });
@@ -1048,8 +1052,9 @@ test('insert many idaho features, delete one & check metadata', function(t) {
           north : expectedBounds[3],
           count : features.length - 1,
           size : expectedSize
-        }
-        t.deepEqual(info, expected, 'expected metadata');
+        };
+        t.ok(info.updated, 'has updated date');
+        t.deepEqual(_.omit(info, 'updated'), expected, 'expected metadata');
         t.end();
     }
 });
@@ -1100,8 +1105,9 @@ test('insert idaho feature, update & check metadata', function(t) {
           north : expectedBounds[3],
           count : 1,
           size : expectedSize
-        }
-        t.deepEqual(info, expected, 'expected metadata');
+        };
+        t.ok(info.updated, 'has updated date');
+        t.deepEqual(_.omit(info, 'updated'), expected, 'expected metadata');
         t.end();
     }
 });
