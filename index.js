@@ -68,9 +68,7 @@ module.exports = function Cardboard(c) {
         if (buf.length < MAX_GEOMETRY_SIZE) item.val = buf;
 
         var condition = { expected: {} };
-        condition.expected.id = {
-            ComparisonOperator: isUpdate ? 'NOT_NULL' : 'NULL'
-        };
+        condition.expected.id  = isUpdate ? {'NOT_NULL': []} : {'NULL': []};
 
         var q = queue(1);
         q.defer(s3.putObject.bind(s3), s3Params);
@@ -227,14 +225,19 @@ module.exports = function Cardboard(c) {
             var options = {
                 pages: 0,
                 index: 'cell',
-                attributes: ['val', 'geometryid']
+                attributes: ['val', 'geometryid'],
+                filter : {
+                    west: { 'LE': input[2] },
+                    east: { 'GE': input[0] },
+                    north: { 'GE': input[1] },
+                    south: { 'LE': input[3] }
+                }
             };
-
             q.defer(dyno.query, query, options);
 
             // Travel up the parent tiles, finding features indexed in each
             var parentTile = tilebelt.getParent(tile);
-            options.QueryFilter = [];
+
 
             while (parentTile[2] > -1) {
                 query.cell = { 'EQ': 'cell!' + tilebelt.tileToQuadkey(parentTile) };
@@ -246,19 +249,9 @@ module.exports = function Cardboard(c) {
         q.awaitAll(function(err, res) {
             if (err) return callback(err);
 
-            res = _.flatten(res.map(function(r) {
+            var resp = _.flatten(res.map(function(r) {
                 return r.items;
             }));
-
-            // Temporary post-query bbox filter
-            var resp = res.reduce(function(memo, item) {
-                if (item.west <= input[2] &&
-                    item.east >= input[0] &&
-                    item.north >= input[1] &&
-                    item.south <= input[3])
-                    memo.push(item);
-                return memo;
-            }, []);
 
             // Reduce the response's records to the set of
             // records with unique ids.
