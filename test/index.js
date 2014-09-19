@@ -20,7 +20,7 @@ var config = {
     endpoint: 'http://localhost:4567',
     bucket: 'test',
     prefix: 'test',
-    region: 'neverland',
+    region: 'us-east-1',
     s3: fakeAWS.S3() // only for mocking s3
 };
 

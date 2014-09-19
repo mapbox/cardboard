@@ -24,11 +24,7 @@ var LARGE_INDEX_DISTANCE = 50; //bbox more then 100 miles corner to corner.
 module.exports = function Cardboard(c) {
     var cardboard = {};
 
-    AWS.config.update({
-        accessKeyId: c.awsKey,
-        secretAccessKey: c.awsSecret,
-        region: c.region || 'us-east-1'
-    });
+    AWS.config.update(c);
 
     // allow for passed in config object to override s3 objects for mocking in tests
     var s3 = c.s3 || new AWS.S3();

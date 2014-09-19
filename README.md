@@ -15,14 +15,20 @@ storage with CRUD on DynamoDB and S3.
 
 ```js
 var c = Cardboard({
-    awsKey: config.awsKey,
-    awsSecret: config.awsSecret,
+    accessKeyId: config.awsKey,
+    secretAccessKey: config.awsSecret,
+    sessionToken: config.sessionToken,
     table: config.DynamoDBTable,
     endpoint: 'http://localhost:4567',
     bucket: 'test',
     prefix: 'test'
 });
 ```
+
+`accessKeyId`, `secretAccessKey`, and `sessionToken` are optional. See
+[Configuring the SDK in Node.js][config] for more configuration options.
+
+[config]:http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-configuring.html
 
 Initialize a new cardboard database connector given a config object that is
 sent to [dyno](http://github.com/mapbox/dyno).

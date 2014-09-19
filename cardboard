@@ -21,8 +21,6 @@ var tableName = argv._[0];
 console.error('endpoint', process.env.Endpoint)
 
 var config = {
-    awsKey: process.env.AWSKey,
-    awsSecret:  process.env.AWSSecret,
     table: tableName,
     endpoint:  process.env.Endpoint,
     region: process.env.Region,
