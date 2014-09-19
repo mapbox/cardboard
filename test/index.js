@@ -14,12 +14,13 @@ var test = require('tap').test,
     fakeAWS = require('mock-aws-s3');
 
 var config = {
-    awsKey: 'fake',
-    awsSecret: 'fake',
+    accessKeyId: 'fake',
+    secretAccessKey: 'fake',
     table: 'geo',
     endpoint: 'http://localhost:4567',
     bucket: 'test',
     prefix: 'test',
+    region: 'neverland',
     s3: fakeAWS.S3() // only for mocking s3
 };
 
@@ -176,7 +177,7 @@ test('insert & delete', function(t) {
     cardboard.put(fixtures.nullIsland, 'default', function(err, primary) {
         t.equal(err, null);
         t.pass('inserted');
-        
+
         cardboard.get(primary, 'default', function(err, data) {
             t.equal(err, null);
             fixtures.nullIsland.id = primary;
@@ -230,7 +231,7 @@ test('listIds', function(t) {
     cardboard.put(fixtures.nullIsland, 'default', function(err, primary) {
         t.equal(err, null);
         t.pass('inserted');
-        
+
         cardboard.listIds('default', function(err, data) {
             var expected = [ 'id!' + primary ];
             t.deepEqual(data, expected);
@@ -320,7 +321,7 @@ test('insert & query', function(t) {
                 t.equal(cardboard.bboxQuery(query.query, 'default', function(err, resp) {
                     t.ifError(err, 'no error for ' + query.query.join(','));
                     if (err) return callback(err);
-                    
+
                     t.equal(resp.features.length, query.length, query.query.join(',') + ' finds ' + query.length + ' data with a query');
                     callback();
                 }), undefined, '.bboxQuery');
@@ -402,7 +403,7 @@ setup();
 test('insert idaho', function(t) {
     var cardboard = Cardboard(config);
     t.pass('inserting idaho');
-    
+
     var idaho = geojsonFixtures.featurecollection.idaho.features.filter(function(f) {
         return f.properties.GEOID === '16049960100';
     })[0];
@@ -737,7 +738,7 @@ test('metadata: adjust bounds', function(t) {
     function checkNewInfo(err, info) {
         t.ifError(err, 'get new metadata');
         var expected = {
-            id: 'metadata!' + dataset, 
+            id: 'metadata!' + dataset,
             dataset: dataset,
             west: initial.west < bbox[0] ? initial.west : bbox[0],
             south: initial.south < bbox[1] ? initial.south : bbox[1],
@@ -787,13 +788,13 @@ test('metadata: add a feature', function(t) {
             t.equal(info.count, initial.count + 1, 'correct feature count');
             t.equal(info.size, initial.size + expectedSize, 'correct size');
 
-            var expectedWest = expectedBounds[0] < initial.west ? 
+            var expectedWest = expectedBounds[0] < initial.west ?
                     expectedBounds[0] : initial.west,
-                expectedSouth = expectedBounds[1] < initial.south ? 
+                expectedSouth = expectedBounds[1] < initial.south ?
                     expectedBounds[1] : initial.south,
-                expectedEast = expectedBounds[2] > initial.east ? 
+                expectedEast = expectedBounds[2] > initial.east ?
                     expectedBounds[2] : initial.east,
-                expectedNorth = expectedBounds[3] > initial.north ? 
+                expectedNorth = expectedBounds[3] > initial.north ?
                     expectedBounds[3] : initial.north;
 
             t.equal(info.west, expectedWest, 'correct west');
@@ -1068,7 +1069,7 @@ test('insert idaho feature, update & check metadata', function(t) {
 
     var expectedSize;
     var expectedBounds = geojsonExtent({
-        type: 'FeatureCollection', 
+        type: 'FeatureCollection',
         features: [original, edited]
     });
 
