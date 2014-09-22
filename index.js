@@ -137,7 +137,7 @@ module.exports = function Cardboard(c) {
 
         dyno.query(query, opts, function(err, res) {
             if (err) return callback(err);
-            resolveFeatures(res, function(err, features) {
+            resolveFeatures(res.items, function(err, features) {
                 if (err) return callback(err);
                 callback(null, featureCollection(features));
             });

@@ -329,7 +329,17 @@ test('insert & query', function(t) {
         });
         q.awaitAll(function(err) {
             t.ifError(err, 'queries passed');
-            t.end();
+            t.equal(cardboard.list('default', function(err, resp) {
+                t.ifError(err, 'no error for list');
+                if (err) return callback(err);
+
+                var length = queries.reduce(function(memo, query) {
+                    return memo + query.length;
+                }, 0);
+                t.equal(resp.features.length, length, 'list finds ' + length + ' data with a query');
+                t.end();
+            }), undefined, '.list');
+
         });
     }
 });
