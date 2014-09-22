@@ -43,7 +43,7 @@ function setup() {
         dynalite.listen(4567, function() {
             t.pass('dynalite listening');
             var cardboard = Cardboard(config);
-            cardboard.createTable(config.table, function(err, resp){
+            cardboard.createTable(function(err, resp){
                 t.pass('table created');
                 t.end();
             });
