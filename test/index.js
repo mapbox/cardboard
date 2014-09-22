@@ -13,53 +13,16 @@ var test = require('tap').test,
     fixtures = require('./fixtures'),
     fakeAWS = require('mock-aws-s3');
 
-var config = {
-    accessKeyId: 'fake',
-    secretAccessKey: 'fake',
-    table: 'geo',
-    endpoint: 'http://localhost:4567',
-    bucket: 'test',
-    prefix: 'test',
-    region: 'us-east-1',
-    s3: fakeAWS.S3() // only for mocking s3
-};
+var s = require('./setup');
+var config = s.config;
+var dyno = s.dyno;
 
 var emptyFeatureCollection = {
     type: 'FeatureCollection',
     features: []
 };
 
-var dynalite, client, db;
-
-var dyno = require('dyno')(config);
-
-function setup() {
-    test('setup', function(t) {
-        dynalite = require('dynalite')({
-            createTableMs: 0,
-            updateTableMs: 0,
-            deleteTableMs: 0
-        });
-        dynalite.listen(4567, function() {
-            t.pass('dynalite listening');
-            var cardboard = Cardboard(config);
-            cardboard.createTable(config.table, function(err, resp){
-                t.pass('table created');
-                t.end();
-            });
-        });
-    });
-}
-
-function teardown() {
-    test('teardown', function(t) {
-        dynalite.close(function() {
-            t.end();
-        });
-    });
-}
-
-setup();
+test('setup', s.setup);
 test('tables', function(t) {
     dyno.listTables(function(err, res) {
         t.equal(err, null);
@@ -67,9 +30,9 @@ test('tables', function(t) {
         t.end();
     });
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('dump', function(t) {
     var cardboard = Cardboard(config);
     cardboard.dump(function(err, data) {
@@ -78,9 +41,9 @@ test('dump', function(t) {
         t.end();
     });
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('insert & dump', function(t) {
     var cardboard = Cardboard(config);
     var dataset = 'default';
@@ -95,9 +58,9 @@ test('insert & dump', function(t) {
         });
     });
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('insert, get by primary index', function(t) {
     var cardboard = Cardboard(config);
 
@@ -114,9 +77,9 @@ test('insert, get by primary index', function(t) {
         });
     });
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('insert, get by secondary index', function(t) {
     var cardboard = Cardboard(config);
 
@@ -140,9 +103,9 @@ test('insert, get by secondary index', function(t) {
        });
     }
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('insert & update', function(t) {
     var cardboard = Cardboard(config);
 
@@ -168,9 +131,9 @@ test('insert & update', function(t) {
         });
     });
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('insert & delete', function(t) {
     var cardboard = Cardboard(config);
 
@@ -194,10 +157,10 @@ test('insert & delete', function(t) {
         });
     });
 });
-teardown();
+test('teardown', s.teardown);
 
 
-setup();
+test('setup', s.setup);
 test('insert & delDataset', function(t) {
     var cardboard = Cardboard(config);
 
@@ -220,11 +183,11 @@ test('insert & delDataset', function(t) {
         });
     });
 });
-teardown();
+test('teardown', s.teardown);
 
 
 
-setup();
+test('setup', s.setup);
 test('listIds', function(t) {
     var cardboard = Cardboard(config);
 
@@ -239,9 +202,9 @@ test('listIds', function(t) {
         });
     });
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('export', function(t) {
     var cardboard = new Cardboard(config);
     var first = geojsonFixtures.featurecollection.idaho.features.slice(0, 10);
@@ -279,9 +242,9 @@ test('export', function(t) {
             });
     });
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('insert & query', function(t) {
     var queries = [
         {
@@ -333,9 +296,9 @@ test('insert & query', function(t) {
         });
     }
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('insert polygon', function(t) {
     var cardboard = Cardboard(config);
     cardboard.put(fixtures.haiti, 'default', inserted);
@@ -365,9 +328,9 @@ test('insert polygon', function(t) {
         q.awaitAll(function() { t.end(); });
     }
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('insert linestring', function(t) {
     var cardboard = Cardboard(config);
     cardboard.put(fixtures.haitiLine, 'default', inserted);
@@ -397,9 +360,9 @@ test('insert linestring', function(t) {
         q.awaitAll(function() { t.end(); });
     }
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('insert idaho', function(t) {
     var cardboard = Cardboard(config);
     t.pass('inserting idaho');
@@ -419,120 +382,9 @@ test('insert idaho', function(t) {
         });
     });
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
-test('queries along 0 lat/lon', function(t) {
-    var cardboard = Cardboard(config);
-    var dataset = 'default';
-
-    // Insert one feature per quadrant
-    var features = [[-1, 1], [1, 1], [1, -1], [-1, -1]].map(function(coords) {
-        return {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-                type: 'Point',
-                coordinates: coords
-            }
-        };
-    });
-
-    // Query in each quadrant + queries that just cross quadrant bounds
-    // all queries should return a single result
-    var queries = [
-        [-10, 0, 0, 10],
-        [-10, -0.5, 0.5, 10],
-        [0, 0, 10, 10],
-        [-0.5, -0.5, 10, 10],
-        [0, -10, 10, 0],
-        [-0.5, -10, 10, 0.5],
-        [-10, -10, 0, 0],
-        [-10, -10, 0.5, 0.5]
-    ];
-
-    var q = queue();
-    features.forEach(function(f) {
-        q.defer(cardboard.put, f, dataset);
-    });
-    q.awaitAll(function(err, res) {
-        t.ifError(err, 'inserted');
-        runQueries();
-    });
-
-    function runQueries() {
-        var q = queue();
-        queries.forEach(function(query) {
-            function deal(callback) {
-                cardboard.bboxQuery(query, dataset, function(err, res) {
-                    if (err) return callback(err);
-                    t.equal(res.features.length, 1, query.join(',') + ' returned one feature');
-                    callback();
-                });
-            }
-            q.defer(deal);
-        });
-        q.await(function(err) {
-            t.ifError(err, 'passed queries');
-            t.end();
-        })
-    }
-});
-teardown();
-
-// Test findability of a linestring crossing the prime meridian.
-//
-// There's a query on either side of lon 0 and two meridian-spanning
-// queries.
-setup();
-test('query for line crossing 0 lon', function(t) {
-    var cardboard = Cardboard(config);
-    var dataset = 'line-query';
-
-    var feature = {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-                type: 'LineString',
-                coordinates: [[-1, 1], [1, 1]]
-            }};
-
-    // all queries should return a single result
-    var queries = [
-        [-10, 0, 0, 10],
-        [-10, -0.5, 0.5, 10],
-        [0, 0, 10, 10],
-        [-0.5, -0.5, 10, 10],
-    ];
-
-    var q = queue();
-    q.defer(cardboard.put, feature, dataset);
-    q.awaitAll(function(err, res) {
-        t.ifError(err, 'inserted');
-        runQueries();
-    });
-
-    function runQueries() {
-        var q = queue();
-        queries.forEach(function(query) {
-            function deal(callback) {
-                cardboard.bboxQuery(query, dataset, function(err, res) {
-                    if (err) return callback(err);
-                    t.equal(res.features.length, 1, JSON.stringify(res));
-                    callback();
-                });
-            }
-            q.defer(deal);
-        });
-        q.await(function(err) {
-            t.ifError(err, 'passed queries');
-            t.end();
-        })
-    }
-});
-teardown();
-
-setup();
+test('setup', s.setup);
 test('insert datasets and listDatasets', function(t) {
     var cardboard = Cardboard(config);
     var q = queue(1);
@@ -560,9 +412,9 @@ test('insert datasets and listDatasets', function(t) {
         })
     }
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('update feature that doesnt exist.', function(t) {
     var cardboard = Cardboard(config);
     var q = queue(1);
@@ -579,7 +431,7 @@ test('update feature that doesnt exist.', function(t) {
         t.end();
     }
 });
-teardown();
+test('teardown', s.teardown);
 
 // Metadata tests
 var dataset = 'metadatatest';
@@ -595,7 +447,7 @@ var initial = {
         north: 10
     };
 
-setup();
+test('setup', s.setup);
 test('metadata: get', function(t) {
 
     metadata.getInfo(noMetadataYet);
@@ -615,9 +467,9 @@ test('metadata: get', function(t) {
         })
     }
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('metadata: defaultInfo', function(t) {
 
     metadata.defaultInfo(function(err, res) {
@@ -643,9 +495,9 @@ test('metadata: defaultInfo', function(t) {
         t.end();
     }
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('metadata: adjust size or count', function(t) {
 
     metadata.adjustProperties({ count: 10 }, function(err, res) {
@@ -708,9 +560,9 @@ test('metadata: adjust size or count', function(t) {
     }
 
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('metadata: adjust bounds', function(t) {
     var bbox = [-12.01, -9, 9, 12.01];
 
@@ -751,9 +603,9 @@ test('metadata: adjust bounds', function(t) {
         t.end();
     }
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('metadata: add a feature', function(t) {
     var feature = geojsonFixtures.feature.one;
     var expectedSize = JSON.stringify(feature).length;
@@ -806,9 +658,9 @@ test('metadata: add a feature', function(t) {
         });
     }
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('metadata: update a feature', function(t) {
     var original = geojsonFixtures.feature.one;
     var edited = geojsonFixtures.featurecollection.idaho.features[0];
@@ -846,9 +698,9 @@ test('metadata: update a feature', function(t) {
     }
 
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('metadata: remove a feature', function(t) {
     var feature = geojsonFixtures.feature.one;
     var expectedSize = JSON.stringify(feature).length;
@@ -883,9 +735,9 @@ test('metadata: remove a feature', function(t) {
         });
     }
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('metadata: calculate dataset info', function(t) {
     var cardboard = new Cardboard(config);
     var features = geojsonFixtures.featurecollection.idaho.features.slice(0, 50);
@@ -931,9 +783,9 @@ test('metadata: calculate dataset info', function(t) {
         });
     });
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('insert idaho & check metadata', function(t) {
     var cardboard = new Cardboard(config);
     t.pass('inserting idaho');
@@ -971,9 +823,9 @@ test('insert idaho & check metadata', function(t) {
         t.end();
     }
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('insert many idaho features & check metadata', function(t) {
     var cardboard = new Cardboard(config);
     var features = geojsonFixtures.featurecollection.idaho.features.slice(0, 50);
@@ -1014,9 +866,9 @@ test('insert many idaho features & check metadata', function(t) {
         t.end();
     }
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('insert many idaho features, delete one & check metadata', function(t) {
     var cardboard = new Cardboard(config);
     var features = geojsonFixtures.featurecollection.idaho.features.slice(0, 50);
@@ -1059,9 +911,9 @@ test('insert many idaho features, delete one & check metadata', function(t) {
         t.end();
     }
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('insert idaho feature, update & check metadata', function(t) {
     var cardboard = new Cardboard(config);
     var original = geojsonFixtures.featurecollection.idaho.features[0];
@@ -1112,9 +964,9 @@ test('insert idaho feature, update & check metadata', function(t) {
         t.end();
     }
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('delDataset removes metadata', function(t) {
     var cardboard = new Cardboard(config);
     dyno.putItem(initial, function(err) {
@@ -1131,9 +983,9 @@ test('delDataset removes metadata', function(t) {
         });
     }
 });
-teardown();
+test('teardown', s.teardown);
 
-setup();
+test('setup', s.setup);
 test('getDatasetInfo', function(t) {
     var cardboard = new Cardboard(config);
     dyno.putItem(initial, function(err) {
@@ -1147,4 +999,4 @@ test('getDatasetInfo', function(t) {
         t.end();
     }
 });
-teardown();
+test('teardown', s.teardown);
