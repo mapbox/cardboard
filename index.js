@@ -113,9 +113,9 @@ module.exports = function Cardboard(c) {
         });
     };
 
-    cardboard.createTable = function(tableName, callback) {
+    cardboard.createTable = function(callback) {
         var table = require('./lib/table.json');
-        table.TableName = tableName;
+        table.TableName = c.table;
         dyno.createTable(table, callback);
     };
 
