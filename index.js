@@ -176,16 +176,21 @@ module.exports = function Cardboard(c) {
         Metadata(dyno, dataset).calculateInfo(callback);
     };
 
+    // Return features that overlap or are within a bounding box.
     cardboard.bboxQuery = function(input, dataset, callback) {
+
         var q = queue(100);
+
+        var bbox = _.clone(input);
+        if (bbox.length === 2) bbox.push(bbox[0], bbox[1]);
 
         // Force queries that touch the equator/prime meridian into one of
         // four quadrants
-        var bbox = _.clone(input);
-        if (bbox[0] === 0) bbox[0] = 0.00000001;
-        if (bbox[1] === 0) bbox[1] = 0.00000001;
-        if (bbox[2] === 0) bbox[2] = -0.00000001;
-        if (bbox[3] === 0) bbox[3] = -0.00000001;
+        var offset = 1E-8;
+        if (bbox[0] === 0) bbox[0] = offset;
+        if (bbox[1] === 0) bbox[1] = offset;
+        if (bbox[2] === 0) bbox[2] = -offset;
+        if (bbox[3] === 0) bbox[3] = -offset;
 
         // If a query crosses the equator/prime meridian, we need to split it
         // into separate queries. Otherwise we will end up querying the z0 tile
@@ -194,14 +199,14 @@ module.exports = function Cardboard(c) {
         var splitY = bbox[1] < 0 && bbox[3] > 0;
 
         if (splitX) bboxes = bboxes.reduce(function(memo, bbox) {
-            memo.push([bbox[0], bbox[1], -0.0001, bbox[3]]);
-            memo.push([0.0001, bbox[1], bbox[2], bbox[3]]);
+            memo.push([bbox[0], bbox[1], -offset, bbox[3]]);
+            memo.push([offset, bbox[1], bbox[2], bbox[3]]);
             return memo;
         }, []);
 
         if (splitY) bboxes = bboxes.reduce(function(memo, bbox) {
-            memo.push([bbox[0], bbox[1], bbox[2], -0.0001]);
-            memo.push([bbox[0], 0.0001, bbox[2], bbox[3]]);
+            memo.push([bbox[0], bbox[1], bbox[2], -offset]);
+            memo.push([bbox[0], offset, bbox[2], bbox[3]]);
             return memo;
         }, []);
 
