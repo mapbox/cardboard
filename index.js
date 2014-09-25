@@ -231,13 +231,15 @@ module.exports = function Cardboard(c) {
             q.defer(dyno.query, query, options);
 
             // Travel up the parent tiles, finding features indexed in each
-            var parentTile = tilebelt.getParent(tile);
+            var parentTileKey = tileKey.slice(0, -1);
 
-
-            while (parentTile[2] > -1) {
-                query.cell = { 'EQ': 'cell!' + tilebelt.tileToQuadkey(parentTile) };
+            while (tileKey.length > 0) {
+                query.cell = { 'EQ': 'cell!' + parentTileKey };
                 q.defer(dyno.query, query, options);
-                parentTile = tilebelt.getParent(parentTile);
+                if (parentTileKey.length == 0) {
+                    break;
+                }
+                parentTileKey = parentTileKey.slice(0, -1);
             }
         });
 
