@@ -180,3 +180,62 @@ test('query for line crossing 0 lon s of eq', function(t) {
     }
 });
 test('teardown', s.teardown);
+
+// Test findability of a linestring near 90dW N of the equator.
+test('setup', s.setup);
+test('query for line near -90 lon n of eq', function(t) {
+    var cardboard = Cardboard(config);
+    var dataset = 'line-query';
+
+    // tile for this feature: [ 31, 63, 7 ]
+    var wanted_feature = {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+                type: 'LineString',
+                coordinates: [[-92, 1], [-91, 1]]
+            }};
+
+    // tile for this feature: [0, 0, 0]
+    var unwanted_feature = {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+                type: 'LineString',
+                coordinates: [[-1, 1], [1, 1]]
+            }};
+
+    // all queries should return a single result
+    var queries = [
+        [-93, 0, -90, 2],           // [0, 0, 0] -- right answer only because
+                                    // of query filters.
+        [-92.5, 0.5, -90.5, 1.5]    // [ 31, 63, 7 ]
+    ];
+
+    var q = queue();
+    q.defer(cardboard.put, wanted_feature, dataset);
+    q.defer(cardboard.put, unwanted_feature, dataset);
+    q.awaitAll(function(err, res) {
+        t.ifError(err, 'inserted');
+        runQueries();
+    });
+
+    function runQueries() {
+        var q = queue();
+        queries.forEach(function(query) {
+            function deal(callback) {
+                cardboard.bboxQuery(query, dataset, function(err, res) {
+                    if (err) return callback(err);
+                    t.equal(res.features.length, 1, query.join(',') + ' returned one feature');
+                    callback();
+                });
+            }
+            q.defer(deal);
+        });
+        q.await(function(err) {
+            t.ifError(err, 'passed queries');
+            t.end();
+        })
+    }
+});
+test('teardown', s.teardown);
