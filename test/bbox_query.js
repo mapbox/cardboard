@@ -65,12 +65,13 @@ test('queries along 0 lat/lon', function(t) {
 });
 test('teardown', s.teardown);
 
-// Test findability of a linestring crossing the prime meridian.
+// Test findability of a linestring crossing the prime meridian west to east
+// N of the equator.
 //
 // There's a query on either side of lon 0 and two meridian-spanning
 // queries.
 test('setup', s.setup);
-test('query for line crossing 0 lon', function(t) {
+test('query for line crossing 0 lon n of eq', function(t) {
     var cardboard = Cardboard(config);
     var dataset = 'line-query';
 
@@ -85,9 +86,72 @@ test('query for line crossing 0 lon', function(t) {
     // all queries should return a single result
     var queries = [
         [-10, 0, 0, 10],
+        [-0.75, 0.75, -0.25, 1.25], 
         [-10, -0.5, 0.5, 10],
         [0, 0, 10, 10],
+        [0.25, 0.75, 0.75, 1.25],
         [-0.5, -0.5, 10, 10],
+        [-1E-6, 1-1E-6, 1E+6, 1+1E+6],
+        [ -180, -85.05112877980659, 0, 85.0511287798066 ],
+        [ -180, -85.05112877980659, 1, 85.0511287798066 ]
+    ];
+
+    var q = queue();
+    q.defer(cardboard.put, feature, dataset);
+    q.awaitAll(function(err, res) {
+        t.ifError(err, 'inserted');
+        runQueries();
+    });
+
+    function runQueries() {
+        var q = queue();
+        queries.forEach(function(query) {
+            function deal(callback) {
+                cardboard.bboxQuery(query, dataset, function(err, res) {
+                    if (err) return callback(err);
+                    t.equal(res.features.length, 1, query.join(',') + ' returned one feature');
+                    callback();
+                });
+            }
+            q.defer(deal);
+        });
+        q.await(function(err) {
+            t.ifError(err, 'passed queries');
+            t.end();
+        })
+    }
+});
+test('teardown', s.teardown);
+
+// Test findability of a linestring crossing the prime meridian west to east
+// S of the equator.
+//
+// There's a query on either side of lon 0 and two meridian-spanning
+// queries.
+test('setup', s.setup);
+test('query for line crossing 0 lon s of eq', function(t) {
+    var cardboard = Cardboard(config);
+    var dataset = 'line-query';
+
+    var feature = {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+                type: 'LineString',
+                coordinates: [[-1, -1], [1, -1]]
+            }};
+
+    // all queries should return a single result
+    var queries = [
+        [-10, -10, 0, 0],
+        [-0.75, -1.25, -0.25, -0.75], 
+        [-10, -9.5, 0.5, 0.5],
+        [0, -10, 10, 0],
+        [0.25, -1.25, 0.75, -0.75],
+        [-0.5, -9.5, 10, 10],
+        [-1E-6, -1-1E-6, 1E+6, -1+1E+6],
+        [ -180, -85.05112877980659, 0, 85.0511287798066 ],
+        [ -180, -85.05112877980659, 1, 85.0511287798066 ]
     ];
 
     var q = queue();
