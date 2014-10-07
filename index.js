@@ -1,4 +1,3 @@
-var s2 = require('s2');
 var through = require('through2');
 var _ = require('lodash');
 var geojsonStream = require('geojson-stream');
