@@ -35,9 +35,9 @@ test('teardown', s.teardown);
 test('setup', s.setup);
 test('dump', function(t) {
     var cardboard = Cardboard(config);
-    cardboard.dump(function(err, data) {
+    cardboard.dump(function(err, items) {
         t.equal(err, null);
-        t.deepEqual(data.items, [], 'no results with a new database');
+        t.deepEqual(items, [], 'no results with a new database');
         t.end();
     });
 });
@@ -53,7 +53,7 @@ test('insert & dump', function(t) {
         t.pass('inserted');
         cardboard.dump(function(err, data) {
             t.equal(err, null);
-            t.equal(data.items.length, 1, 'creates data');
+            t.equal(data.length, 1, 'creates data');
             t.end();
         });
     });
@@ -147,7 +147,7 @@ test('insert & delete', function(t) {
             t.deepEqual(data, geojsonNormalize(fixtures.nullIsland));
             delete fixtures.nullIsland.id;
             cardboard.del(primary, 'default', function(err, data) {
-                t.ifError(err, 'removed')
+                t.ifError(err, 'removed');
                 cardboard.get(primary, 'default', function(err, data) {
                     t.equal(err, null);
                     t.deepEqual(data, emptyFeatureCollection);
@@ -405,21 +405,21 @@ test('insert datasets and listDatasets', function(t) {
     });
     q.defer(function(cb) {
         cardboard.put(fixtures.dc, 'dc', function(){
-            cb()
+            cb();
         });
     });
 
-    q.awaitAll(getDatasets)
+    q.awaitAll(getDatasets);
 
     function getDatasets(){
         cardboard.listDatasets(function(err, res){
-            t.notOk(err, 'should not return an error')
+            t.notOk(err, 'should not return an error');
             t.ok(res, 'should return a array of datasets');
-            t.equal(res.length, 2)
-            t.equal(res[0], 'dc')
-            t.equal(res[1], 'haiti')
+            t.equal(res.length, 2);
+            t.equal(res[0], 'dc');
+            t.equal(res[1], 'haiti');
             t.end();
-        })
+        });
     }
 });
 test('teardown', s.teardown);
@@ -474,7 +474,7 @@ test('metadata: get', function(t) {
             t.ifError(err, 'get metadata');
             t.deepEqual(info, initial, 'valid metadata');
             t.end();
-        })
+        });
     }
 });
 test('teardown', s.teardown);
@@ -756,7 +756,7 @@ test('metadata: calculate dataset info', function(t) {
     var q = queue();
     features.forEach(function(f) {
         q.defer(cardboard.put, f, dataset);
-    })
+    });
     q.awaitAll(function(err, ids) {
         t.ifError(err, 'inserted');
 
@@ -827,7 +827,7 @@ test('insert idaho & check metadata', function(t) {
             north : info.north,
             count : 1,
             size : info.size
-        }
+        };
         t.ok(info.updated, 'has updated date');
         t.deepEqual(_.omit(info, 'updated'), expected, 'expected metadata');
         t.end();
@@ -870,7 +870,7 @@ test('insert many idaho features & check metadata', function(t) {
           north : expectedBounds[3],
           count : features.length,
           size : expectedSize
-        }
+        };
         t.ok(info.updated, 'has updated date');
         t.deepEqual(_.omit(info, 'updated'), expected, 'expected metadata');
         t.end();

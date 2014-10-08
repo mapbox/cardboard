@@ -31,9 +31,9 @@ module.exports.setup = function(t) {
             t.end();
         });
     });
-}
+};
 
 module.exports.teardown = function(t) {
     dynalite.close();
     t.end();
-}
+};
