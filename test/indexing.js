@@ -17,10 +17,12 @@ var s = require('./setup');
 var config = s.config;
 var dyno = s.dyno;
 
-var emptyFeatureCollection = {
-    type: 'FeatureCollection',
-    features: []
-};
+function featureCollection(features) {
+    return  {
+        type: 'FeatureCollection',
+        features: features || []
+    };
+}
 
 test('setup', s.setup);
 test('tables', function(t) {
@@ -83,11 +85,12 @@ test('setup', s.setup);
 test('insert, get by secondary index', function(t) {
     var cardboard = Cardboard(config);
 
-    queue(1)
-        .defer(cardboard.put, fixtures.haiti, 'haiti')
-        .defer(cardboard.put, fixtures.haiti, 'haiti')
-        .defer(cardboard.put, fixtures.haitiLine, 'haiti')
-        .awaitAll(get);
+    cardboard.put(
+        featureCollection([
+            _.clone(fixtures.haiti),
+            _.clone(fixtures.haiti),
+            _.clone(fixtures.haitiLine)
+        ]), 'haiti', get);
 
     function get(err, ids) {
        t.ifError(err, 'inserted');
@@ -109,18 +112,17 @@ test('setup', s.setup);
 test('insert & update', function(t) {
     var cardboard = Cardboard(config);
 
-    cardboard.put(fixtures.haitiLine, 'default', function(err, res) {
+    cardboard.put(fixtures.haitiLine, 'default', function(err, primary) {
         t.equal(err, null);
-        var primary = res;
 
         t.ok(primary, 'got id');
         t.pass('inserted');
-        update = _.defaults({ id: primary }, fixtures.haitiLine);
+        update = _.defaults({ id: primary[0] }, fixtures.haitiLine);
         update.geometry.coordinates[0][0] = -72.588671875;
 
         cardboard.put(update, 'default', function(err, res) {
             t.equal(err, null);
-            t.equal(res, primary, 'same id returned');
+            t.equal(res[0], primary[0], 'same id returned');
 
             cardboard.get(primary, 'default', function(err, data) {
                 t.ifError(err, 'got record');
@@ -136,21 +138,20 @@ test('teardown', s.teardown);
 test('setup', s.setup);
 test('insert & delete', function(t) {
     var cardboard = Cardboard(config);
-
-    cardboard.put(fixtures.nullIsland, 'default', function(err, primary) {
+    var nullIsland = _.clone(fixtures.nullIsland);
+    cardboard.put(nullIsland, 'default', function(err, primary) {
         t.equal(err, null);
         t.pass('inserted');
 
         cardboard.get(primary, 'default', function(err, data) {
             t.equal(err, null);
-            fixtures.nullIsland.id = primary;
-            t.deepEqual(data, geojsonNormalize(fixtures.nullIsland));
-            delete fixtures.nullIsland.id;
+            nullIsland.id = primary[0];
+            t.deepEqual(data, geojsonNormalize(nullIsland));
             cardboard.del(primary, 'default', function(err, data) {
                 t.ifError(err, 'removed');
-                cardboard.get(primary, 'default', function(err, data) {
+                cardboard.get(primary[0], 'default', function(err, data) {
                     t.equal(err, null);
-                    t.deepEqual(data, emptyFeatureCollection);
+                    t.deepEqual(data, featureCollection());
                     t.end();
                 });
             });
@@ -169,12 +170,12 @@ test('insert & delDataset', function(t) {
         t.pass('inserted');
         cardboard.get(primary, 'default', function(err, data) {
             t.equal(err, null);
-            fixtures.nullIsland.id = primary;
-            t.deepEqual(data, geojsonNormalize(fixtures.nullIsland));
-            delete fixtures.nullIsland.id;
+            var nullIsland = _.clone(fixtures.nullIsland)
+            nullIsland.id = primary[0];
+            t.deepEqual(data, geojsonNormalize(nullIsland));
             cardboard.delDataset('default', function(err, data) {
                 t.equal(err, null);
-                cardboard.get(primary, 'default', function(err, data) {
+                cardboard.get(primary[0], 'default', function(err, data) {
                     t.equal(err, null);
                     t.deepEqual(data.features.length, 0);
                     t.end();
@@ -427,19 +428,38 @@ test('teardown', s.teardown);
 test('setup', s.setup);
 test('update feature that doesnt exist.', function(t) {
     var cardboard = Cardboard(config);
-    var q = queue(1);
+    var haiti = _.clone(fixtures.haiti)
+    haiti.id = 'doesntexist';
 
-    fixtures.haiti.id = 'doesntexist';
-
-    cardboard.put(fixtures.haiti, 'default', failUpdate);
+    cardboard.put(haiti, 'default', failUpdate);
 
     function failUpdate(err, id) {
         t.ok(err, 'should return an error');
-        t.equal(id, fixtures.haiti.id, 'should return id that failed');
         t.equal(err.message, 'Feature does not exist');
-        delete fixtures.haiti.id;
         t.end();
     }
+});
+test('teardown', s.teardown);
+
+test('setup', s.setup);
+test('mix of failing update and an insert', function(t) {
+    var cardboard = Cardboard(config);
+    var haiti = _.clone(fixtures.haiti)
+    haiti.id = 'doesntexist';
+
+    cardboard.put(featureCollection([haiti, fixtures.haiti]), 'default', failUpdate);
+
+    function failUpdate(err, id) {
+        t.ok(err, 'should return an error');
+        t.equal(err.message, 'Feature does not exist');
+
+        cardboard.dump(function(err, items) {
+            t.equal(err, null);
+            t.deepEqual(items, [], 'nothing should have been put in the database');
+            t.end();
+        });
+    }
+
 });
 test('teardown', s.teardown);
 
@@ -753,11 +773,7 @@ test('metadata: calculate dataset info', function(t) {
     var features = geojsonFixtures.featurecollection.idaho.features.slice(0, 50);
     var expectedBounds = geojsonExtent({ type: 'FeatureCollection', features: features });
 
-    var q = queue();
-    features.forEach(function(f) {
-        q.defer(cardboard.put, f, dataset);
-    });
-    q.awaitAll(function(err, ids) {
+    cardboard.put(featureCollection(features), dataset, function(err, ids) {
         t.ifError(err, 'inserted');
 
         features = features.map(function(f, i) {
