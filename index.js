@@ -1,7 +1,7 @@
 var through = require('through2');
 var _ = require('lodash');
 var geojsonStream = require('geojson-stream');
-var geojsonNormalize = require('geojson-normalize')
+var geojsonNormalize = require('geojson-normalize');
 var concat = require('concat-stream');
 var coverOpts = require('./lib/coveropts');
 var Metadata = require('./lib/metadata');
@@ -89,10 +89,10 @@ module.exports = function Cardboard(c) {
     cardboard.get = function(primary, dataset, callback) {
         var key = { dataset: dataset, id: 'id!' + primary };
 
-        dyno.getItem(key, function(err, res) {
+        dyno.getItem(key, function(err, item) {
             if (err) return callback(err);
-            if (!res.Item) return callback(null, featureCollection());
-            resolveFeature(res.Item, function(err, feature) {
+            if (!item) return callback(null, featureCollection());
+            resolveFeature(item, function(err, feature) {
                 if (err) return callback(err);
                 callback(null, featureCollection([feature]));
             });
@@ -103,9 +103,9 @@ module.exports = function Cardboard(c) {
         var query = { dataset: { EQ: dataset }, usid: { EQ: id } },
             opts = { index: 'usid', attributes: ['val', 's3url'], pages: 0 };
 
-        dyno.query(query, opts, function(err, res) {
+        dyno.query(query, opts, function(err, item) {
             if (err) return callback(err);
-            resolveFeatures(res.items, function(err, features) {
+            resolveFeatures(item, function(err, features) {
                 if (err) return callback(err);
                 callback(null, featureCollection(features));
             });
@@ -134,9 +134,9 @@ module.exports = function Cardboard(c) {
         var query = { dataset: { EQ: dataset }, id: { BEGINS_WITH: 'id!' } },
             opts = { pages: 0 };
 
-        dyno.query(query, opts, function(err, res) {
+        dyno.query(query, opts, function(err, items) {
             if (err) return callback(err);
-            resolveFeatures(res.items, function(err, features) {
+            resolveFeatures(items, function(err, features) {
                 if (err) return callback(err);
                 callback(null, featureCollection(features));
             });
@@ -147,9 +147,9 @@ module.exports = function Cardboard(c) {
         var query = { dataset: { EQ: dataset } },
             opts = { attributes: ['id'], pages: 0 };
 
-        dyno.query(query, opts, function(err, res) {
+        dyno.query(query, opts, function(err, items) {
             if (err) return callback(err);
-            callback(err, res.items.map(function(_) {
+            callback(err, items.map(function(_) {
                 return _.id;
             }));
         });
@@ -158,9 +158,9 @@ module.exports = function Cardboard(c) {
     cardboard.listDatasets = function(callback) {
         var opts = { attributes: ['dataset'], pages:0 };
 
-        dyno.scan(opts, function(err, res) {
+        dyno.scan(opts, function(err, items) {
             if (err) return callback(err);
-            var datasets = _.uniq(res.items.map(function(item){
+            var datasets = _.uniq(items.map(function(item){
                 return item.dataset;
             }));
             callback(err, datasets);
@@ -236,27 +236,25 @@ module.exports = function Cardboard(c) {
             while (tileKey.length > 0) {
                 query.cell = { 'EQ': 'cell!' + parentTileKey };
                 q.defer(dyno.query, query, options);
-                if (parentTileKey.length == 0) {
+                if (parentTileKey.length === 0) {
                     break;
                 }
                 parentTileKey = parentTileKey.slice(0, -1);
             }
         });
 
-        q.awaitAll(function(err, res) {
+        q.awaitAll(function(err, items) {
             if (err) return callback(err);
 
-            var resp = _.flatten(res.map(function(r) {
-                return r.items;
-            }));
+            items = _.flatten(items);
 
             // Reduce the response's records to the set of
             // records with unique ids.
-            uniq(resp, function(a, b) {
-                return a.id !== b.id
+            uniq(items, function(a, b) {
+                return a.id !== b.id;
             });
 
-            resolveFeatures(resp, function(err, data) {
+            resolveFeatures(items, function(err, data) {
                 if (err) return callback(err);
                 callback(err, featureCollection(data));
             });

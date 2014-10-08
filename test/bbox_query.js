@@ -60,7 +60,7 @@ test('queries along 0 lat/lon', function(t) {
         q.await(function(err) {
             t.ifError(err, 'passed queries');
             t.end();
-        })
+        });
     }
 });
 test('teardown', s.teardown);
@@ -86,7 +86,7 @@ test('query for line crossing 0 lon n of eq', function(t) {
     // all queries should return a single result
     var queries = [
         [-10, 0, 0, 10],
-        [-0.75, 0.75, -0.25, 1.25], 
+        [-0.75, 0.75, -0.25, 1.25],
         [-10, -0.5, 0.5, 10],
         [0, 0, 10, 10],
         [0.25, 0.75, 0.75, 1.25],
@@ -118,7 +118,7 @@ test('query for line crossing 0 lon n of eq', function(t) {
         q.await(function(err) {
             t.ifError(err, 'passed queries');
             t.end();
-        })
+        });
     }
 });
 test('teardown', s.teardown);
@@ -144,7 +144,7 @@ test('query for line crossing 0 lon s of eq', function(t) {
     // all queries should return a single result
     var queries = [
         [-10, -10, 0, 0],
-        [-0.75, -1.25, -0.25, -0.75], 
+        [-0.75, -1.25, -0.25, -0.75],
         [-10, -9.5, 0.5, 0.5],
         [0, -10, 10, 0],
         [0.25, -1.25, 0.75, -0.75],
@@ -176,7 +176,7 @@ test('query for line crossing 0 lon s of eq', function(t) {
         q.await(function(err) {
             t.ifError(err, 'passed queries');
             t.end();
-        })
+        });
     }
 });
 test('teardown', s.teardown);
@@ -235,7 +235,7 @@ test('query for line near -90 lon n of eq', function(t) {
         q.await(function(err) {
             t.ifError(err, 'passed queries');
             t.end();
-        })
+        });
     }
 });
 test('teardown', s.teardown);
