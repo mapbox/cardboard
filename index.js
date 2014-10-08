@@ -36,16 +36,34 @@ module.exports = function Cardboard(c) {
 
     cardboard.put = function(featureCollection, dataset, callback) {
         var featureCollection = geojsonNormalize(featureCollection);
-        var q = queue(20);
 
         // if the feature is an update, check upfront that they exist, we can fail them
         // early.
-
-        featureCollection.features.forEach(function(f){
-            q.defer(putFeature, f, dataset);
+        var q = queue();
+        featureCollection.features.forEach(function(f) {
+            if (f.id) {
+                var key = { dataset: dataset, id: 'id!' + f.id };
+                q.defer(dyno.getItem, key);
+            }
         });
 
-        q.awaitAll(callback);
+        q.awaitAll(function(err, res) {
+            if (err) return callback(err);
+            for(var i = 0; i< res.length; i++) {
+                if(!res[i]) return callback(new Error('Feature does not exist'));
+            }
+            doPut();
+        });
+
+        function doPut(){
+            var q = queue(20);
+
+            featureCollection.features.forEach(function(f) {
+                q.defer(putFeature, f, dataset);
+            });
+            q.awaitAll(callback);
+        }
+
     };
     function putFeature(feature, dataset, callback) {
         var isUpdate = feature.hasOwnProperty('id'),
