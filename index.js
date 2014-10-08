@@ -33,7 +33,21 @@ module.exports = function Cardboard(c) {
     if (!c.prefix) throw new Error('No s3 prefix set');
     var prefix = c.prefix;
 
-    cardboard.put = function(feature, dataset, callback) {
+
+    cardboard.put = function(featureCollection, dataset, callback) {
+        var featureCollection = geojsonNormalize(featureCollection);
+        var q = queue(20);
+
+        // if the feature is an update, check upfront that they exist, we can fail them
+        // early.
+
+        featureCollection.features.forEach(function(f){
+            q.defer(putFeature, f, dataset);
+        });
+
+        q.awaitAll(callback);
+    };
+    function putFeature(feature, dataset, callback) {
         var isUpdate = feature.hasOwnProperty('id'),
             f = isUpdate ? _.clone(feature) : _.extend({ id: cuid() }, feature),
             metadata = Metadata(dyno, dataset),
@@ -75,7 +89,7 @@ module.exports = function Cardboard(c) {
             }
             callback(err, primary);
         });
-    };
+    }
 
     cardboard.del = function(primary, dataset, callback) {
         var key = { dataset: dataset, id: 'id!' + primary };
