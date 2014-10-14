@@ -207,23 +207,16 @@ module.exports = function Cardboard(c) {
         Metadata(dyno, dataset).calculateInfo(callback);
     };
 
-    cardboard.bboxQuery = function(input, dataset, callback) {
+    cardboard.bboxQuery = function(bbox, dataset, callback) {
         var q = queue(100);
 
-        // Force queries that touch the equator/prime meridian into one of
-        // four quadrants
-        var offset = 1E-8;
-        var bbox = _.clone(input);
-        if (bbox[0] === 0) bbox[0] = offset;
-        if (bbox[1] === 0) bbox[1] = offset;
-        if (bbox[2] === 0) bbox[2] = -offset;
-        if (bbox[3] === 0) bbox[3] = -offset;
-
-        // If a query crosses the equator/prime meridian, we need to split it
-        // into separate queries. Otherwise we will end up querying the z0 tile
+        // If a query crosses the equator/prime meridian, we split it
+        // into separate queries to reduce overall throughput.
         var bboxes = [bbox];
-        var splitX = bbox[0] < 0 && bbox[2] > 0;
-        var splitY = bbox[1] < 0 && bbox[3] > 0;
+        var splitX = bbox[0] <= 0 && bbox[2] >= 0;
+        var splitY = bbox[1] <= 0 && bbox[3] >= 0;
+
+        var offset = 1E-8;
 
         if (splitX) bboxes = bboxes.reduce(function(memo, bbox) {
             memo.push([bbox[0], bbox[1], -offset, bbox[3]]);
@@ -241,6 +234,18 @@ module.exports = function Cardboard(c) {
             return tilebelt.bboxToTile(bbox);
         });
 
+        // Deduplicate subquery tiles.
+        uniq(tiles, function(a, b) {
+                return !tilebelt.tilesEqual(a, b);
+            });
+
+        if (tiles.length > 1) {
+            // Filter out the z0 tile -- we'll always search it eventually.
+            tiles = _.filter(tiles, function(item) {
+                return item[2] !== 0;
+                });
+        }
+
         tiles.forEach(function(tile) {
             var tileKey = tilebelt.tileToQuadkey(tile);
 
@@ -254,10 +259,10 @@ module.exports = function Cardboard(c) {
                 pages: 0,
                 index: 'cell',
                 filter : {
-                    west: { 'LE': input[2] },
-                    east: { 'GE': input[0] },
-                    north: { 'GE': input[1] },
-                    south: { 'LE': input[3] }
+                    west: { 'LE': bbox[2] },
+                    east: { 'GE': bbox[0] },
+                    north: { 'GE': bbox[1] },
+                    south: { 'LE': bbox[3] }
                 }
             };
             q.defer(dyno.query, query, options);
