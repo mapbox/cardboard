@@ -237,9 +237,19 @@ module.exports = function Cardboard(c) {
             return memo;
         }, []);
 
-        var tiles = bboxes.map(function(bbox) {
+        var split_tiles = bboxes.map(function(bbox) {
             return tilebelt.bboxToTile(bbox);
         });
+
+        // Dedupe.
+        var tiles = _.clone(split_tiles);
+        uniq(tiles, function(a, b) {
+                return !tilebelt.tilesEqual(a, b);
+            });
+
+        if (tiles.length != split_tiles.length) {
+            console.log(JSON.stringify(split_tiles) + " deduped to " + JSON.stringify(tiles));
+        }
 
         tiles.forEach(function(tile) {
             var tileKey = tilebelt.tileToQuadkey(tile);
