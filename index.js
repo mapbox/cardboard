@@ -65,6 +65,7 @@ module.exports = function Cardboard(c) {
         }
 
     };
+
     function putFeature(feature, dataset, callback) {
         var isUpdate = feature.hasOwnProperty('id'),
             f = isUpdate ? _.clone(feature) : _.extend({ id: cuid() }, feature),
@@ -84,10 +85,10 @@ module.exports = function Cardboard(c) {
             id: 'id!' + primary,
             cell: 'cell!' + cell,
             size: info.size,
-            west: info.west,
-            south: info.south,
-            east: info.east,
-            north: info.north,
+            west: truncateNum(info.west),
+            south: truncateNum(info.south),
+            east: truncateNum(info.east),
+            north: truncateNum(info.north),
             s3url: ['s3:/', bucket, s3Key].join('/')
         };
 
@@ -358,4 +359,10 @@ function featureCollection(features) {
         type: 'FeatureCollection',
         features: features || []
     };
+}
+
+function truncateNum(num, digits) {
+    digits = digits || 6;
+    var exp = Math.pow(10, digits);
+    return Math.round(exp * num) / exp;
 }
