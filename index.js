@@ -91,7 +91,7 @@ module.exports = function Cardboard(c) {
             s3url: ['s3:/', bucket, s3Key].join('/')
         };
 
-        if (f.properties.id) item.usid = f.properties.id;
+        if (f.properties.id) item.usid = f.properties.id.toString();
         if (buf.length < MAX_GEOMETRY_SIZE) item.val = buf;
 
         var condition = { expected: {} };
