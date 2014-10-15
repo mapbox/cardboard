@@ -82,6 +82,32 @@ test('insert, get by primary index', function(t) {
 test('teardown', s.teardown);
 
 test('setup', s.setup);
+test('insert non-string usid', function(t) {
+    var cardboard = Cardboard(config);
+    cardboard.put(featureCollection([
+        {
+            type: 'Feature',
+            properties: {
+                id: 1234,
+                up: 'and down'
+            },
+            geometry: {
+                type: 'Point',
+                coordinates: [0,0]
+            }
+        }
+    ]), 'test', function(err, ids) {
+        t.ifError(err, 'insert did not error');
+        cardboard.getBySecondaryId('1234', 'test', function(err, res) {
+            t.ifError(err, 'found item');
+            t.equal(res.features[0].properties.up, 'and down', 'correct feature');
+            t.end();
+        });
+    });
+});
+test('teardown', s.teardown);
+
+test('setup', s.setup);
 test('insert, get by secondary index', function(t) {
     var cardboard = Cardboard(config);
 
