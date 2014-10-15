@@ -230,9 +230,14 @@ module.exports = function Cardboard(c) {
             return memo;
         }, []);
 
-        var tiles = bboxes.map(function(bbox) {
-            return tilebelt.bboxToTile(bbox);
-        });
+        var tiles = uniq(
+            bboxes.map(function(bbox) { return tilebelt.bboxToTile(bbox); }),
+            function(a, b) { return !tilebelt.tilesEqual(a, b); });
+
+        // Dedupe.
+        uniq(tiles, function(a, b) {
+                return !tilebelt.tilesEqual(a, b);
+            });
 
         // Deduplicate subquery tiles.
         uniq(tiles, function(a, b) {
