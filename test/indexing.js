@@ -82,6 +82,36 @@ test('insert, get by primary index', function(t) {
 test('teardown', s.teardown);
 
 test('setup', s.setup);
+test('insert wildly precise feature', function(t) {
+    var cardboard = Cardboard(config);
+    var d = {
+            "geometry": {
+            "coordinates": [
+                0.987654321,
+                0.123456789
+            ],
+            "type": "Point"
+        },
+        "properties": {},
+        "type": "Feature"
+    };
+
+    cardboard.put(d, 'default', function(err, res) {
+        t.ifError(err, 'inserted without error');
+        dyno.getItem({ dataset: 'default', id: 'id!' + res[0] }, function(err, item) {
+            t.ifError(err, 'got item');
+            if (err) return t.end();
+            t.equal(item.west, 0.987654, 'correct west attr');
+            t.equal(item.east, 0.987654, 'correct east attr');
+            t.equal(item.north, 0.123457, 'correct north attr');
+            t.equal(item.south, 0.123457, 'correct south attr');
+            t.end();
+        });
+    });
+});
+test('teardown', s.teardown);
+
+test('setup', s.setup);
 test('insert non-string usid', function(t) {
     var cardboard = Cardboard(config);
     cardboard.put(featureCollection([
