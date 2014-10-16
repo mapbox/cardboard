@@ -69,10 +69,17 @@ module.exports = function Cardboard(c) {
     function putFeature(feature, dataset, callback) {
         var isUpdate = feature.hasOwnProperty('id'),
             f = isUpdate ? _.clone(feature) : _.extend({ id: cuid() }, feature),
-            metadata = Metadata(dyno, dataset),
+            primary = f.id;
+
+        if (!f.geometry || !f.geometry.coordinates) {
+            var msg = 'Unlocated features can not be stored.'
+            var err = new Error(msg);
+            return callback(err, primary);
+        }
+
+        var metadata = Metadata(dyno, dataset),
             info = metadata.getFeatureInfo(f),
             timestamp = (+new Date()),
-            primary = f.id,
             buf = geobuf.featureToGeobuf(f).toBuffer(),
             tile = tilebelt.bboxToTile([info.west, info.south, info.east, info.north]),
             cell = tilebelt.tileToQuadkey(tile),

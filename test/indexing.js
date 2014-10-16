@@ -82,6 +82,39 @@ test('insert, get by primary index', function(t) {
 test('teardown', s.teardown);
 
 test('setup', s.setup);
+test('insert feature with no geometry', function(t) {
+    var cardboard = Cardboard(config);
+    var d = {
+        "properties": {},
+        "type": "Feature"
+    };
+
+    cardboard.put(d, 'default', function(err, res) {
+        t.ok(err, 'should return an error');
+        t.equal(err.message, 'Unlocated features can not be stored.');
+        t.end();
+    });
+});
+test('teardown', s.teardown);
+
+test('setup', s.setup);
+test('insert feature with no coordinates', function(t) {
+    var cardboard = Cardboard(config);
+    var d = {
+        "geometry": {"type": "Point"},
+        "properties": {},
+        "type": "Feature"
+    };
+
+    cardboard.put(d, 'default', function(err, res) {
+        t.ok(err, 'should return an error');
+        t.equal(err.message, 'Unlocated features can not be stored.');
+        t.end();
+    });
+});
+test('teardown', s.teardown);
+
+test('setup', s.setup);
 test('insert wildly precise feature', function(t) {
     var cardboard = Cardboard(config);
     var d = {
