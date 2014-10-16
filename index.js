@@ -176,6 +176,22 @@ module.exports = function Cardboard(c) {
         });
     };
 
+    // As list() but for a single page of records starting at `start`.
+    cardboard.page = function(dataset, start, opts, callback) {
+        var query = { dataset: { EQ: dataset }, id: { BEGINS_WITH: 'id!' } },
+            options = {};
+        options.pages = opts.pages || 1 ;
+        options.limit = opts.limit;
+        if (start) options.start = start;
+        dyno.query(query, options, function(err, items, metas) {
+            if (err) return callback(err);
+            resolveFeatures(items, function(err, features) {
+                if (err) return callback(err);
+                callback(null, featureCollection(features), metas.pop().last);
+            });
+        });
+    };
+
     cardboard.listIds = function(dataset, callback) {
         var query = { dataset: { EQ: dataset } },
             opts = { attributes: ['id'], pages: 0 };

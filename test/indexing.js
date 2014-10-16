@@ -242,7 +242,25 @@ test('insert & delDataset', function(t) {
 });
 test('teardown', s.teardown);
 
+test('setup', s.setup);
+test('list', function(t) {
+    var cardboard = Cardboard(config);
 
+    cardboard.put(fixtures.nullIsland, 'default', function(err, primary) {
+        t.equal(err, null);
+        t.pass('inserted');
+
+        var nullIsland = _.clone(fixtures.nullIsland);
+        nullIsland.id = primary[0];
+
+        cardboard.list('default', function(err, data) {
+            t.deepEqual(data.features.length, 1);
+            t.deepEqual(data, geojsonNormalize(nullIsland));
+            t.end();
+        });
+    });
+});
+test('teardown', s.teardown);
 
 test('setup', s.setup);
 test('listIds', function(t) {
@@ -258,6 +276,99 @@ test('listIds', function(t) {
             t.end();
         });
     });
+});
+test('teardown', s.teardown);
+
+test('setup', s.setup);
+test('first page', function(t) {
+    var cardboard = Cardboard(config);
+
+    cardboard.put(
+        featureCollection([
+            _.clone(fixtures.haiti),
+            _.clone(fixtures.haiti),
+            _.clone(fixtures.haiti)]),
+        'default',
+        function page(err, primary) {
+            t.equal(err, null);
+            t.pass('collection inserted');
+            cardboard.page('default', undefined, {limit: 1}, function(err, data, last) {
+                t.equal(err, null, 'no error');
+                t.deepEqual(data.features.length, 1, 'first page has one feature');
+                t.deepEqual(data.features[0].id, primary[0], 'id as expected');
+                t.end();
+            });
+    });
+});
+test('teardown', s.teardown);
+
+test('setup', s.setup);
+test('page -- limit: 1', function(t) {
+    var cardboard = Cardboard(config);
+
+    cardboard.put(
+        featureCollection([
+            _.clone(fixtures.haiti),
+            _.clone(fixtures.haiti),
+            _.clone(fixtures.haiti)
+        ]), 'default', page);
+
+    function page(err, primary) {
+        t.equal(err, null);
+        t.pass('collection inserted');
+        var i = 0;
+        function testPage(next) {
+            t.notEqual(next, null, 'next key is not null');
+            cardboard.page('default', next, {limit:1}, function(err, data, last) {
+                t.equal(err, null, 'no error');
+                if (!last) {
+                    t.end();
+                    return;
+                }
+                t.deepEqual(data.features.length, 1, 'page has one feature');
+                t.deepEqual(data.features[0].id, primary[i], 'id as expected');
+                i++;
+                testPage(last);
+            });
+        }
+        testPage();
+    }
+
+});
+test('teardown', s.teardown);
+
+test('setup', s.setup);
+test('page -- db limited', function(t) {
+    var cardboard = Cardboard(config);
+
+    cardboard.put(
+        featureCollection([
+            _.clone(fixtures.haiti),
+            _.clone(fixtures.haiti),
+            _.clone(fixtures.haiti)
+        ]), 'default', page);
+
+    function page(err, primary) {
+        t.equal(err, null);
+        t.pass('collection inserted');
+        function testPage(next) {
+            t.notEqual(next, null, 'next key is not null');
+            cardboard.page('default', next, {}, function(err, data, last) {
+                t.equal(err, null, 'no error');
+                if (!last) {
+                    t.end();
+                    return;
+                }
+                t.deepEqual(data.features.length, 3, 'page has three features');
+                t.deepEqual(data.features[0].id, primary[0], 'id as expected');
+                t.deepEqual(data.features[1].id, primary[1], 'id as expected');
+                t.deepEqual(data.features[2].id, primary[2], 'id as expected');
+                testPage(last);
+            });
+        }
+        testPage();
+    }
+
 });
 test('teardown', s.teardown);
 
