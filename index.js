@@ -234,25 +234,58 @@ module.exports = function Cardboard(c) {
     cardboard.bboxQuery = function(bbox, dataset, callback) {
         var q = queue(100);
 
-        // If a query crosses the equator/prime meridian, we split it
-        // into separate queries to reduce overall throughput.
         var bboxes = [bbox];
-        var splitX = bbox[0] <= 0 && bbox[2] >= 0;
-        var splitY = bbox[1] <= 0 && bbox[3] >= 0;
+        var epsilon = 1E-8;
 
-        var offset = 1E-8;
+        // If a query crosses the (W) antimeridian/equator, we split it
+        // into separate queries to reduce overall throughput.
+        if (bbox[0] <= -180 && bbox[2] >= -180) {
+            bboxes = bboxes.reduce(function(memo, bbox) {
+                memo.push([bbox[0], bbox[1], -180 - epsilon, bbox[3]]);
+                memo.push([-180 + epsilon, bbox[1], bbox[2], bbox[3]]);
+                return memo;
+            }, []);
+            if (bbox[1] <= 0 && bbox[3] >= 0) {
+                bboxes = bboxes.reduce(function(memo, bbox) {
+                    memo.push([bbox[0], bbox[1], bbox[2], -epsilon]);
+                    memo.push([bbox[0], epsilon, bbox[2], bbox[3]]);
+                    return memo;
+                }, []);
+            }
+        }
 
-        if (splitX) bboxes = bboxes.reduce(function(memo, bbox) {
-            memo.push([bbox[0], bbox[1], -offset, bbox[3]]);
-            memo.push([offset, bbox[1], bbox[2], bbox[3]]);
-            return memo;
-        }, []);
+        // Likewise, if a query crosses the (E) antimeridian/equator,
+        // we split it.
+        else if (bbox[0] <= 180 && bbox[2] >= 180) {
+            bboxes = bboxes.reduce(function(memo, bbox) {
+                memo.push([bbox[0], bbox[1], 180 - epsilon, bbox[3]]);
+                memo.push([180 + epsilon, bbox[1], bbox[2], bbox[3]]);
+                return memo;
+            }, []);
+            if (bbox[1] <= 0 && bbox[3] >= 0) {
+                bboxes = bboxes.reduce(function(memo, bbox) {
+                    memo.push([bbox[0], bbox[1], bbox[2], -epsilon]);
+                    memo.push([bbox[0], epsilon, bbox[2], bbox[3]]);
+                    return memo;
+                }, []);
+            }
+        }
 
-        if (splitY) bboxes = bboxes.reduce(function(memo, bbox) {
-            memo.push([bbox[0], bbox[1], bbox[2], -offset]);
-            memo.push([bbox[0], offset, bbox[2], bbox[3]]);
-            return memo;
-        }, []);
+        // If a query crosses the equator/prime meridian, we split it.
+        else if (bbox[0] <= 0 && bbox[2] >= 0) {
+            bboxes = bboxes.reduce(function(memo, bbox) {
+                memo.push([bbox[0], bbox[1], -epsilon, bbox[3]]);
+                memo.push([epsilon, bbox[1], bbox[2], bbox[3]]);
+                return memo;
+            }, []);
+            if (bbox[1] <= 0 && bbox[3] >= 0) {
+                bboxes = bboxes.reduce(function(memo, bbox) {
+                    memo.push([bbox[0], bbox[1], bbox[2], -epsilon]);
+                    memo.push([bbox[0], epsilon, bbox[2], bbox[3]]);
+                    return memo;
+                }, []);
+            }
+        }
 
         var tiles = bboxes.map(function(bbox) {
             return tilebelt.bboxToTile(bbox);

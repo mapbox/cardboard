@@ -239,3 +239,62 @@ test('query for line near -90 lon n of eq', function(t) {
     }
 });
 test('teardown', s.teardown);
+
+test('setup', s.setup);
+test('queries along antimeridian (W)', function(t) {
+    var cardboard = Cardboard(config);
+    var dataset = 'default';
+
+    // Insert one feature per quadrant
+    var features = [[-181, 1], [-179, 1], [-179, -1], [-181, -1]].map(function(coords) {
+        return {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+                type: 'Point',
+                coordinates: coords
+            }
+        };
+    });
+
+    // Query in each quadrant + queries that just cross quadrant bounds
+    // all queries should return a single result
+    var queries = [
+        [-190, 0, -180, 10],
+        [-190, -0.5, -179.5, 10],
+        [-180, 0, -170, 10],
+        [-180.5, -0.5, -170, 10],
+        [-180, -10, -170, 0],
+        [-180.5, -10, -170, 0.5],
+        [-190, -10, -180, 0],
+        [-190, -10, -179.5, 0.5],
+    ];
+
+    var q = queue();
+    features.forEach(function(f) {
+        q.defer(cardboard.put, f, dataset);
+    });
+    q.awaitAll(function(err, res) {
+        t.ifError(err, 'inserted');
+        runQueries();
+    });
+
+    function runQueries() {
+        var q = queue();
+        queries.forEach(function(query) {
+            function deal(callback) {
+                cardboard.bboxQuery(query, dataset, function(err, res) {
+                    if (err) return callback(err);
+                    t.equal(res.features.length, 1, query.join(',') + ' returned one feature');
+                    callback();
+                });
+            }
+            q.defer(deal);
+        });
+        q.await(function(err) {
+            t.ifError(err, 'passed queries');
+            t.end();
+        });
+    }
+});
+test('teardown', s.teardown);
