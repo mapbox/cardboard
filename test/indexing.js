@@ -304,8 +304,7 @@ test('listIds', function(t) {
         t.pass('inserted');
 
         cardboard.listIds('default', function(err, data) {
-            var expected = [ 'id!' + primary ];
-            t.deepEqual(data, expected);
+            t.deepEqual(data, primary);
             t.end();
         });
     });

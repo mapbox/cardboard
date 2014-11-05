@@ -161,8 +161,9 @@ module.exports = function Cardboard(c) {
     cardboard.delDataset = function(dataset, callback) {
         cardboard.listIds(dataset, function(err, res) {
             var keys = res.map(function(id){
-                return { dataset: dataset, id: id };
+                return { dataset: dataset, id: 'id!'+id };
             });
+            keys.push({ dataset: dataset, id: 'metadata!'+dataset });
 
             dyno.deleteItems(keys, function(err, res) {
                 callback(err);
@@ -200,13 +201,13 @@ module.exports = function Cardboard(c) {
     };
 
     cardboard.listIds = function(dataset, callback) {
-        var query = { dataset: { EQ: dataset } },
+        var query = { dataset: { EQ: dataset }, id: {BEGINS_WITH: 'id!'} },
             opts = { attributes: ['id'], pages: 0 };
 
         dyno.query(query, opts, function(err, items) {
             if (err) return callback(err);
             callback(err, items.map(function(_) {
-                return _.id;
+                return _.id.split('!')[1];
             }));
         });
     };
