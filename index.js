@@ -56,7 +56,7 @@ module.exports = function Cardboard(c) {
         });
 
         function doPut(){
-            var q = queue();
+            var q = queue(50);
 
             featureCollection.features.forEach(function(f) {
                 q.defer(putFeature, f, dataset);
@@ -233,7 +233,7 @@ module.exports = function Cardboard(c) {
     };
 
     cardboard.bboxQuery = function(bbox, dataset, callback) {
-        var q = queue();
+        var q = queue(100);
 
         var bboxes = [bbox];
         var epsilon = 1E-8;
@@ -393,7 +393,7 @@ module.exports = function Cardboard(c) {
     }
 
     function resolveFeatures(items, callback) {
-        var q = queue();
+        var q = queue(100);
         items.forEach(function(item) {
             q.defer(resolveFeature, item);
         });
