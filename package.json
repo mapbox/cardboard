@@ -26,7 +26,7 @@
   "homepage": "https://github.com/mapbox/cardboard",
   "dependencies": {
     "JSONStream": "~0.7.3",
-    "aws-sdk": "^2.0.11",
+    "aws-sdk": "2.0.23",
     "concat-stream": "~1.4.5",
     "cuid": "^1.2.4",
     "debug": "~1.0.3",
