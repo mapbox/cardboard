@@ -39,7 +39,7 @@ module.exports = function Cardboard(c) {
 
         // if the feature is an update, check upfront that they exist, we can fail them
         // early.
-        var q = queue();
+        var q = queue(50);
         featureCollection.features.forEach(function(f) {
             if (f.id) {
                 var key = { dataset: dataset, id: 'id!' + f.id };
@@ -55,7 +55,7 @@ module.exports = function Cardboard(c) {
             doPut();
         });
 
-        function doPut(){
+        function doPut() {
             var q = queue(50);
 
             featureCollection.features.forEach(function(f) {
