@@ -27,6 +27,10 @@ module.exports = function Cardboard(c) {
 
     // allow for passed in config object to override s3 objects for mocking in tests
     var s3 = c.s3 || new AWS.S3();
+    var creds = new AWS.EC2MetadataCredentials({httpOptions: { timeout: 5000 }});
+    creds.get(function(err) {
+        if(!err && creds) s3.config.credentials= creds;
+    });
     var dyno = Dyno(c);
     if (!c.bucket) throw new Error('No bucket set');
     var bucket = c.bucket;

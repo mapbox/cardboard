@@ -31,7 +31,7 @@
     "cuid": "^1.2.4",
     "debug": "~1.0.3",
     "dotenv": "^0.4.0",
-    "dyno": "~0.7.2",
+    "dyno": "~0.7.3",
     "geobuf": "0.2.3",
     "geojson-extent": "^0.1.0",
     "geojson-normalize": "0.0.0",
