@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 var fs = require('fs'),
-    Cardboard = require('./'),
+    Cardboard = require('../'),
     concat = require('concat-stream'),
     hat = require('hat'),
     queue = require('queue-async'),
@@ -24,7 +24,7 @@ var config = {
     table: tableName,
     endpoint:  process.env.Endpoint,
     region: process.env.Region,
-    bucket: process.env.Bucket || 'mapbox-s2',
+    bucket: process.env.Bucket,
     prefix: tableName
 };
 
