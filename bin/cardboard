@@ -41,6 +41,10 @@ cardboard.createTable(tableName, function(err){
 
 function ready() {
     process.stdin.pipe(concat(function(buf) {
+        if (!buf || buf.length === 0) {
+          return;
+        }
+      
         var q = queue(10);
         var gj = geojsonNormalize(JSON.parse(buf));
         gj.features.forEach(function(feature) {
