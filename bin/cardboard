@@ -3,7 +3,6 @@
 var fs = require('fs'),
     Cardboard = require('../'),
     concat = require('concat-stream'),
-    hat = require('hat'),
     queue = require('queue-async'),
     geojsonNormalize = require('geojson-normalize'),
     JSONStream = require('JSONStream'),
