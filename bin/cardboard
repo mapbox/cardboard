@@ -41,22 +41,19 @@ cardboard.createTable(tableName, function(err){
 });
 
 function ready() {
-    if (!process.stdin.isTTY) {
-        process.stdin.pipe(concat(function(buf) {
-            var q = queue(10);
-            var gj = geojsonNormalize(JSON.parse(buf));
-            gj.features.forEach(function(feature) {
-                feature.properties.id = feature.id;
-                delete feature.id;
-                q.defer(cardboard.put, feature, argv.dataset || 'default');
-            });
-            q.awaitAll(function(err, res) {
-                if (err) console.error(err);
-                else console.log('inserted');
-            });
-        }));
-        return;
-    }
+    process.stdin.pipe(concat(function(buf) {
+        var q = queue(10);
+        var gj = geojsonNormalize(JSON.parse(buf));
+        gj.features.forEach(function(feature) {
+            feature.properties.id = feature.id;
+            delete feature.id;
+            q.defer(cardboard.put, feature, argv.dataset || 'default');
+        });
+        q.awaitAll(function(err, res) {
+            if (err) console.error(err);
+            else console.log('inserted');
+        });
+    }));
     if (argv.export) {
         cardboard.export()
             .pipe(process.stdout);
