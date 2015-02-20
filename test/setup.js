@@ -2,6 +2,7 @@ var test = require('tap').test,
     Dynalite = require('dynalite'),
     Cardboard = require('../'),
     fakeAWS = require('mock-aws-s3'),
+    queue = require('queue-async'),
     dynalite;
 
 var config = module.exports.config = {
@@ -17,7 +18,7 @@ var config = module.exports.config = {
 
 var dyno = module.exports.dyno = require('dyno')(config);
 
-module.exports.setup = function(t) {
+module.exports.setup = function(t, multi) {
     dynalite = Dynalite({
         createTableMs: 0,
         updateTableMs: 0,
@@ -26,8 +27,15 @@ module.exports.setup = function(t) {
     dynalite.listen(4567, function() {
         t.pass('dynalite listening');
         var cardboard = Cardboard(config);
-        cardboard.createTable(config.table, function(err, resp){
-            t.pass('table created');
+        var q = queue(1);
+        q.defer(cardboard.createTable, config.table);
+        if (multi) {
+            q.defer(cardboard.createTable, 'test-cardboard-read');
+            q.defer(cardboard.createTable, 'test-cardboard-write');
+        }
+        q.awaitAll(function(err, resp){
+            console.log(err)
+            t.notOk(err);
             t.end();
         });
     });
