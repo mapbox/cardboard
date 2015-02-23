@@ -23,10 +23,8 @@ var LARGE_INDEX_DISTANCE = 50; //bbox more then 100 miles corner to corner.
 module.exports = function Cardboard(c) {
     var cardboard = {};
 
-    AWS.config.update(c);
-
     // allow for passed in config object to override s3 objects for mocking in tests
-    var s3 = c.s3 || new AWS.S3();
+    var s3 = c.s3 || new AWS.S3(c);
     var creds = new AWS.EC2MetadataCredentials({httpOptions: { timeout: 5000 }});
     creds.get(function(err) {
         if(!err && creds) s3.config.credentials= creds;
