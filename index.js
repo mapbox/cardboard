@@ -25,11 +25,8 @@ module.exports = function Cardboard(c) {
 
     // allow for passed in config object to override s3 objects for mocking in tests
     var s3 = c.s3 || new AWS.S3(c);
-    var creds = new AWS.EC2MetadataCredentials({httpOptions: { timeout: 5000 }});
-    creds.get(function(err) {
-        if(!err && creds) s3.config.credentials= creds;
-    });
-    var dyno = Dyno(c);
+    // pass in a pre configured dyno object, or create one based on config
+    var dyno = c.dyno || Dyno(c);
     if (!c.bucket) throw new Error('No bucket set');
     var bucket = c.bucket;
     if (!c.prefix) throw new Error('No s3 prefix set');
@@ -176,7 +173,6 @@ module.exports = function Cardboard(c) {
     cardboard.list = function(dataset, callback) {
         var query = { dataset: { EQ: dataset }, id: { BEGINS_WITH: 'id!' } },
             opts = { pages: 0 };
-
         dyno.query(query, opts, function(err, items) {
             if (err) return callback(err);
             resolveFeatures(items, function(err, features) {
