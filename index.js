@@ -130,7 +130,7 @@ module.exports = function Cardboard(c) {
 
         dyno.getItem(key, function(err, item) {
             if (err) return callback(err);
-            if (!item) return callback(null, featureCollection());
+            if (!item) return callback(new Error('Feature does not exist'));
             resolveFeature(item, function(err, feature) {
                 if (err) return callback(err);
                 callback(null, featureCollection([feature]));
