@@ -124,10 +124,13 @@ module.exports = function Cardboard(c) {
 
     cardboard.del = function(primary, dataset, callback) {
         var key = { dataset: dataset, id: 'id!' + primary };
-
-        dyno.deleteItems([ key ], function(err) {
-            if (err) return callback(err, true);
-            else callback();
+        dyno.getItem(key, function(err, item) {
+            if (err) return callback(err);
+            if (!item) return callback(new Error('Feature does not exist'));
+            dyno.deleteItems([ key ], function(err, res, data) {
+                if (err) return callback(err, true);
+                else callback();
+            });
         });
     };
 
