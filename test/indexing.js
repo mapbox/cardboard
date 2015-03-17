@@ -225,6 +225,21 @@ test('insert & update', function(t) {
 test('teardown', s.teardown);
 
 test('setup', s.setup);
+test('delete a non-extistent feature', function(t) {
+    var cardboard = Cardboard(config);
+    cardboard.get('foobar', 'default', function(err, data) {
+        t.equal(err, null);
+        t.equal(data.features.length, 0)
+        cardboard.del('foobar', 'default', function(err, data) {
+            t.ok(err, 'should return an error');
+            t.equal(err.message, 'Feature does not exist');
+            t.end();
+        });
+    });
+});
+test('teardown', s.teardown);
+
+test('setup', s.setup);
 test('insert & delete', function(t) {
     var cardboard = Cardboard(config);
     var nullIsland = _.clone(fixtures.nullIsland);
