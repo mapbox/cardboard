@@ -1168,7 +1168,7 @@ test('setup', s.setup);
 test('insert idaho feature, update & check metadata', function(t) {
     var cardboard = new Cardboard(config);
     var original = geojsonFixtures.featurecollection.idaho.features[0];
-    var edited = geojsonFixtures.feature.one;
+    var edited = geojsonFixtures.featurecollection.idaho.features[1];
 
     var expectedSize;
     var expectedBounds = geojsonExtent({
