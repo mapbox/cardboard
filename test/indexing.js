@@ -171,6 +171,32 @@ test('insert non-string usid', function(t) {
 test('teardown', s.teardown);
 
 test('setup', s.setup);
+test('insert feature with object property', function(t) {
+    var cardboard = Cardboard(config);
+    var d = {
+        "geometry": {
+            "coordinates": [
+                0,
+                0
+            ],
+            "type": "Point"
+        },
+        "properties": {
+            "prop0": "0",
+            "prop1": { "nested": "object"}
+        },
+        "type": "Feature"
+    };
+
+    cardboard.put(d, 'default', function(err, res) {
+        t.ok(err, 'should return an error');
+        t.equal(err.message, 'Does not support nested objects');
+        t.end();
+    });
+});
+test('teardown', s.teardown);
+
+test('setup', s.setup);
 test('insert, get by secondary index', function(t) {
     var cardboard = Cardboard(config);
 
