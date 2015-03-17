@@ -119,7 +119,9 @@ module.exports = function Cardboard(c) {
     cardboard.del = function(primary, dataset, callback) {
         var key = { dataset: dataset, id: 'id!' + primary };
 
-        dyno.deleteItems([ key ], function(err) {
+        var opts = { expected: { id: 'NOT_NULL'} }
+        dyno.deleteItem(key, opts, function(err, res) {
+            if (err && err.code === 'ConditionalCheckFailedException') return callback(new Error('Feature does not exist'));
             if (err) return callback(err, true);
             else callback();
         });
