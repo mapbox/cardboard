@@ -35,14 +35,7 @@ module.exports = function Cardboard(c) {
 
     cardboard.put = function(featureCollection, dataset, callback) {
         var featureCollection = geojsonNormalize(featureCollection);
-        // reject nested objects
-        for (var i = 0; i < featureCollection.features.length; i++) {
-            for (var prop in featureCollection.features[i].properties) {
-                if (typeof featureCollection.features[i].properties[prop] === 'object') {
-                    return callback(new Error('Does not support nested objects'));
-                }
-            }
-        }
+
         // if the feature is an update, check upfront that they exist, we can fail them
         // early.
         var q = queue(150);
