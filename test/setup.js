@@ -34,7 +34,6 @@ module.exports.setup = function(t, multi) {
             q.defer(cardboard.createTable, 'test-cardboard-write');
         }
         q.awaitAll(function(err, resp){
-            console.log(err)
             t.notOk(err);
             t.end();
         });

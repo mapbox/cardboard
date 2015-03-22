@@ -182,16 +182,31 @@ test('insert feature with object property', function(t) {
             "type": "Point"
         },
         "properties": {
-            "prop0": "0",
-            "prop1": { "nested": "object"}
+            "string": "0",
+            "int": 0,
+            "null": null,
+            "array": ['a', 'b', 'c'],
+            "object": {
+                "string": "0",
+                "int": 0,
+                "null": null,
+                "array": ['a', 'b', {'foo': 'bar'}],
+                "object": {
+                    "enough": "recursion"
+                }
+            }
         },
         "type": "Feature"
     };
 
     cardboard.put(d, 'default', function(err, res) {
-        t.ok(err, 'should return an error');
-        t.equal(err.message, 'Does not support nested objects');
-        t.end();
+        t.ifError(err, 'inserted without error');
+        cardboard.get(res, 'default', function(err, data) {
+            t.ifError(err, 'got item');
+            d.id = res;
+            t.deepEqual(data, geojsonNormalize(geobuf.geobufToFeature(geobuf.featureToGeobuf(d).toBuffer())));
+            t.end();
+        });
     });
 });
 test('teardown', s.teardown);
