@@ -893,7 +893,7 @@ test('teardown', s.teardown);
 test('setup', s.setup);
 test('metadata: add a feature', function(t) {
     var feature = geojsonFixtures.feature.one;
-    var expectedSize = JSON.stringify(feature).length;
+    var expectedSize = Buffer.byteLength(JSON.stringify(feature));
     var expectedBounds = geojsonExtent(feature);
 
     metadata.addFeature(feature, brandNew);
@@ -988,7 +988,7 @@ test('teardown', s.teardown);
 test('setup', s.setup);
 test('metadata: remove a feature', function(t) {
     var feature = geojsonFixtures.feature.one;
-    var expectedSize = JSON.stringify(feature).length;
+    var expectedSize = Buffer.byteLength(JSON.stringify(feature));
 
     metadata.deleteFeature(feature, function(err) {
         t.ifError(err, 'graceful exit if no metadata exists');
@@ -1037,7 +1037,7 @@ test('metadata: calculate dataset info', function(t) {
         });
 
         var expectedSize = features.reduce(function(memo, feature) {
-            memo = memo + JSON.stringify(feature).length;
+            memo = memo + Buffer.byteLength(JSON.stringify(feature));
             return memo;
         }, 0);
         var expected = {
@@ -1112,7 +1112,7 @@ test('insert many idaho features & check metadata', function(t) {
     var features = geojsonFixtures.featurecollection.idaho.features.slice(0, 50);
     var expectedBounds = geojsonExtent({ type: 'FeatureCollection', features: features });
     var expectedSize = features.reduce(function(memo, feature) {
-        memo = memo + JSON.stringify(feature).length;
+        memo = memo + Buffer.byteLength(JSON.stringify(feature));
         return memo;
     }, 0);
 
