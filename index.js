@@ -171,30 +171,24 @@ module.exports = function Cardboard(c) {
         });
     };
 
-    cardboard.list = function(dataset, callback) {
-        var query = { dataset: { EQ: dataset }, id: { BEGINS_WITH: 'id!' } },
-            opts = { pages: 0 };
+    cardboard.list = function(dataset, pageOptions, callback) {
+        var opts = {};
+
+        if (typeof pageOptions === 'function') {
+            callback = pageOptions;
+            opts.pages = 0;
+            pageOptions = {};
+        }
+
+        if (pageOptions.start) opts.start = pageOptions.start;
+        if (pageOptions.maxFeatures) opts.limit = pageOptions.maxFeatures;
+
+        var query = { dataset: { EQ: dataset }, id: { BEGINS_WITH: 'id!' } };
         dyno.query(query, opts, function(err, items) {
             if (err) return callback(err);
             resolveFeatures(items, function(err, features) {
                 if (err) return callback(err);
                 callback(null, featureCollection(features));
-            });
-        });
-    };
-
-    // As list() but for a single page of records starting at `start`.
-    cardboard.page = function(dataset, start, opts, callback) {
-        var query = { dataset: { EQ: dataset }, id: { BEGINS_WITH: 'id!' } },
-            options = {};
-        options.pages = opts.pages || 1 ;
-        options.limit = opts.limit;
-        if (start) options.start = start;
-        dyno.query(query, options, function(err, items, metas) {
-            if (err) return callback(err);
-            resolveFeatures(items, function(err, features) {
-                if (err) return callback(err);
-                callback(null, featureCollection(features), metas.pop().last);
             });
         });
     };
