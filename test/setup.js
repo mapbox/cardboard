@@ -1,4 +1,4 @@
-var test = require('tap').test,
+var test = require('tape'),
     Dynalite = require('dynalite'),
     Cardboard = require('../'),
     fakeAWS = require('mock-aws-s3'),
