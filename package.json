@@ -1,6 +1,6 @@
 {
   "name": "cardboard",
-  "version": "0.14.1",
+  "version": "0.14.2",
   "description": "A library for storing and searching geographic features",
   "main": "index.js",
   "scripts": {
