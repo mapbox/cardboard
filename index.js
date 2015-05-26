@@ -20,17 +20,20 @@ var MAX_GEOMETRY_SIZE = 1024*10;  //10KB
 var LARGE_INDEX_DISTANCE = 50; //bbox more then 100 miles corner to corner.
 
 
-module.exports = function Cardboard(c) {
+module.exports = function Cardboard(config) {
+    if (!config.bucket) throw new Error('No bucket set');
+    if (!config.prefix) throw new Error('No s3 prefix set');
+
+    // Allow caller to pass in aws-sdk clients
+    if (!config.s3) config.s3 = new AWS.S3(config);
+    if (!config.dyno) config.dyno = Dyno(config);
+    
     var cardboard = {};
 
-    // allow for passed in config object to override s3 objects for mocking in tests
-    var s3 = c.s3 || new AWS.S3(c);
-    // pass in a pre configured dyno object, or create one based on config
-    var dyno = c.dyno || Dyno(c);
-    if (!c.bucket) throw new Error('No bucket set');
-    var bucket = c.bucket;
-    if (!c.prefix) throw new Error('No s3 prefix set');
-    var prefix = c.prefix;
+    var s3 = config.s3 || new AWS.S3(config);
+    var dyno = config.dyno || Dyno(config);
+    var bucket = config.bucket;
+    var prefix = config.prefix;
 
     cardboard.put = function(featureCollection, dataset, callback) {
         featureCollection = geojsonNormalize(featureCollection);
@@ -60,8 +63,8 @@ module.exports = function Cardboard(c) {
             tile = tilebelt.bboxToTile([info.west, info.south, info.east, info.north]),
             cell = tilebelt.tileToQuadkey(tile),
             useS3 = buf.length > MAX_GEOMETRY_SIZE,
-            s3Key = [prefix, dataset, primary, timestamp].join('/'),
-            s3Params = { Bucket: bucket, Key: s3Key, Body: buf };
+            s3Key = [config.prefix, dataset, primary, timestamp].join('/'),
+            s3Params = { Bucket: config.bucket, Key: s3Key, Body: buf };
 
         var item = {
             dataset: dataset,
@@ -72,14 +75,14 @@ module.exports = function Cardboard(c) {
             south: truncateNum(info.south),
             east: truncateNum(info.east),
             north: truncateNum(info.north),
-            s3url: ['s3:/', bucket, s3Key].join('/')
+            s3url: ['s3:/', config.bucket, s3Key].join('/')
         };
 
         if (buf.length < MAX_GEOMETRY_SIZE) item.val = buf;
 
         var q = queue(1);
-        q.defer(s3.putObject.bind(s3), s3Params);
-        q.defer(dyno.putItem, item);
+        q.defer(config.s3.putObject.bind(config.s3), s3Params);
+        q.defer(config.dyno.putItem, item);
         q.await(function(err) {
             callback(err, primary);
         });
@@ -88,7 +91,7 @@ module.exports = function Cardboard(c) {
     cardboard.del = function(primary, dataset, callback) {
         var key = { dataset: dataset, id: 'id!' + primary };
 
-        dyno.deleteItem(key, { expected: { id: 'NOT_NULL'} }, function(err, res) {
+        config.dyno.deleteItem(key, { expected: { id: 'NOT_NULL'} }, function(err, res) {
             if (err && err.code === 'ConditionalCheckFailedException') return callback(new Error('Feature does not exist'));
             if (err) return callback(err, true);
             else callback();
@@ -98,7 +101,7 @@ module.exports = function Cardboard(c) {
     cardboard.get = function(primary, dataset, callback) {
         var key = { dataset: dataset, id: 'id!' + primary };
 
-        dyno.getItem(key, function(err, item) {
+        config.dyno.getItem(key, function(err, item) {
             if (err) return callback(err);
             if (!item) return callback(null, featureCollection());
             resolveFeature(item, function(err, feature) {
@@ -111,7 +114,7 @@ module.exports = function Cardboard(c) {
     cardboard.createTable = function(tableName, callback) {
         var table = require('./lib/table.json');
         table.TableName = tableName;
-        dyno.createTable(table, callback);
+        config.dyno.createTable(table, callback);
     };
 
     cardboard.delDataset = function(dataset, callback) {
@@ -121,7 +124,7 @@ module.exports = function Cardboard(c) {
             });
             keys.push({ dataset: dataset, id: 'metadata!'+dataset });
 
-            dyno.deleteItems(keys, function(err, res) {
+            config.dyno.deleteItems(keys, function(err, res) {
                 callback(err);
             });
         });
@@ -140,7 +143,7 @@ module.exports = function Cardboard(c) {
         if (pageOptions.maxFeatures) opts.limit = pageOptions.maxFeatures;
 
         var query = { dataset: { EQ: dataset }, id: { BEGINS_WITH: 'id!' } };
-        dyno.query(query, opts, function(err, items) {
+        config.dyno.query(query, opts, function(err, items) {
             if (err) return callback(err);
             resolveFeatures(items, function(err, features) {
                 if (err) return callback(err);
@@ -153,7 +156,7 @@ module.exports = function Cardboard(c) {
         var query = { dataset: { EQ: dataset }, id: {BEGINS_WITH: 'id!'} },
             opts = { attributes: ['id'], pages: 0 };
 
-        dyno.query(query, opts, function(err, items) {
+        config.dyno.query(query, opts, function(err, items) {
             if (err) return callback(err);
             callback(err, items.map(function(_) {
                 return _.id.split('!')[1];
@@ -164,7 +167,7 @@ module.exports = function Cardboard(c) {
     cardboard.listDatasets = function(callback) {
         var opts = { attributes: ['dataset'], pages:0 };
 
-        dyno.scan(opts, function(err, items) {
+        config.dyno.scan(opts, function(err, items) {
             if (err) return callback(err);
             var datasets = _.uniq(items.map(function(item){
                 return item.dataset;
@@ -174,11 +177,11 @@ module.exports = function Cardboard(c) {
     };
 
     cardboard.getDatasetInfo = function(dataset, callback) {
-        Metadata(dyno, dataset).getInfo(callback);
+        Metadata(config.dyno, dataset).getInfo(callback);
     };
 
     cardboard.calculateDatasetInfo = function(dataset, callback) {
-        Metadata(dyno, dataset).calculateInfo(callback);
+        Metadata(config.dyno, dataset).calculateInfo(callback);
     };
 
     cardboard.bboxQuery = function(bbox, dataset, callback) {
@@ -272,14 +275,14 @@ module.exports = function Cardboard(c) {
                     south: { 'LE': bbox[3] }
                 }
             };
-            q.defer(dyno.query, query, options);
+            q.defer(config.dyno.query, query, options);
 
             // Travel up the parent tiles, finding features indexed in each
             var parentTileKey = tileKey.slice(0, -1);
 
             while (tileKey.length > 0) {
                 query.cell = { 'EQ': 'cell!' + parentTileKey };
-                q.defer(dyno.query, query, options);
+                q.defer(config.dyno.query, query, options);
                 if (parentTileKey.length === 0) {
                     break;
                 }
@@ -306,11 +309,11 @@ module.exports = function Cardboard(c) {
     };
 
     cardboard.dump = function(cb) {
-        return dyno.scan(cb);
+        return config.dyno.scan(cb);
     };
 
     cardboard.export = function(_) {
-        return dyno.scan()
+        return config.dyno.scan()
             .pipe(through({ objectMode: true }, function(data, enc, cb) {
                 var output = this.push.bind(this);
                 if (data.id.indexOf('id!') === 0) {
@@ -332,7 +335,7 @@ module.exports = function Cardboard(c) {
 
         // Get geobuf from S3
         var uri = url.parse(item.s3url);
-        s3.getObject({
+        config.s3.getObject({
             Bucket: uri.host,
             Key: uri.pathname.substr(1)
         }, function(err, data) {
