@@ -315,7 +315,7 @@ test('listIds', function(t) {
 test('teardown', s.teardown);
 
 test('setup', s.setup);
-test('first page', function(t) {
+test('list first page with maxFeatures', function(t) {
     var cardboard = Cardboard(config);
 
     cardboard.put(
@@ -327,7 +327,7 @@ test('first page', function(t) {
         function page(err, primary) {
             t.equal(err, null);
             t.pass('collection inserted');
-            cardboard.page('default', undefined, {limit: 1}, function(err, data, last) {
+            cardboard.list('default', {maxFeatures: 1}, function(err, data) {
                 t.equal(err, null, 'no error');
                 t.deepEqual(data.features.length, 1, 'first page has one feature');
                 t.deepEqual(data.features[0].id, primary[0], 'id as expected');
@@ -338,7 +338,7 @@ test('first page', function(t) {
 test('teardown', s.teardown);
 
 test('setup', s.setup);
-test('page -- limit: 1', function(t) {
+test('list all pages', function(t) {
     var cardboard = Cardboard(config);
 
     cardboard.put(
@@ -354,7 +354,9 @@ test('page -- limit: 1', function(t) {
         var i = 0;
         function testPage(next) {
             t.notEqual(next, null, 'next key is not null');
-            cardboard.page('default', next, {limit:1}, function(err, data, last) {
+            var opts = {maxFeatures:1};
+            if (next) opts.start = next;
+            cardboard.list('default', opts, function(err, data, last) {
                 t.equal(err, null, 'no error');
                 if (!last) {
                     t.end();
@@ -363,7 +365,7 @@ test('page -- limit: 1', function(t) {
                 t.deepEqual(data.features.length, 1, 'page has one feature');
                 t.deepEqual(data.features[0].id, primary[i], 'id as expected');
                 i++;
-                testPage(last);
+                testPage(data.features.slice(-1)[0].id);
             });
         }
         testPage();
@@ -373,7 +375,7 @@ test('page -- limit: 1', function(t) {
 test('teardown', s.teardown);
 
 test('setup', s.setup);
-test('page -- db limited', function(t) {
+test('page -- without maxFeatures', function(t) {
     var cardboard = Cardboard(config);
 
     cardboard.put(
@@ -388,7 +390,9 @@ test('page -- db limited', function(t) {
         t.pass('collection inserted');
         function testPage(next) {
             t.notEqual(next, null, 'next key is not null');
-            cardboard.page('default', next, {}, function(err, data, last) {
+            var opts = {};
+            if (next) opts.start = next;
+            cardboard.list('default', opts, function(err, data, last) {
                 t.equal(err, null, 'no error');
                 if (!last) {
                     t.end();
@@ -398,7 +402,7 @@ test('page -- db limited', function(t) {
                 t.deepEqual(data.features[0].id, primary[0], 'id as expected');
                 t.deepEqual(data.features[1].id, primary[1], 'id as expected');
                 t.deepEqual(data.features[2].id, primary[2], 'id as expected');
-                testPage(last);
+                testPage(data.features.slice(-1)[0].id);
             });
         }
         testPage();
