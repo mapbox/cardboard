@@ -1,4 +1,4 @@
-var test = require('tap').test,
+var test = require('tape'),
     fs = require('fs'),
     queue = require('queue-async'),
     concat = require('concat-stream'),
@@ -145,32 +145,6 @@ test('insert wildly precise feature', function(t) {
 test('teardown', s.teardown);
 
 test('setup', s.setup);
-test('insert non-string usid', function(t) {
-    var cardboard = Cardboard(config);
-    cardboard.put(featureCollection([
-        {
-            type: 'Feature',
-            properties: {
-                id: 1234,
-                up: 'and down'
-            },
-            geometry: {
-                type: 'Point',
-                coordinates: [0,0]
-            }
-        }
-    ]), 'test', function(err, ids) {
-        t.ifError(err, 'insert did not error');
-        cardboard.getBySecondaryId('1234', 'test', function(err, res) {
-            t.ifError(err, 'found item');
-            t.equal(res.features[0].properties.up, 'and down', 'correct feature');
-            t.end();
-        });
-    });
-});
-test('teardown', s.teardown);
-
-test('setup', s.setup);
 test('insert feature with object property', function(t) {
     var cardboard = Cardboard(config);
     var d = {
@@ -208,33 +182,6 @@ test('insert feature with object property', function(t) {
             t.end();
         });
     });
-});
-test('teardown', s.teardown);
-
-test('setup', s.setup);
-test('insert, get by secondary index', function(t) {
-    var cardboard = Cardboard(config);
-
-    cardboard.put(
-        featureCollection([
-            _.clone(fixtures.haiti),
-            _.clone(fixtures.haiti),
-            _.clone(fixtures.haitiLine)
-        ]), 'haiti', get);
-
-    function get(err, ids) {
-       t.ifError(err, 'inserted');
-       cardboard.getBySecondaryId(fixtures.haiti.properties.id, 'haiti', function(err, res){
-           t.notOk(err, 'should not return an error');
-           t.ok(res, 'should return a array of features');
-           t.equal(res.features.length, 2);
-           t.equal(res.features[0].properties.id, 'haitipolygonid');
-           t.equal(res.features[0].id, ids[0]);
-           t.equal(res.features[1].properties.id, 'haitipolygonid');
-           t.equal(res.features[1].id, ids[1]);
-           t.end();
-       });
-    }
 });
 test('teardown', s.teardown);
 
@@ -681,40 +628,44 @@ test('insert datasets and listDatasets', function(t) {
 test('teardown', s.teardown);
 
 test('setup', s.setup);
-test('update feature that doesnt exist.', function(t) {
+test('Insert feature with id specified by user', function(t) {
     var cardboard = Cardboard(config);
-    var haiti = _.clone(fixtures.haiti)
+    var haiti = _.clone(fixtures.haiti);
     haiti.id = 'doesntexist';
 
-    cardboard.put(haiti, 'default', failUpdate);
-
-    function failUpdate(err, id) {
-        t.ok(err, 'should return an error');
-        t.equal(err.message, 'Feature does not exist');
-        t.end();
-    }
+    cardboard.put(haiti, 'default', function(err, id) {
+        t.ifError(err, 'inserted');
+        t.deepEqual(id, [haiti.id], 'Uses given id');
+        cardboard.get(haiti.id, 'default', function(err, feature) {
+            var f = geobuf.geobufToFeature(geobuf.featureToGeobuf(haiti).toBuffer());
+            t.deepEqual(feature, geojsonNormalize(f), 'retrieved record');
+            t.end();
+        });
+    });
 });
 test('teardown', s.teardown);
 
 test('setup', s.setup);
-test('mix of failing update and an insert', function(t) {
+test('Insert with and without ids specified', function(t) {
     var cardboard = Cardboard(config);
-    var haiti = _.clone(fixtures.haiti)
+    var haiti = _.clone(fixtures.haiti);
     haiti.id = 'doesntexist';
 
-    cardboard.put(featureCollection([haiti, fixtures.haiti]), 'default', failUpdate);
+    cardboard.put(featureCollection([haiti, fixtures.haiti]), 'default', function(err, ids) {
+        t.ifError(err, 'inserted features');
 
-    function failUpdate(err, id) {
-        t.ok(err, 'should return an error');
-        t.equal(err.message, 'Feature does not exist');
-
-        cardboard.dump(function(err, items) {
-            t.equal(err, null);
-            t.deepEqual(items, [], 'nothing should have been put in the database');
-            t.end();
+        cardboard.get(haiti.id, 'default', function(err, feature) {
+            var f = geobuf.geobufToFeature(geobuf.featureToGeobuf(haiti).toBuffer());
+            t.deepEqual(feature, geojsonNormalize(f), 'retrieved record');
+            cardboard.get(ids[1], 'default', function(err, feature) {
+                var f = _.extend({ id: ids[1] }, fixtures.haiti);
+                console.log(f);
+                f = geobuf.geobufToFeature(geobuf.featureToGeobuf(f).toBuffer());
+                t.deepEqual(feature, geojsonNormalize(f), 'retrieved record');
+                t.end();
+            });
         });
-    }
-
+    });
 });
 test('teardown', s.teardown);
 

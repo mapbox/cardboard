@@ -32,46 +32,23 @@ module.exports = function Cardboard(c) {
     if (!c.prefix) throw new Error('No s3 prefix set');
     var prefix = c.prefix;
 
-
     cardboard.put = function(featureCollection, dataset, callback) {
-        var featureCollection = geojsonNormalize(featureCollection);
-
-        // if the feature is an update, check upfront that they exist, we can fail them
-        // early.
+        featureCollection = geojsonNormalize(featureCollection);
         var q = queue(150);
+
         featureCollection.features.forEach(function(f) {
-            if (f.id) {
-                var key = { dataset: dataset, id: 'id!' + f.id };
-                q.defer(dyno.getItem, key);
-            }
+            q.defer(putFeature, f, dataset);
         });
 
-        q.awaitAll(function(err, res) {
-            if (err) return callback(err);
-            for(var i = 0; i< res.length; i++) {
-                if(!res[i]) return callback(new Error('Feature does not exist'));
-            }
-            doPut();
-        });
-
-        function doPut() {
-            var q = queue(150);
-
-            featureCollection.features.forEach(function(f) {
-                q.defer(putFeature, f, dataset);
-            });
-            q.awaitAll(callback);
-        }
-
+        q.awaitAll(callback);
     };
 
     function putFeature(feature, dataset, callback) {
-        var isUpdate = feature.hasOwnProperty('id'),
-            f = isUpdate ? _.clone(feature) : _.extend({ id: cuid() }, feature),
-            primary = f.id;
+        var f = feature.hasOwnProperty('id') ? _.clone(feature) : _.extend({ id: cuid() }, feature);
+        var primary = f.id;
 
         if (!f.geometry || !f.geometry.coordinates) {
-            var msg = 'Unlocated features can not be stored.'
+            var msg = 'Unlocated features can not be stored.';
             var err = new Error(msg);
             return callback(err, primary);
         }
@@ -98,20 +75,12 @@ module.exports = function Cardboard(c) {
             s3url: ['s3:/', bucket, s3Key].join('/')
         };
 
-        if (f.properties.id) item.usid = f.properties.id.toString();
         if (buf.length < MAX_GEOMETRY_SIZE) item.val = buf;
-
-        var condition = { expected: {} };
-        condition.expected.id  = isUpdate ? {'NOT_NULL': []} : {'NULL': []};
 
         var q = queue(1);
         q.defer(s3.putObject.bind(s3), s3Params);
-        q.defer(dyno.putItem, item, condition);
+        q.defer(dyno.putItem, item);
         q.await(function(err) {
-            if (err && err.code === 'ConditionalCheckFailedException') {
-                var msg = isUpdate ? 'Feature does not exist' : 'Feature already exists';
-                err = new Error(msg);
-            }
             callback(err, primary);
         });
     }
@@ -135,19 +104,6 @@ module.exports = function Cardboard(c) {
             resolveFeature(item, function(err, feature) {
                 if (err) return callback(err);
                 callback(null, featureCollection([feature]));
-            });
-        });
-    };
-
-    cardboard.getBySecondaryId = function(id, dataset, callback) {
-        var query = { dataset: { EQ: dataset }, usid: { EQ: id } },
-            opts = { index: 'usid', attributes: ['val', 's3url'], pages: 0 };
-
-        dyno.query(query, opts, function(err, item) {
-            if (err) return callback(err);
-            resolveFeatures(item, function(err, features) {
-                if (err) return callback(err);
-                callback(null, featureCollection(features));
             });
         });
     };
