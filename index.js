@@ -19,21 +19,21 @@ var tilebelt = require('tilebelt');
 var MAX_GEOMETRY_SIZE = 1024*10;  //10KB
 var LARGE_INDEX_DISTANCE = 50; //bbox more then 100 miles corner to corner.
 
-
 module.exports = function Cardboard(config) {
+    config = config || {};
+    config.MAX_GEOMETRY_SIZE = MAX_GEOMETRY_SIZE;
+
     if (!config.bucket) throw new Error('No bucket set');
     if (!config.prefix) throw new Error('No s3 prefix set');
 
     // Allow caller to pass in aws-sdk clients
     if (!config.s3) config.s3 = new AWS.S3(config);
     if (!config.dyno) config.dyno = Dyno(config);
-    
-    var cardboard = {};
 
-    var s3 = config.s3 || new AWS.S3(config);
-    var dyno = config.dyno || Dyno(config);
-    var bucket = config.bucket;
-    var prefix = config.prefix;
+    var utils = require('./lib/utils')(config);
+    var cardboard = {
+        batch: require('./lib/batch')(config)
+    };
 
     cardboard.put = function(featureCollection, dataset, callback) {
         featureCollection = geojsonNormalize(featureCollection);
@@ -47,45 +47,14 @@ module.exports = function Cardboard(config) {
     };
 
     function putFeature(feature, dataset, callback) {
-        var f = feature.hasOwnProperty('id') ? _.clone(feature) : _.extend({ id: cuid() }, feature);
-        var primary = f.id;
-
-        if (!f.geometry || !f.geometry.coordinates) {
-            var msg = 'Unlocated features can not be stored.';
-            var err = new Error(msg);
-            return callback(err, primary);
-        }
-
-        var metadata = Metadata(dyno, dataset),
-            info = metadata.getFeatureInfo(f),
-            timestamp = (+new Date()),
-            buf = geobuf.featureToGeobuf(f).toBuffer(),
-            tile = tilebelt.bboxToTile([info.west, info.south, info.east, info.north]),
-            cell = tilebelt.tileToQuadkey(tile),
-            useS3 = buf.length > MAX_GEOMETRY_SIZE,
-            s3Key = [config.prefix, dataset, primary, timestamp].join('/'),
-            s3Params = { Bucket: config.bucket, Key: s3Key, Body: buf };
-
-        var item = {
-            dataset: dataset,
-            id: 'id!' + primary,
-            cell: 'cell!' + cell,
-            size: info.size,
-            west: truncateNum(info.west),
-            south: truncateNum(info.south),
-            east: truncateNum(info.east),
-            north: truncateNum(info.north),
-            s3url: ['s3:/', config.bucket, s3Key].join('/')
-        };
-
-        if (buf.length < MAX_GEOMETRY_SIZE) item.val = buf;
+        var encoded;
+        try { encoded = utils.toDatabaseRecord(feature, dataset); }
+        catch (err) { return callback(err); }
 
         var q = queue(1);
-        q.defer(config.s3.putObject.bind(config.s3), s3Params);
-        q.defer(config.dyno.putItem, item);
-        q.await(function(err) {
-            callback(err, primary);
-        });
+        q.defer(config.s3.putObject.bind(config.s3), encoded[1]);
+        q.defer(config.dyno.putItem, encoded[0]);
+        q.await(function(err) { callback(err, encoded[0].id.split('!')[1]); });
     }
 
     cardboard.del = function(primary, dataset, callback) {
@@ -103,10 +72,10 @@ module.exports = function Cardboard(config) {
 
         config.dyno.getItem(key, function(err, item) {
             if (err) return callback(err);
-            if (!item) return callback(null, featureCollection());
-            resolveFeature(item, function(err, feature) {
+            if (!item) return callback(null, { type: 'FeatureCollection', features: [] });
+            utils.resolveFeatures([item], function(err, features) {
                 if (err) return callback(err);
-                callback(null, featureCollection([feature]));
+                callback(null, features);
             });
         });
     };
@@ -145,9 +114,9 @@ module.exports = function Cardboard(config) {
         var query = { dataset: { EQ: dataset }, id: { BEGINS_WITH: 'id!' } };
         config.dyno.query(query, opts, function(err, items) {
             if (err) return callback(err);
-            resolveFeatures(items, function(err, features) {
+            utils.resolveFeatures(items, function(err, features) {
                 if (err) return callback(err);
-                callback(null, featureCollection(features));
+                callback(null, features);
             });
         });
     };
@@ -301,9 +270,9 @@ module.exports = function Cardboard(config) {
                 return a.id !== b.id;
             });
 
-            resolveFeatures(items, function(err, data) {
+            utils.resolveFeatures(items, function(err, data) {
                 if (err) return callback(err);
-                callback(err, featureCollection(data));
+                callback(err, data);
             });
         });
     };
@@ -317,8 +286,8 @@ module.exports = function Cardboard(config) {
             .pipe(through({ objectMode: true }, function(data, enc, cb) {
                 var output = this.push.bind(this);
                 if (data.id.indexOf('id!') === 0) {
-                    return resolveFeature(data, function(err, feature) {
-                        output(feature);
+                    return utils.resolveFeatures([data], function(err, features) {
+                        output(features.features[0]);
                         cb();
                     });
                 }
@@ -326,31 +295,6 @@ module.exports = function Cardboard(config) {
             }))
             .pipe(geojsonStream.stringify());
     };
-
-    function resolveFeature(item, callback) {
-        var val = item.val;
-
-        // Geobuf is stored in dynamo
-        if (val) return callback(null, geobuf.geobufToFeature(val));
-
-        // Get geobuf from S3
-        var uri = url.parse(item.s3url);
-        config.s3.getObject({
-            Bucket: uri.host,
-            Key: uri.pathname.substr(1)
-        }, function(err, data) {
-            if (err) return callback(err);
-            callback(null, geobuf.geobufToFeature(data.Body));
-        });
-    }
-
-    function resolveFeatures(items, callback) {
-        var q = queue(100);
-        items.forEach(function(item) {
-            q.defer(resolveFeature, item);
-        });
-        q.awaitAll(callback);
-    }
 
     return cardboard;
 };
@@ -361,13 +305,6 @@ function indexLevel(feature) {
     var ne = point(bbox[2], bbox[3]);
     var dist = distance(sw, ne, 'miles');
     return dist >= LARGE_INDEX_DISTANCE ? 0 : 1;
-}
-
-function featureCollection(features) {
-    return {
-        type: 'FeatureCollection',
-        features: features || []
-    };
 }
 
 function truncateNum(num, digits) {

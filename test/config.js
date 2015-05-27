@@ -31,9 +31,7 @@ test('pass preconfigured dyno object', function(t) {
     var cardboard = Cardboard(omitConfig);
     var geojson = featureCollection([{type: 'Feature', properties: {}, geometry: {type: 'Point', coordinates:[1,2]}}]);
 
-    cardboard.put(geojson, 'default', featurePut);
-
-    function featurePut(err) {
+    cardboard.put(geojson, 'default', function(err) {
         t.notOk(err);
 
         cardboard.list('default', function(err, items) {
@@ -42,6 +40,6 @@ test('pass preconfigured dyno object', function(t) {
             t.deepEqual(items, geojson, 'one result');
             t.end();
         });
-    }
+    });
 });
 test('teardown', s.teardown);
