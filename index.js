@@ -23,12 +23,14 @@ module.exports = function Cardboard(config) {
     config = config || {};
     config.MAX_GEOMETRY_SIZE = MAX_GEOMETRY_SIZE;
 
-    if (!config.bucket) throw new Error('No bucket set');
-    if (!config.prefix) throw new Error('No s3 prefix set');
-
     // Allow caller to pass in aws-sdk clients
     if (!config.s3) config.s3 = new AWS.S3(config);
     if (!config.dyno) config.dyno = Dyno(config);
+
+    if (!config.table && !config.dyno) throw new Error('No table set');
+    if (!config.region && !config.dyno) throw new Error('No region set');
+    if (!config.bucket) throw new Error('No bucket set');
+    if (!config.prefix) throw new Error('No s3 prefix set');
 
     var utils = require('./lib/utils')(config);
     var cardboard = {
