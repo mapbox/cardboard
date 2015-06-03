@@ -37,18 +37,7 @@ module.exports = function Cardboard(config) {
         batch: require('./lib/batch')(config)
     };
 
-    cardboard.put = function(featureCollection, dataset, callback) {
-        featureCollection = geojsonNormalize(featureCollection);
-        var q = queue(150);
-
-        featureCollection.features.forEach(function(f) {
-            q.defer(putFeature, f, dataset);
-        });
-
-        q.awaitAll(callback);
-    };
-
-    function putFeature(feature, dataset, callback) {
+    cardboard.put = function(feature, dataset, callback) {
         var encoded;
         try { encoded = utils.toDatabaseRecord(feature, dataset); }
         catch (err) { return callback(err); }
@@ -56,8 +45,12 @@ module.exports = function Cardboard(config) {
         var q = queue(1);
         q.defer(config.s3.putObject.bind(config.s3), encoded[1]);
         q.defer(config.dyno.putItem, encoded[0]);
-        q.await(function(err) { callback(err, encoded[0].id.split('!')[1]); });
-    }
+        q.await(function(err) {
+            var result = JSON.parse(JSON.stringify(feature));
+            result.id = encoded[0].id.split('!')[1];
+            callback(err, result);
+        });
+    };
 
     cardboard.del = function(primary, dataset, callback) {
         var key = { dataset: dataset, id: 'id!' + primary };
@@ -74,10 +67,10 @@ module.exports = function Cardboard(config) {
 
         config.dyno.getItem(key, function(err, item) {
             if (err) return callback(err);
-            if (!item) return callback(null, { type: 'FeatureCollection', features: [] });
+            if (!item) return callback(new Error('Feature ' + primary + ' does not exist'));
             utils.resolveFeatures([item], function(err, features) {
                 if (err) return callback(err);
-                callback(null, features);
+                callback(null, features.features[0]);
             });
         });
     };
