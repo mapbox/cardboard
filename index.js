@@ -12,9 +12,32 @@ var stream = require('stream');
 
 var MAX_GEOMETRY_SIZE = 1024 * 10;  // 10KB
 
-module.exports = function Cardboard(config) {
+// /**
+//  * Handle the response from inserting or updating a feature
+//  * @callback cardboard~putCallback
+//  * @param {object} err - an error object, set to null if no error occurred
+//  * @param {object} feature - a stored version of the GeoJSON feature that was inserted or updated
+//  */
+
+
+/**
+ * @name CardboardClientConfiguration
+ * @type {object}
+ * @property {string} table - the name of a DynamoDB table to connect to
+ * @property {string} region - the AWS region containing the DynamoDB table
+ * @property {string} bucket - the name of an S3 bucket to use
+ * @property {string} prefix - the name of a folder within the indicated S3 bucket
+ */
+
+/**
+ * Creates a cardboard client
+ * @name CardboardClientFactory
+ * @param {CardboardClientConfiguration} config - a configuration object
+ * @returns {cardboard} a cardboard client
+ */
+module.exports = function(config) {
     config = config || {};
-    config.MAX_GEOMETRY_SIZE = MAX_GEOMETRY_SIZE;
+    config.MAX_GEOMETRY_SIZE = config.MAX_GEOMETRY_SIZE || MAX_GEOMETRY_SIZE;
 
     // Allow caller to pass in aws-sdk clients
     if (!config.s3) config.s3 = new AWS.S3(config);
@@ -26,10 +49,20 @@ module.exports = function Cardboard(config) {
     if (!config.prefix) throw new Error('No s3 prefix set');
 
     var utils = require('./lib/utils')(config);
+
+    /**
+     * A client configured to interact with a backend cardboard database
+     */
     var cardboard = {
         batch: require('./lib/batch')(config)
     };
 
+    /**
+     * Insert or update a single GeoJSON feature
+     * @param {object} feature - a GeoJSON feature
+     * @param {string} dataset - the name of the dataset that this feature belongs to
+     * @param {function} callback - the callback function to handle the response
+     */
     cardboard.put = function(feature, dataset, callback) {
         var encoded;
         try { encoded = utils.toDatabaseRecord(feature, dataset); }
@@ -45,6 +78,12 @@ module.exports = function Cardboard(config) {
         });
     };
 
+    /**
+     * Remove a single GeoJSON feature
+     * @param {string} primary - the id for a feature
+     * @param {string} dataset - the name of the dataset that this feature belongs to
+     * @param {function} callback - the callback function to handle the response
+     */
     cardboard.del = function(primary, dataset, callback) {
         var key = { dataset: dataset, id: 'id!' + primary };
 
@@ -55,6 +94,12 @@ module.exports = function Cardboard(config) {
         });
     };
 
+    /**
+     * Retreive a single GeoJSON feature
+     * @param {string} primary - the id for a feature
+     * @param {string} dataset - the name of the dataset that this feature belongs to
+     * @param {function} callback - the callback function to handle the response
+     */
     cardboard.get = function(primary, dataset, callback) {
         var key = { dataset: dataset, id: 'id!' + primary };
 
