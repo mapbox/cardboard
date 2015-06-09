@@ -1,3 +1,9 @@
+var random = require('geojson-random');
+
+module.exports.random = function() {
+  return random.polygon.apply(random, arguments);
+};
+
 module.exports.USA = {
   "type": "Feature",
   "properties": {},
