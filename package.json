@@ -47,7 +47,7 @@
   "devDependencies": {
     "buffer-equal": "0.0.1",
     "dynalite": "^0.14.0",
-    "dynamodb-test": "^0.1.2",
+    "dynamodb-test": "^0.1.3",
     "geojson-fixtures": "0.1.0",
     "geojson-random": "^0.2.2",
     "mock-aws-s3": "^0.2.1",
