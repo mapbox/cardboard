@@ -47,10 +47,10 @@ var cardboard = Cardboard({
 Once you've initialized the client, you can use it to create a table for you:
 
 ```js
-cardboard.createTable('my-new-cardboard-table', callback);
+cardboard.createTable(callback);
 ```
 
-You can also provide the name of a pre-existing table to your configuration options to use that table.
+You don't have to create the table each time; you can provide the name of a pre-existing table to your configuration options to use that table.
 
 ## Concepts
 
