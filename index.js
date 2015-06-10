@@ -76,8 +76,13 @@ module.exports = function Cardboard(config) {
     };
 
     cardboard.createTable = function(tableName, callback) {
+        if (typeof tableName === 'function') {
+            callback = tableName;
+            tableName = null;
+        }
+        
         var table = require('./lib/table.json');
-        table.TableName = tableName;
+        table.TableName = tableName || config.table;
         config.dyno.createTable(table, callback);
     };
 
