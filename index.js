@@ -14,6 +14,7 @@ var extent = require('geojson-extent');
 var cuid = require('cuid');
 var url = require('url');
 var tilebelt = require('tilebelt');
+var geobuf = require('geobuf');
 
 var MAX_GEOMETRY_SIZE = 1024 * 10;  //10KB
 var LARGE_INDEX_DISTANCE = 50; //bbox more then 100 miles corner to corner.
@@ -45,7 +46,7 @@ module.exports = function Cardboard(config) {
         q.defer(config.s3.putObject.bind(config.s3), encoded[1]);
         q.defer(config.dyno.putItem, encoded[0]);
         q.await(function(err) {
-            var result = JSON.parse(JSON.stringify(feature));
+            var result = geobuf.geobufToFeature(encoded[1].Body);
             result.id = encoded[0].id.split('!')[1];
             callback(err, result);
         });
