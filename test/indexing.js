@@ -161,6 +161,35 @@ test('teardown', s.teardown);
 
 test('setup', s.setup);
 
+test('insert reflects feature identical to subsequent get', function(t) {
+    var cardboard = Cardboard(config);
+    var d = {
+        geometry: {
+            coordinates: [
+                0.987654321,
+                0.123456789
+            ],
+            type: 'Point'
+        },
+        properties: {},
+        type: 'Feature'
+    };
+
+    cardboard.put(d, 'default', function(err, reflected) {
+        t.ifError(err, 'put success');
+        t.ok(reflected, 'reflected a feature');
+        cardboard.get(reflected.id, 'default', function(err, got) {
+            t.ifError(err, 'get success');
+            t.deepEqual(reflected, got, 'reflected feature identical');
+            t.end();
+        });
+    });
+});
+
+test('teardown', s.teardown);
+
+test('setup', s.setup);
+
 test('insert feature with object property', function(t) {
     var cardboard = Cardboard(config);
     var d = {
