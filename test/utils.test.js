@@ -122,7 +122,6 @@ test('[utils] toDatabaseRecord - with ID', function(assert) {
     assert.end();
 });
 
-
 test('[utils] toDatabaseRecord - no geometry', function(assert) {
     var noGeom = {
         type: 'Feature',
@@ -133,7 +132,7 @@ test('[utils] toDatabaseRecord - no geometry', function(assert) {
 
     try { var encoded = utils.toDatabaseRecord(noGeom, 'dataset'); }
     catch (err) {
-        assert.equal(err.message ,'Unlocated features can not be stored.', 'expected error message');
+        assert.equal(err.message, 'Unlocated features can not be stored.', 'expected error message');
         return assert.end();
     }
 

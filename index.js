@@ -15,7 +15,7 @@ var cuid = require('cuid');
 var url = require('url');
 var tilebelt = require('tilebelt');
 
-var MAX_GEOMETRY_SIZE = 1024*10;  //10KB
+var MAX_GEOMETRY_SIZE = 1024 * 10;  //10KB
 var LARGE_INDEX_DISTANCE = 50; //bbox more then 100 miles corner to corner.
 
 module.exports = function Cardboard(config) {
@@ -87,10 +87,11 @@ module.exports = function Cardboard(config) {
 
     cardboard.delDataset = function(dataset, callback) {
         cardboard.listIds(dataset, function(err, res) {
-            var keys = res.map(function(id){
-                return { dataset: dataset, id: 'id!'+id };
+            var keys = res.map(function(id) {
+                return { dataset: dataset, id: 'id!' + id };
             });
-            keys.push({ dataset: dataset, id: 'metadata!'+dataset });
+
+            keys.push({ dataset: dataset, id: 'metadata!' + dataset });
 
             config.dyno.deleteItems(keys, function(err, res) {
                 callback(err);
@@ -121,8 +122,8 @@ module.exports = function Cardboard(config) {
     };
 
     cardboard.listIds = function(dataset, callback) {
-        var query = { dataset: { EQ: dataset }, id: {BEGINS_WITH: 'id!'} },
-            opts = { attributes: ['id'], pages: 0 };
+        var query = { dataset: { EQ: dataset }, id: {BEGINS_WITH: 'id!'} };
+        var opts = { attributes: ['id'], pages: 0 };
 
         config.dyno.query(query, opts, function(err, items) {
             if (err) return callback(err);
@@ -137,9 +138,11 @@ module.exports = function Cardboard(config) {
 
         config.dyno.scan(opts, function(err, items) {
             if (err) return callback(err);
-            var datasets = _.uniq(items.map(function(item){
+
+            var datasets = _.uniq(items.map(function(item) {
                 return item.dataset;
             }));
+
             callback(err, datasets);
         });
     };
@@ -166,6 +169,7 @@ module.exports = function Cardboard(config) {
                 memo.push([-180 + epsilon, bbox[1], bbox[2], bbox[3]]);
                 return memo;
             }, []);
+
             if (bbox[1] <= 0 && bbox[3] >= 0) {
                 bboxes = bboxes.reduce(function(memo, bbox) {
                     memo.push([bbox[0], bbox[1], bbox[2], -epsilon]);
@@ -183,6 +187,7 @@ module.exports = function Cardboard(config) {
                 memo.push([180 + epsilon, bbox[1], bbox[2], bbox[3]]);
                 return memo;
             }, []);
+
             if (bbox[1] <= 0 && bbox[3] >= 0) {
                 bboxes = bboxes.reduce(function(memo, bbox) {
                     memo.push([bbox[0], bbox[1], bbox[2], -epsilon]);
@@ -199,6 +204,7 @@ module.exports = function Cardboard(config) {
                 memo.push([epsilon, bbox[1], bbox[2], bbox[3]]);
                 return memo;
             }, []);
+
             if (bbox[1] <= 0 && bbox[3] >= 0) {
                 bboxes = bboxes.reduce(function(memo, bbox) {
                     memo.push([bbox[0], bbox[1], bbox[2], -epsilon]);
@@ -221,7 +227,7 @@ module.exports = function Cardboard(config) {
             // Filter out the z0 tile -- we'll always search it eventually.
             tiles = _.filter(tiles, function(item) {
                 return item[2] !== 0;
-                });
+            });
         }
 
         tiles.forEach(function(tile) {
@@ -229,18 +235,18 @@ module.exports = function Cardboard(config) {
 
             // First find features indexed in children of this tile
             var query = {
-                cell: { 'BEGINS_WITH': 'cell!' + tileKey },
-                dataset: { 'EQ': dataset }
+                cell: { BEGINS_WITH: 'cell!' + tileKey },
+                dataset: { EQ: dataset }
             };
 
             var options = {
                 pages: 0,
                 index: 'cell',
-                filter : {
-                    west: { 'LE': bbox[2] },
-                    east: { 'GE': bbox[0] },
-                    north: { 'GE': bbox[1] },
-                    south: { 'LE': bbox[3] }
+                filter: {
+                    west: { LE: bbox[2] },
+                    east: { GE: bbox[0] },
+                    north: { GE: bbox[1] },
+                    south: { LE: bbox[3] }
                 }
             };
             q.defer(config.dyno.query, query, options);
@@ -249,11 +255,9 @@ module.exports = function Cardboard(config) {
             var parentTileKey = tileKey.slice(0, -1);
 
             while (tileKey.length > 0) {
-                query.cell = { 'EQ': 'cell!' + parentTileKey };
+                query.cell = { EQ: 'cell!' + parentTileKey };
                 q.defer(config.dyno.query, query, options);
-                if (parentTileKey.length === 0) {
-                    break;
-                }
+                if (parentTileKey.length === 0) break;
                 parentTileKey = parentTileKey.slice(0, -1);
             }
         });
@@ -284,12 +288,14 @@ module.exports = function Cardboard(config) {
         return config.dyno.scan()
             .pipe(through({ objectMode: true }, function(data, enc, cb) {
                 var output = this.push.bind(this);
+
                 if (data.id.indexOf('id!') === 0) {
                     return utils.resolveFeatures([data], function(err, features) {
                         output(features.features[0]);
                         cb();
                     });
                 }
+
                 cb();
             }))
             .pipe(geojsonStream.stringify());

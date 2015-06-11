@@ -4,6 +4,7 @@
   "description": "A library for storing and searching geographic features",
   "main": "index.js",
   "scripts": {
+    "pretest": "jshint index.js lib test && jscs index.js lib test",
     "test": "node test/index.js",
     "coverage": "istanbul cover test/index.js && coveralls < ./coverage/lcov.info"
   },
@@ -53,7 +54,20 @@
     "geojson-fixtures": "0.1.0",
     "geojson-random": "^0.2.2",
     "istanbul": "^0.3.15",
+    "jscs": "^1.13.1",
+    "jshint": "^2.8.0",
     "mock-aws-s3": "^0.2.1",
     "tape": "^4.0.0"
+  },
+  "jscsConfig": {
+    "preset": "airbnb",
+    "validateIndentation": 4
+  },
+  "jshint": {
+    "node": true,
+    "globalstrict": false,
+    "undef": true,
+    "unused": true,
+    "noarg": true
   }
 }

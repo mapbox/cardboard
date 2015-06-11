@@ -1,12 +1,13 @@
-var test = require('tape'),
-    queue = require('queue-async'),
-    Cardboard = require('../');
+var test = require('tape');
+var queue = require('queue-async');
+var Cardboard = require('../');
 
 var s = require('./setup');
 var config = s.config;
 var dyno = s.dyno;
 
 test('setup', s.setup);
+
 test('queries along 0 lat/lon', function(t) {
     var cardboard = Cardboard(config);
     var dataset = 'default';
@@ -33,13 +34,15 @@ test('queries along 0 lat/lon', function(t) {
         [0, -10, 10, 0],
         [-0.5, -10, 10, 0.5],
         [-10, -10, 0, 0],
-        [-10, -10, 0.5, 0.5],
+        [-10, -10, 0.5, 0.5]
     ];
 
     var q = queue();
+
     features.forEach(function(f) {
         q.defer(cardboard.put, f, dataset);
     });
+
     q.awaitAll(function(err, res) {
         t.ifError(err, 'inserted');
         runQueries();
@@ -47,6 +50,7 @@ test('queries along 0 lat/lon', function(t) {
 
     function runQueries() {
         var q = queue();
+
         queries.forEach(function(query) {
             function deal(callback) {
                 cardboard.bboxQuery(query, dataset, function(err, res) {
@@ -55,14 +59,17 @@ test('queries along 0 lat/lon', function(t) {
                     callback();
                 });
             }
+
             q.defer(deal);
         });
+
         q.await(function(err) {
             t.ifError(err, 'passed queries');
             t.end();
         });
     }
 });
+
 test('teardown', s.teardown);
 
 // Test findability of a linestring crossing the prime meridian west to east
@@ -71,6 +78,7 @@ test('teardown', s.teardown);
 // There's a query on either side of lon 0 and two meridian-spanning
 // queries.
 test('setup', s.setup);
+
 test('query for line crossing 0 lon n of eq', function(t) {
     var cardboard = Cardboard(config);
     var dataset = 'line-query';
@@ -91,9 +99,9 @@ test('query for line crossing 0 lon n of eq', function(t) {
         [0, 0, 10, 10],
         [0.25, 0.75, 0.75, 1.25],
         [-0.5, -0.5, 10, 10],
-        [-1E-6, 1-1E-6, 1E+6, 1+1E+6],
-        [ -180, -85.05112877980659, 0, 85.0511287798066 ],
-        [ -180, -85.05112877980659, 1, 85.0511287798066 ]
+        [-1E-6, 1 - 1E-6, 1E+6, 1 + 1E+6],
+        [-180, -85.05112877980659, 0, 85.0511287798066],
+        [-180, -85.05112877980659, 1, 85.0511287798066]
     ];
 
     var q = queue();
@@ -105,6 +113,7 @@ test('query for line crossing 0 lon n of eq', function(t) {
 
     function runQueries() {
         var q = queue();
+
         queries.forEach(function(query) {
             function deal(callback) {
                 cardboard.bboxQuery(query, dataset, function(err, res) {
@@ -113,14 +122,17 @@ test('query for line crossing 0 lon n of eq', function(t) {
                     callback();
                 });
             }
+
             q.defer(deal);
         });
+
         q.await(function(err) {
             t.ifError(err, 'passed queries');
             t.end();
         });
     }
 });
+
 test('teardown', s.teardown);
 
 // Test findability of a linestring crossing the prime meridian west to east
@@ -129,6 +141,7 @@ test('teardown', s.teardown);
 // There's a query on either side of lon 0 and two meridian-spanning
 // queries.
 test('setup', s.setup);
+
 test('query for line crossing 0 lon s of eq', function(t) {
     var cardboard = Cardboard(config);
     var dataset = 'line-query';
@@ -149,9 +162,9 @@ test('query for line crossing 0 lon s of eq', function(t) {
         [0, -10, 10, 0],
         [0.25, -1.25, 0.75, -0.75],
         [-0.5, -9.5, 10, 10],
-        [-1E-6, -1-1E-6, 1E+6, -1+1E+6],
-        [ -180, -85.05112877980659, 0, 85.0511287798066 ],
-        [ -180, -85.05112877980659, 1, 85.0511287798066 ]
+        [-1E-6, -1 - 1E-6, 1E+6, -1 + 1E+6],
+        [-180, -85.05112877980659, 0, 85.0511287798066],
+        [-180, -85.05112877980659, 1, 85.0511287798066]
     ];
 
     var q = queue();
@@ -163,6 +176,7 @@ test('query for line crossing 0 lon s of eq', function(t) {
 
     function runQueries() {
         var q = queue();
+
         queries.forEach(function(query) {
             function deal(callback) {
                 cardboard.bboxQuery(query, dataset, function(err, res) {
@@ -171,24 +185,28 @@ test('query for line crossing 0 lon s of eq', function(t) {
                     callback();
                 });
             }
+
             q.defer(deal);
         });
+
         q.await(function(err) {
             t.ifError(err, 'passed queries');
             t.end();
         });
     }
 });
+
 test('teardown', s.teardown);
 
 // Test findability of a linestring near 90dW N of the equator.
 test('setup', s.setup);
+
 test('query for line near -90 lon n of eq', function(t) {
     var cardboard = Cardboard(config);
     var dataset = 'line-query';
 
     // tile for this feature: [ 31, 63, 7 ]
-    var wanted_feature = {
+    var wanted = {
             type: 'Feature',
             properties: {},
             geometry: {
@@ -197,7 +215,7 @@ test('query for line near -90 lon n of eq', function(t) {
             }};
 
     // tile for this feature: [0, 0, 0]
-    var unwanted_feature = {
+    var unwanted = {
             type: 'Feature',
             properties: {},
             geometry: {
@@ -213,8 +231,8 @@ test('query for line near -90 lon n of eq', function(t) {
     ];
 
     var q = queue();
-    q.defer(cardboard.put, wanted_feature, dataset);
-    q.defer(cardboard.put, unwanted_feature, dataset);
+    q.defer(cardboard.put, wanted, dataset);
+    q.defer(cardboard.put, unwanted, dataset);
     q.awaitAll(function(err, res) {
         t.ifError(err, 'inserted');
         runQueries();
@@ -222,6 +240,7 @@ test('query for line near -90 lon n of eq', function(t) {
 
     function runQueries() {
         var q = queue();
+
         queries.forEach(function(query) {
             function deal(callback) {
                 cardboard.bboxQuery(query, dataset, function(err, res) {
@@ -230,17 +249,21 @@ test('query for line near -90 lon n of eq', function(t) {
                     callback();
                 });
             }
+
             q.defer(deal);
         });
+
         q.await(function(err) {
             t.ifError(err, 'passed queries');
             t.end();
         });
     }
 });
+
 test('teardown', s.teardown);
 
 test('setup', s.setup);
+
 test('queries along antimeridian (W)', function(t) {
     var cardboard = Cardboard(config);
     var dataset = 'default';
@@ -267,13 +290,15 @@ test('queries along antimeridian (W)', function(t) {
         [-180, -10, -170, 0],
         [-180.5, -10, -170, 0.5],
         [-190, -10, -180, 0],
-        [-190, -10, -179.5, 0.5],
+        [-190, -10, -179.5, 0.5]
     ];
 
     var q = queue();
+
     features.forEach(function(f) {
         q.defer(cardboard.put, f, dataset);
     });
+
     q.awaitAll(function(err, res) {
         t.ifError(err, 'inserted');
         runQueries();
@@ -281,6 +306,7 @@ test('queries along antimeridian (W)', function(t) {
 
     function runQueries() {
         var q = queue();
+
         queries.forEach(function(query) {
             function deal(callback) {
                 cardboard.bboxQuery(query, dataset, function(err, res) {
@@ -289,12 +315,15 @@ test('queries along antimeridian (W)', function(t) {
                     callback();
                 });
             }
+
             q.defer(deal);
         });
+
         q.await(function(err) {
             t.ifError(err, 'passed queries');
             t.end();
         });
     }
 });
+
 test('teardown', s.teardown);
