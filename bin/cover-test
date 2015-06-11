@@ -1,9 +1,0 @@
-#!/usr/bin/env node
-
-var geojsonCover = require('../lib/geojsoncover'),
-    rw = require('rw');
-
-geojsonCover.geometry(JSON.parse(rw.readFileSync('/dev/stdin')))
-    .forEach(function(cell) {
-        console.log(cell);
-    });

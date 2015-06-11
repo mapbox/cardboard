@@ -3,7 +3,6 @@ var _ = require('lodash');
 var geojsonStream = require('geojson-stream');
 var geojsonNormalize = require('geojson-normalize');
 var concat = require('concat-stream');
-var coverOpts = require('./lib/coveropts');
 var Metadata = require('./lib/metadata');
 var uniq = require('uniq');
 var geobuf = require('geobuf');
@@ -80,7 +79,7 @@ module.exports = function Cardboard(config) {
             callback = tableName;
             tableName = null;
         }
-        
+
         var table = require('./lib/table.json');
         table.TableName = tableName || config.table;
         config.dyno.createTable(table, callback);
