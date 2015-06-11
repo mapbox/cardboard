@@ -19,6 +19,12 @@ var MAX_GEOMETRY_SIZE = 1024 * 10;  // 10KB
 //  * @param {object} feature - a stored version of the GeoJSON feature that was inserted or updated
 //  */
 
+/**
+ * @name PaginationOptions
+ * @type {object}
+ * @property {string} start - start reading features past the provided id
+ * @property {number} maxFeatures - maximum number of features to return
+ */
 
 /**
  * @name CardboardClientConfiguration
@@ -54,6 +60,9 @@ module.exports = function(config) {
      * A client configured to interact with a backend cardboard database
      */
     var cardboard = {
+        /**
+         * A module for batch requests
+         */
         batch: require('./lib/batch')(config)
     };
 
@@ -113,6 +122,11 @@ module.exports = function(config) {
         });
     };
 
+    /**
+     * Create a DynamoDB table with Cardboard's schema
+     * @param {string} [tableName] - the name of the table to create, if not provided, defaults to the tablename defined in client configuration.
+     * @param {function} callback - the callback function to handle the response
+     */
     cardboard.createTable = function(tableName, callback) {
         if (typeof tableName === 'function') {
             callback = tableName;
@@ -150,6 +164,12 @@ module.exports = function(config) {
         });
     };
 
+    /**
+     * List the GeoJSON features that belong to a particular dataset
+     * @param {string} dataset - the name of the dataset
+     * @param {PaginationOptions} pageOptions - pagination options
+     * @param {function} callback - the callback function to handle the response
+     */
     cardboard.list = function(dataset, pageOptions, callback) {
         var opts = {};
 
@@ -211,6 +231,10 @@ module.exports = function(config) {
         });
     };
 
+    /**
+     * List datasets available in this database
+     * @param {function} callback - the callback function to handle the response
+     */
     cardboard.listDatasets = function(callback) {
         var opts = { attributes: ['dataset'], pages:0 };
 
@@ -225,14 +249,30 @@ module.exports = function(config) {
         });
     };
 
+    /**
+     * Get cached metadata about a dataset
+     * @param {string} dataset - the name of the dataset
+     * @param {function} callback - the callback function to handle the response
+     */
     cardboard.getDatasetInfo = function(dataset, callback) {
         Metadata(config.dyno, dataset).getInfo(callback);
     };
 
+    /**
+     * Calculate metadata about a dataset
+     * @param {string} dataset - the name of the dataset
+     * @param {function} callback - the callback function to handle the response
+     */
     cardboard.calculateDatasetInfo = function(dataset, callback) {
         Metadata(config.dyno, dataset).calculateInfo(callback);
     };
 
+    /**
+     * Find GeoJSON features that intersect a bounding box
+     * @param {number[]} bbox - the bounding box as `[west, south, east, north]`
+     * @param {string} dataset - the name of the dataset
+     * @param {function} callback - the callback function to handle the response
+     */
     cardboard.bboxQuery = function(bbox, dataset, callback) {
         var q = queue(100);
 
