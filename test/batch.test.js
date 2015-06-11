@@ -27,11 +27,14 @@ test('[batch] put', function(assert) {
 
         dynamodb.dyno.scan(function(err, records) {
             if (err) throw err;
+
             assert.equal(records.length, states.features.length, 'inserted all the features');
+
             assert.ok(records.reduce(function(inDataset, record) {
                 if (record.dataset !== 'states') inDataset = false;
                 return inDataset;
             }, true), 'all records in the right dataset');
+
             assert.end();
         });
     });

@@ -1,20 +1,21 @@
-var test = require('tape'),
-    fs = require('fs'),
-    Cardboard = require('../'),
-    _ = require('lodash'),
-    Dyno = require('dyno');
+var test = require('tape');
+var fs = require('fs');
+var Cardboard = require('../');
+var _ = require('lodash');
+var Dyno = require('dyno');
 
 var s = require('./setup');
 var config = s.config;
 
 function featureCollection(features) {
-    return  {
+    return {
         type: 'FeatureCollection',
         features: features || []
     };
 }
 
-test('setup', function(t){ s.setup(t, true); });
+test('setup', function(t) { s.setup(t, true); });
+
 test('pass preconfigured dyno object', function(t) {
 
     var omitConfig = _.omit(config, ['accessKeyId', 'secretAccessKey', 'table', 'endpoint', 'region']);
@@ -29,7 +30,7 @@ test('pass preconfigured dyno object', function(t) {
 
     omitConfig.dyno = Dyno.multi(dynoconfig, dynoconfig);
     var cardboard = Cardboard(omitConfig);
-    var geojson = {type: 'Feature', properties: {}, geometry: {type: 'Point', coordinates:[1,2]}};
+    var geojson = {type: 'Feature', properties: {}, geometry: {type: 'Point', coordinates:[1, 2]}};
 
     cardboard.put(geojson, 'default', function(err) {
         t.notOk(err);
@@ -42,4 +43,5 @@ test('pass preconfigured dyno object', function(t) {
         });
     });
 });
+
 test('teardown', s.teardown);
