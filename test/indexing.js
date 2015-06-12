@@ -38,31 +38,14 @@ test('teardown', s.teardown);
 
 test('setup', s.setup);
 
-test('dump', function(t) {
-    var cardboard = Cardboard(config);
-    cardboard.dump(function(err, items) {
-        t.equal(err, null);
-        t.deepEqual(items, [], 'no results with a new database');
-        t.end();
-    });
-});
-
-test('teardown', s.teardown);
-
-test('setup', s.setup);
-
-test('insert & dump', function(t) {
+test('insert', function(t) {
     var cardboard = Cardboard(config);
     var dataset = 'default';
 
     cardboard.put(fixtures.nullIsland, dataset, function(err, res) {
         t.equal(err, null);
         t.pass('inserted');
-        cardboard.dump(function(err, data) {
-            t.equal(err, null);
-            t.equal(data.length, 1, 'creates data');
-            t.end();
-        });
+        t.end();
     });
 });
 
@@ -358,24 +341,6 @@ test('teardown', s.teardown);
 
 test('setup', s.setup);
 
-test('listIds', function(t) {
-    var cardboard = Cardboard(config);
-
-    cardboard.put(fixtures.nullIsland, 'default', function(err, primary) {
-        t.equal(err, null);
-        t.pass('inserted');
-
-        cardboard.listIds('default', function(err, data) {
-            t.deepEqual(data, [primary.id]);
-            t.end();
-        });
-    });
-});
-
-test('teardown', s.teardown);
-
-test('setup', s.setup);
-
 test('list first page with maxFeatures', function(t) {
     var cardboard = Cardboard(config);
     var features = featureCollection([_.clone(fixtures.haiti), _.clone(fixtures.haiti), _.clone(fixtures.haiti)]);
@@ -476,54 +441,6 @@ test('page -- without maxFeatures', function(t) {
         testPage();
     }
 
-});
-
-test('teardown', s.teardown);
-
-test('setup', s.setup);
-
-test('export', function(t) {
-    var cardboard = new Cardboard(config);
-    var first = geojsonFixtures.featurecollection.idaho.features.slice(0, 10);
-    var second = geojsonFixtures.featurecollection.idaho.features.slice(10, 20);
-
-    var q = queue();
-    first.forEach(function(f) {
-        q.defer(cardboard.put, f, 'first');
-    });
-
-    second.forEach(function(f) {
-        q.defer(cardboard.put, f, 'second');
-    });
-
-    q.defer(cardboard.calculateDatasetInfo, 'first');
-    q.defer(cardboard.calculateDatasetInfo, 'second');
-    q.awaitAll(function(err, ids) {
-        t.ifError(err, 'inserted and calc metadata');
-
-        first = first.map(function(f, i) {
-            return _.defaults({ id: ids[0] }, f);
-        });
-
-        second = second.map(function(f, i) {
-            return _.defaults({ id: ids[i + 10] }, f);
-        });
-
-        var expected = { type: 'FeatureCollection', features: _.union(first, second) };
-        var found = '';
-
-        cardboard.export()
-            .on('data', function(chunk) { found = found + chunk; })
-            .on('error', function(err) {
-                t.notOk(err, 'stream error');
-                t.end();
-            })
-            .on('end', function() {
-                found = JSON.parse(found);
-                t.equal(found.features.length, expected.features.length, 'expected number of features');
-                t.end();
-            });
-    });
 });
 
 test('teardown', s.teardown);

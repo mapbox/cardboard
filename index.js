@@ -86,8 +86,20 @@ module.exports = function Cardboard(config) {
         config.dyno.createTable(table, callback);
     };
 
+    function listIds(dataset, callback) {
+        var query = { dataset: { EQ: dataset }, id: {BEGINS_WITH: 'id!'} };
+        var opts = { attributes: ['id'], pages: 0 };
+
+        config.dyno.query(query, opts, function(err, items) {
+            if (err) return callback(err);
+            callback(err, items.map(function(_) {
+                return _.id.split('!')[1];
+            }));
+        });
+    }
+
     cardboard.delDataset = function(dataset, callback) {
-        cardboard.listIds(dataset, function(err, res) {
+        listIds(dataset, function(err, res) {
             var keys = res.map(function(id) {
                 return { dataset: dataset, id: 'id!' + id };
             });
@@ -119,18 +131,6 @@ module.exports = function Cardboard(config) {
                 if (err) return callback(err);
                 callback(null, features);
             });
-        });
-    };
-
-    cardboard.listIds = function(dataset, callback) {
-        var query = { dataset: { EQ: dataset }, id: {BEGINS_WITH: 'id!'} };
-        var opts = { attributes: ['id'], pages: 0 };
-
-        config.dyno.query(query, opts, function(err, items) {
-            if (err) return callback(err);
-            callback(err, items.map(function(_) {
-                return _.id.split('!')[1];
-            }));
         });
     };
 
@@ -279,27 +279,6 @@ module.exports = function Cardboard(config) {
                 callback(err, data);
             });
         });
-    };
-
-    cardboard.dump = function(cb) {
-        return config.dyno.scan(cb);
-    };
-
-    cardboard.export = function(_) {
-        return config.dyno.scan()
-            .pipe(through({ objectMode: true }, function(data, enc, cb) {
-                var output = this.push.bind(this);
-
-                if (data.id.indexOf('id!') === 0) {
-                    return utils.resolveFeatures([data], function(err, features) {
-                        output(features.features[0]);
-                        cb();
-                    });
-                }
-
-                cb();
-            }))
-            .pipe(geojsonStream.stringify());
     };
 
     return cardboard;
