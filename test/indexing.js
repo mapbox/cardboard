@@ -1292,3 +1292,45 @@ test('getDatasetInfo', function(t) {
 });
 
 test('teardown', s.teardown);
+
+test('setup', s.setup);
+
+test('calculateDatasetInfo', function(t) {
+    var cardboard = new Cardboard(config);
+    var features = geojsonFixtures.featurecollection.idaho.features.slice(0, 50);
+    var expectedBounds = geojsonExtent({ type: 'FeatureCollection', features: features });
+
+    cardboard.batch.put(featureCollection(features), dataset, function(err, putFeatures) {
+        t.ifError(err, 'inserted');
+
+        features = features.map(function(f, i) {
+            var feature = _.defaults({ id: putFeatures.features[i].id }, f);
+            return feature;
+        });
+
+        var expectedSize = features.reduce(function(memo, feature) {
+            memo = memo + Buffer.byteLength(JSON.stringify(feature));
+            return memo;
+        }, 0);
+
+        var expected = {
+            dataset: dataset,
+            id: metadata.recordId,
+            size: expectedSize,
+            count: features.length,
+            west: expectedBounds[0],
+            south: expectedBounds[1],
+            east: expectedBounds[2],
+            north: expectedBounds[3]
+        };
+
+        cardboard.calculateDatasetInfo(dataset, function(err, info) {
+            t.ifError(err, 'calculated');
+            t.ok(info.updated, 'has updated date');
+            t.deepEqual(_.omit(info, 'updated'), expected, 'returned expected info');
+            t.end();
+        });
+    });
+});
+
+test('teardown', s.teardown);

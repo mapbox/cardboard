@@ -16,8 +16,7 @@ var url = require('url');
 var tilebelt = require('tilebelt');
 var geobuf = require('geobuf');
 
-var MAX_GEOMETRY_SIZE = 1024 * 10;  //10KB
-var LARGE_INDEX_DISTANCE = 50; //bbox more then 100 miles corner to corner.
+var MAX_GEOMETRY_SIZE = 1024 * 10;  // 10KB
 
 module.exports = function Cardboard(config) {
     config = config || {};
@@ -283,17 +282,3 @@ module.exports = function Cardboard(config) {
 
     return cardboard;
 };
-
-function indexLevel(feature) {
-    var bbox = extent(feature);
-    var sw = point(bbox[0], bbox[1]);
-    var ne = point(bbox[2], bbox[3]);
-    var dist = distance(sw, ne, 'miles');
-    return dist >= LARGE_INDEX_DISTANCE ? 0 : 1;
-}
-
-function truncateNum(num, digits) {
-    digits = digits || 6;
-    var exp = Math.pow(10, digits);
-    return Math.round(exp * num) / exp;
-}
