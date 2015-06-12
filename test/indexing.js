@@ -1,14 +1,13 @@
 var test = require('tape');
 var fs = require('fs');
 var queue = require('queue-async');
-var concat = require('concat-stream');
 var _ = require('lodash');
-var bufferEqual = require('buffer-equal');
 var Cardboard = require('../');
 var Metadata = require('../lib/metadata');
 var geojsonExtent = require('geojson-extent');
 var geojsonFixtures = require('geojson-fixtures');
 var geojsonNormalize = require('geojson-normalize');
+var geojsonStream = require('geojson-stream');
 var geobuf = require('geobuf');
 var fixtures = require('./fixtures');
 var fakeAWS = require('mock-aws-s3');
@@ -334,6 +333,60 @@ test('list', function(t) {
             t.deepEqual(data, geojsonNormalize(nullIsland));
             t.end();
         });
+    });
+});
+
+test('teardown', s.teardown);
+
+test('setup', s.setup);
+
+test('list stream', function(t) {
+    var cardboard = Cardboard(config);
+    var collection = fixtures.random(2223);
+
+    cardboard.batch.put(collection, 'default', function(err, putResults) {
+        t.ifError(err, 'put success');
+
+        var streamed = [];
+
+        cardboard.list('default')
+            .on('data', function(feature) {
+                streamed.push(feature);
+            })
+            .on('error', function(err) {
+                t.ifError(err, 'stream error encountered');
+            })
+            .on('end', function() {
+                t.equal(streamed.length, putResults.features.length, 'got all the features');
+                t.end();
+            });
+    });
+});
+
+test('teardown', s.teardown);
+
+test('setup', s.setup);
+
+test('list stream - query error', function(t) {
+    var cardboard = Cardboard(config);
+    var collection = fixtures.random(20);
+    t.plan(3);
+
+    cardboard.batch.put(collection, 'default', function(err, putResults) {
+        t.ifError(err, 'put success');
+
+        var streamed = [];
+
+        // Should fail because empty string passed for dataset
+        cardboard.list('')
+            .on('data', function(feature) {
+                t.fail('Should not find any data');
+            })
+            .on('error', function(err) {
+                t.pass('expected error caught');
+                t.equal(err.code, 'ValidationException', 'expected error type');
+                t.end();
+            });
     });
 });
 
