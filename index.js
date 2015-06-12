@@ -15,6 +15,7 @@ var cuid = require('cuid');
 var url = require('url');
 var tilebelt = require('tilebelt');
 var geobuf = require('geobuf');
+var stream = require('stream');
 
 var MAX_GEOMETRY_SIZE = 1024 * 10;  // 10KB
 
@@ -120,10 +121,52 @@ module.exports = function Cardboard(config) {
             pageOptions = {};
         }
 
+        pageOptions = pageOptions || {};
         if (pageOptions.start) opts.start = pageOptions.start;
         if (pageOptions.maxFeatures) opts.limit = pageOptions.maxFeatures;
 
         var query = { dataset: { EQ: dataset }, id: { BEGINS_WITH: 'id!' } };
+
+        if (!callback) {
+            var resolver = new stream.Transform({ objectMode: true, highWaterMark: 50 });
+
+            resolver.items = [];
+
+            resolver._resolve = function(callback) {
+                utils.resolveFeatures(resolver.items, function(err, collection) {
+                    if (err) return callback(err);
+
+                    resolver.items = [];
+
+                    collection.features.forEach(function(feature) {
+                        resolver.push(feature);
+                    });
+
+                    callback();
+                });
+            };
+
+            resolver._transform = function(item, enc, callback) {
+                if (resolver.items.length === 25)
+                    return setImmediate(resolver._transform.bind(resolver), item, enc, callback);
+
+                resolver.items.push(item);
+                if (resolver.items.length < 25) return callback();
+
+                resolver._resolve(callback);
+            };
+
+            resolver._flush = function(callback) {
+                if (!resolver.items.length) return callback();
+
+                resolver._resolve(callback);
+            };
+
+            return config.dyno.query(query)
+                .on('error', function(err) { resolver.emit('error', err); })
+              .pipe(resolver);
+        }
+
         config.dyno.query(query, opts, function(err, items) {
             if (err) return callback(err);
             utils.resolveFeatures(items, function(err, features) {

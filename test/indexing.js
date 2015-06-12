@@ -9,6 +9,7 @@ var Metadata = require('../lib/metadata');
 var geojsonExtent = require('geojson-extent');
 var geojsonFixtures = require('geojson-fixtures');
 var geojsonNormalize = require('geojson-normalize');
+var geojsonStream = require('geojson-stream');
 var geobuf = require('geobuf');
 var fixtures = require('./fixtures');
 var fakeAWS = require('mock-aws-s3');
@@ -334,6 +335,33 @@ test('list', function(t) {
             t.deepEqual(data, geojsonNormalize(nullIsland));
             t.end();
         });
+    });
+});
+
+test('teardown', s.teardown);
+
+test('setup', s.setup);
+
+test('list stream', function(t) {
+    var cardboard = Cardboard(config);
+    var collection = fixtures.random(223);
+
+    cardboard.batch.put(collection, 'default', function(err, putResults) {
+        t.ifError(err, 'put success');
+
+        var streamed = [];
+
+        cardboard.list('default')
+            .on('data', function(feature) {
+                streamed.push(feature);
+            })
+            .on('error', function(err) {
+                t.ifError(err, 'stream error encountered');
+            })
+            .on('end', function() {
+                t.equal(streamed.length, putResults.features.length, 'got all the features');
+                t.end();
+            });
     });
 });
 
