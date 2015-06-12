@@ -140,9 +140,6 @@ module.exports = function Cardboard(config) {
             };
 
             resolver._transform = function(item, enc, callback) {
-                if (resolver.items.length === 25)
-                    return setImmediate(resolver._transform.bind(resolver), item, enc, callback);
-
                 resolver.items.push(item);
                 if (resolver.items.length < 25) return callback();
 

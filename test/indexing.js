@@ -342,7 +342,7 @@ test('setup', s.setup);
 
 test('list stream', function(t) {
     var cardboard = Cardboard(config);
-    var collection = fixtures.random(223);
+    var collection = fixtures.random(2223);
 
     cardboard.batch.put(collection, 'default', function(err, putResults) {
         t.ifError(err, 'put success');
@@ -358,6 +358,33 @@ test('list stream', function(t) {
             })
             .on('end', function() {
                 t.equal(streamed.length, putResults.features.length, 'got all the features');
+                t.end();
+            });
+    });
+});
+
+test('teardown', s.teardown);
+
+test('setup', s.setup);
+
+test('list stream - query error', function(t) {
+    var cardboard = Cardboard(config);
+    var collection = fixtures.random(20);
+    t.plan(3);
+
+    cardboard.batch.put(collection, 'default', function(err, putResults) {
+        t.ifError(err, 'put success');
+
+        var streamed = [];
+
+        // Should fail because empty string passed for dataset
+        cardboard.list('')
+            .on('data', function(feature) {
+                t.fail('Should not find any data');
+            })
+            .on('error', function(err) {
+                t.pass('expected error caught');
+                t.equal(err.code, 'ValidationException', 'expected error type');
                 t.end();
             });
     });
