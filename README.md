@@ -1,6 +1,6 @@
 # cardboard
 
-[![build status](https://secure.travis-ci.org/mapbox/cardboard.png)](http://travis-ci.org/mapbox/cardboard)
+[![Build Status](https://travis-ci.org/mapbox/cardboard.svg?branch=master)](https://travis-ci.org/mapbox/cardboard) [![Coverage Status](https://coveralls.io/repos/mapbox/cardboard/badge.svg?branch=master)](https://coveralls.io/r/mapbox/cardboard?branch=master)
 
 Cardboard is a JavaScript library for managing the storage of GeoJSON features on an AWS backend. It relies on DynamoDB for indexing and small-feature storage, and S3 for large-feature storage. Cardboard provides functions to create, read, update, and delete single features or in batch, as well as simple bounding-box spatial query capabilities.
 
