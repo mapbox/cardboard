@@ -1,0 +1,79 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Travis user for testing cardboard",
+    "Resources": {
+        "CardboardTestUser": {
+            "Type": "AWS::IAM::User",
+            "Properties": {
+                "Path": "/service/",
+                "Policies": [
+                    {
+                        "PolicyName": "cardboard-test",
+                        "PolicyDocument": {
+                            "Statement": [
+                                {
+                                    "Resource": [
+                                        {
+                                            "Fn::Join": [
+                                                "",
+                                                [
+                                                    "arn:aws:dynamodb:us-east-1:",
+                                                    {
+                                                        "Ref": "AWS::AccountId"
+                                                    },
+                                                    ":table/test-cardboard*"
+                                                ]
+                                            ]
+                                        }
+                                    ],
+                                    "Action": [
+                                        "dynamodb:CreateTable",
+                                        "dynamodb:DeleteTable",
+                                        "dynamodb:DescribeTable",
+                                        "dynamodb:BatchWriteItem",
+                                        "dynamodb:Query"
+                                    ],
+                                    "Effect": "Allow"
+                                },
+                                {
+                                    "Resource": [
+                                        "arn:aws:s3:::mapbox-sandbox/cardboard-test*"
+                                    ],
+                                    "Action": [
+                                        "s3:GetObject",
+                                        "s3:PutObject"
+                                    ],
+                                    "Effect": "Allow"
+                                }
+                            ]
+                        }
+
+                    }
+                ]
+            }
+        },
+        "CardboardTestKey": {
+            "Type": "AWS::IAM::AccessKey",
+            "Properties": {
+                "UserName": {
+                    "Ref": "CardboardTestUser"
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "TestAccessKeyId": {
+            "Value": {
+                "Ref": "CardboardTestKey"
+            }
+        },
+        "TestSecretAccessKey": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "CardboardTestKey",
+                    "SecretAccessKey"
+                ]
+            }
+        }
+    }
+}
