@@ -13,40 +13,15 @@
           <a href="/" class="h5 button block button-transparent">cardboard 0.14.2</a>
           <div class='px2'>
               <a
-                href='#cardboardclientconfiguration'
+                href='#cardboard'
                 class='regular block'>
-                <code>CardboardClientConfiguration</code>
-              </a>
-              <a
-                href='#cardboardclientfactory'
-                class='regular block'>
-                <code>CardboardClientFactory</code>
-              </a>
-              <a
-                href='#metadataclientfactory'
-                class='regular block'>
-                <code>MetadataClientFactory</code>
-              </a>
-              <a
-                href='#paginationoptions'
-                class='regular block'>
-                <code>PaginationOptions</code>
-              </a>
-              <a
-                href='#utilsfactory'
-                class='regular block'>
-                <code>UtilsFactory</code>
+                <code>Cardboard</code>
               </a>
               <a
                 href='#cardboard'
                 class='regular block'>
                 <code>cardboard</code>
               </a>
-                <a
-                  href='#cardboard/batch'
-                  class='px1 regular block'>
-                  <code>.batch</code>
-                </a>
                 <a
                   href='#cardboard/bboxquery'
                   class='px1 regular block'>
@@ -66,6 +41,11 @@
                   href='#cardboard/del'
                   class='px1 regular block'>
                   <code>.del</code>
+                </a>
+                <a
+                  href='#cardboard/deldataset'
+                  class='px1 regular block'>
+                  <code>.delDataset</code>
                 </a>
                 <a
                   href='#cardboard/get'
@@ -91,6 +71,21 @@
                   href='#cardboard/put'
                   class='px1 regular block'>
                   <code>.put</code>
+                </a>
+              <a
+                href='#cardboard-batch'
+                class='regular block'>
+                <code>cardboard.batch</code>
+              </a>
+                <a
+                  href='#cardboard-batch/put'
+                  class='px1 regular block'>
+                  <code>.put</code>
+                </a>
+                <a
+                  href='#cardboard-batch/remove'
+                  class='px1 regular block'>
+                  <code>.remove</code>
                 </a>
               <a
                 href='#metadata'
@@ -148,74 +143,15 @@
       <div class='sm-col  col-9  flex flex-column'>
         <div class='flex-auto full-width'>
           <div class='px1'>
-<section id='cardboardclientconfiguration'class='mt2 mb2 py1 px2 keyline-top'>
+<section id='cardboard'class='mt2 mb2 py1 px2 keyline-top'>
   <h3 class='regular'>
-    <a class='black' href='#cardboardclientconfiguration'>
+    <a class='black' href='#cardboard'>
       <code>
-        CardboardClientConfiguration<span class='gray'></span>
+        Cardboard<span class='gray'>(config, config.table, config.region, config.bucket, config.prefix, [config.dyno], [config.s3])</span>
       </code>
     </a>
   </h3>
-  
-
-
-    <p>
-      <table class='table-light overflow-hidden bg-cloudy-light'>
-        <thead>
-          <th class='col-3'>property</th>
-          <th class='col-3'>type</th>
-          <th class='col-6'>description</th>
-        </thead>
-          <tr>
-            <td>table</td>
-            <td>
-              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
-            </td>
-            <td><p>the name of a DynamoDB table to connect to</p>
-</td>
-          </tr>
-          <tr>
-            <td>region</td>
-            <td>
-              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
-            </td>
-            <td><p>the AWS region containing the DynamoDB table</p>
-</td>
-          </tr>
-          <tr>
-            <td>bucket</td>
-            <td>
-              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
-            </td>
-            <td><p>the name of an S3 bucket to use</p>
-</td>
-          </tr>
-          <tr>
-            <td>prefix</td>
-            <td>
-              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
-            </td>
-            <td><p>the name of a folder within the indicated S3 bucket</p>
-</td>
-          </tr>
-      </table>
-    </p>
-
-
-
-
-
-
-</section>
-<section id='cardboardclientfactory'class='mt2 mb2 py1 px2 keyline-top'>
-  <h3 class='regular'>
-    <a class='black' href='#cardboardclientfactory'>
-      <code>
-        CardboardClientFactory<span class='gray'>(config)</span>
-      </code>
-    </a>
-  </h3>
-  <p>Creates a cardboard client</p>
+  <p>Cardboard client generator</p>
 
 
     <p>
@@ -228,9 +164,57 @@
           <tr>
             <td>config</td>
             <td>
-              <code><a href="#cardboardclientconfiguration">CardboardClientConfiguration</a></code>
+              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></code>
             </td>
             <td><p>a configuration object</p>
+</td>
+          </tr>
+          <tr>
+            <td>config.table</td>
+            <td>
+              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+            </td>
+            <td><p>the name of a DynamoDB table to connect to</p>
+</td>
+          </tr>
+          <tr>
+            <td>config.region</td>
+            <td>
+              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+            </td>
+            <td><p>the AWS region containing the DynamoDB table</p>
+</td>
+          </tr>
+          <tr>
+            <td>config.bucket</td>
+            <td>
+              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+            </td>
+            <td><p>the name of an S3 bucket to use</p>
+</td>
+          </tr>
+          <tr>
+            <td>config.prefix</td>
+            <td>
+              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+            </td>
+            <td><p>the name of a folder within the indicated S3 bucket</p>
+</td>
+          </tr>
+          <tr>
+            <td>config.dyno</td>
+            <td>
+              <code>[<code>dyno</code>]</code>
+            </td>
+            <td><p>a pre-configured <a href="https://github.com/mapbox/dyno">dyno client</a> for connecting to DynamoDB</p>
+</td>
+          </tr>
+          <tr>
+            <td>config.s3</td>
+            <td>
+              <code>[<code>s3</code>]</code>
+            </td>
+            <td><p>a pre-configured <a href="http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html">S3 client</a></p>
 </td>
           </tr>
       </table>
@@ -246,143 +230,17 @@
       </span>
 
 
-
-
-
-</section>
-<section id='metadataclientfactory'class='mt2 mb2 py1 px2 keyline-top'>
-  <h3 class='regular'>
-    <a class='black' href='#metadataclientfactory'>
-      <code>
-        MetadataClientFactory<span class='gray'>(dyno, dataset)</span>
-      </code>
-    </a>
-  </h3>
-  <p>Create a metadata client</p>
-
-
-    <p>
-      <table class='table-light overflow-hidden bg-cloudy-light'>
-        <thead>
-          <th class='col-3'>parameter</th>
-          <th class='col-3'>type</th>
-          <th class='col-6'>description</th>
-        </thead>
-          <tr>
-            <td>dyno</td>
-            <td>
-              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></code>
-            </td>
-            <td><p>a dyno client</p>
-</td>
-          </tr>
-          <tr>
-            <td>dataset</td>
-            <td>
-              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
-            </td>
-            <td><p>the name of the dataset</p>
-</td>
-          </tr>
-      </table>
-    </p>
-
-
-      <h4>Returns</h4>
-      <code><code><a href="#metadata">metadata</a></code></code>
-      :
-      <span class='force-inline'>
-        <p>a metadata client</p>
-
-      </span>
-
-
-
-
-
-</section>
-<section id='paginationoptions'class='mt2 mb2 py1 px2 keyline-top'>
-  <h3 class='regular'>
-    <a class='black' href='#paginationoptions'>
-      <code>
-        PaginationOptions<span class='gray'></span>
-      </code>
-    </a>
-  </h3>
-  
-
-
-    <p>
-      <table class='table-light overflow-hidden bg-cloudy-light'>
-        <thead>
-          <th class='col-3'>property</th>
-          <th class='col-3'>type</th>
-          <th class='col-6'>description</th>
-        </thead>
-          <tr>
-            <td>start</td>
-            <td>
-              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
-            </td>
-            <td><p>start reading features past the provided id</p>
-</td>
-          </tr>
-          <tr>
-            <td>maxFeatures</td>
-            <td>
-              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>
-            </td>
-            <td><p>maximum number of features to return</p>
-</td>
-          </tr>
-      </table>
-    </p>
-
-
-
-
-
-
-</section>
-<section id='utilsfactory'class='mt2 mb2 py1 px2 keyline-top'>
-  <h3 class='regular'>
-    <a class='black' href='#utilsfactory'>
-      <code>
-        UtilsFactory<span class='gray'>(config)</span>
-      </code>
-    </a>
-  </h3>
-  <p>Gain access to utils</p>
-
-
-    <p>
-      <table class='table-light overflow-hidden bg-cloudy-light'>
-        <thead>
-          <th class='col-3'>parameter</th>
-          <th class='col-3'>type</th>
-          <th class='col-6'>description</th>
-        </thead>
-          <tr>
-            <td>config</td>
-            <td>
-              <code><a href="#cardboardclientconfiguration">CardboardClientConfiguration</a></code>
-            </td>
-            <td><p>cardboard configuration object</p>
-</td>
-          </tr>
-      </table>
-    </p>
-
-
-      <h4>Returns</h4>
-      <code><code><a href="#utils">utils</a></code></code>
-      :
-      <span class='force-inline'>
-        <p>module containing utility functions</p>
-
-      </span>
-
-
+    <h4>Examples</h4>
+<pre><span class="hljs-keyword">var</span> cardboard = <span class="hljs-built_in">require</span>(<span class="hljs-string">'cardboard'</span>)({
+  table: <span class="hljs-string">'my-cardboard-table'</span>,
+  region: <span class="hljs-string">'us-east-1'</span>,
+  bucket: <span class="hljs-string">'my-cardboard-bucket'</span>,
+  prefix: <span class="hljs-string">'my-cardboard-prefix'</span>
+});</pre><pre><span class="hljs-keyword">var</span> cardboard = <span class="hljs-built_in">require</span>(<span class="hljs-string">'cardboard'</span>)({
+  dyno: <span class="hljs-built_in">require</span>(<span class="hljs-string">'dyno'</span>)(dynoConfig),
+  bucket: <span class="hljs-string">'my-cardboard-bucket'</span>,
+  prefix: <span class="hljs-string">'my-cardboard-prefix'</span>
+});</pre>
 
 
 
@@ -403,135 +261,6 @@
 
 
 
-      <div class='section-indent'>
-<section id='cardboard/batch'class='mt2 mb2 py1 px2 keyline-top'>
-  <h3 class='regular'>
-    <a class='black' href='#cardboard/batch'>
-      <code>
-        batch<span class='gray'></span>
-      </code>
-    </a>
-  </h3>
-  <p>A module for batch requests</p>
-
-
-
-
-
-
-
-      <div class='section-indent'>
-<section id='cardboard/batch/put'class='mt2 mb2 py1 px2 keyline-top'>
-  <h3 class='regular'>
-    <a class='black' href='#cardboard/batch/put'>
-      <code>
-        put<span class='gray'>(collection, dataset, callback)</span>
-      </code>
-    </a>
-  </h3>
-  <p>Insert or update a set of GeoJSON features</p>
-
-
-    <p>
-      <table class='table-light overflow-hidden bg-cloudy-light'>
-        <thead>
-          <th class='col-3'>parameter</th>
-          <th class='col-3'>type</th>
-          <th class='col-6'>description</th>
-        </thead>
-          <tr>
-            <td>collection</td>
-            <td>
-              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></code>
-            </td>
-            <td><p>a GeoJSON FeatureCollection containing features to insert and/or update</p>
-</td>
-          </tr>
-          <tr>
-            <td>dataset</td>
-            <td>
-              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
-            </td>
-            <td><p>the name of the dataset that these features belongs to</p>
-</td>
-          </tr>
-          <tr>
-            <td>callback</td>
-            <td>
-              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function">function</a></code>
-            </td>
-            <td><p>the callback function to handle the response</p>
-</td>
-          </tr>
-      </table>
-    </p>
-
-
-
-
-
-
-
-</section>
-      </div>
-      <div class='section-indent'>
-<section id='cardboard/batch/remove'class='mt2 mb2 py1 px2 keyline-top'>
-  <h3 class='regular'>
-    <a class='black' href='#cardboard/batch/remove'>
-      <code>
-        remove<span class='gray'>(ids, dataset, callback)</span>
-      </code>
-    </a>
-  </h3>
-  <p>Remove a set of features</p>
-
-
-    <p>
-      <table class='table-light overflow-hidden bg-cloudy-light'>
-        <thead>
-          <th class='col-3'>parameter</th>
-          <th class='col-3'>type</th>
-          <th class='col-6'>description</th>
-        </thead>
-          <tr>
-            <td>ids</td>
-            <td>
-              Array<<code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>>
-            </td>
-            <td><p>an array of feature ids to remove</p>
-</td>
-          </tr>
-          <tr>
-            <td>dataset</td>
-            <td>
-              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
-            </td>
-            <td><p>the name of the dataset that these features belong to</p>
-</td>
-          </tr>
-          <tr>
-            <td>callback</td>
-            <td>
-              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function">function</a></code>
-            </td>
-            <td><p>the callback function to handle the response</p>
-</td>
-          </tr>
-      </table>
-    </p>
-
-
-
-
-
-
-
-</section>
-      </div>
-
-
-</section>
-      </div>
       <div class='section-indent'>
 <section id='cardboard/bboxquery'class='mt2 mb2 py1 px2 keyline-top'>
   <h3 class='regular'>
@@ -673,6 +402,14 @@
 
 
 
+    <h4>Examples</h4>
+<pre><span class="hljs-comment">// Create the cardboard table specified by the client config</span>
+cardboard.createTable(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err</span>) </span>{
+  <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> err;
+});</pre><pre><span class="hljs-comment">// Create the another cardboard table</span>
+cardboard.createTable(<span class="hljs-string">'new-cardboard-table'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err</span>) </span>{
+  <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> err;
+});</pre>
 
 
 
@@ -711,6 +448,76 @@
               <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
             </td>
             <td><p>the name of the dataset that this feature belongs to</p>
+</td>
+          </tr>
+          <tr>
+            <td>callback</td>
+            <td>
+              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function">function</a></code>
+            </td>
+            <td><p>the callback function to handle the response</p>
+</td>
+          </tr>
+      </table>
+    </p>
+
+
+
+
+    <h4>Examples</h4>
+<pre><span class="hljs-comment">// Create a point, then delete it</span>
+<span class="hljs-keyword">var</span> feature = {
+  id: <span class="hljs-string">'my-custom-id'</span>,
+  type: <span class="hljs-string">'Feature'</span>,
+  properties: {},
+  geometry: {
+    type: <span class="hljs-string">'Point'</span>,
+    coordinates: [<span class="hljs-number">0</span>, <span class="hljs-number">0</span>]
+  }
+};
+
+cardboard.put(feature, <span class="hljs-string">'my-dataset'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, result</span>) </span>{
+  <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> err;
+
+  cardboard.del(result.id, <span class="hljs-string">'my-dataset'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, result</span>) </span>{
+    <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> err;
+    !!result; <span class="hljs-comment">// true: the feature was removed</span>
+  });
+});</pre><pre><span class="hljs-comment">// Attempt to delete a feature that does not exist</span>
+cardboard.del(<span class="hljs-string">'non-existent-feature'</span>, <span class="hljs-string">'my-dataset'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, result</span>) </span>{
+  err.message === <span class="hljs-string">'Feature does not exist'</span>; <span class="hljs-comment">// true</span>
+  !!result; <span class="hljs-comment">// false: nothing was removed</span>
+});</pre>
+
+
+
+</section>
+      </div>
+      <div class='section-indent'>
+<section id='cardboard/deldataset'class='mt2 mb2 py1 px2 keyline-top'>
+  <h3 class='regular'>
+    <a class='black' href='#cardboard/deldataset'>
+      <code>
+        delDataset<span class='gray'>(dataset, callback)</span>
+      </code>
+    </a>
+  </h3>
+  <p>Remove an entire dataset</p>
+
+
+    <p>
+      <table class='table-light overflow-hidden bg-cloudy-light'>
+        <thead>
+          <th class='col-3'>parameter</th>
+          <th class='col-3'>type</th>
+          <th class='col-6'>description</th>
+        </thead>
+          <tr>
+            <td>dataset</td>
+            <td>
+              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+            </td>
+            <td><p>the name of the dataset</p>
 </td>
           </tr>
           <tr>
@@ -781,6 +588,30 @@
 
 
 
+    <h4>Examples</h4>
+<pre><span class="hljs-comment">// Create a point, then retrieve it.</span>
+<span class="hljs-keyword">var</span> feature = {
+  type: <span class="hljs-string">'Feature'</span>,
+  properties: {},
+  geometry: {
+    type: <span class="hljs-string">'Point'</span>,
+    coordinates: [<span class="hljs-number">0</span>, <span class="hljs-number">0</span>]
+  }
+};
+
+cardboard.put(feature, <span class="hljs-string">'my-dataset'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, result</span>) </span>{
+  <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> err;
+  result.geometry.coordinates = [<span class="hljs-number">1</span>, <span class="hljs-number">1</span>];
+
+  cardboard.get(result.id, <span class="hljs-string">'my-dataset'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, final</span>) </span>{
+    <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> err;
+    final === result; <span class="hljs-comment">// true: the feature was retrieved</span>
+  });
+});</pre><pre><span class="hljs-comment">// Attempt to retrieve a feature that does not exist</span>
+cardboard.get(<span class="hljs-string">'non-existent-feature'</span>, <span class="hljs-string">'my-dataset'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, result</span>) </span>{
+  err.message === <span class="hljs-string">'Feature non-existent-feature does not exist'</span>; <span class="hljs-comment">// true</span>
+  !!result; <span class="hljs-comment">// false: nothing was removed</span>
+});</pre>
 
 
 
@@ -837,7 +668,7 @@
   <h3 class='regular'>
     <a class='black' href='#cardboard/list'>
       <code>
-        list<span class='gray'>(dataset, pageOptions, callback)</span>
+        list<span class='gray'>(dataset, [pageOptions], [pageOptions.start], [pageOptions.maxFeatures], callback)</span>
       </code>
     </a>
   </h3>
@@ -862,9 +693,25 @@
           <tr>
             <td>pageOptions</td>
             <td>
-              <code><a href="#paginationoptions">PaginationOptions</a></code>
+              <code>[<code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></code>]</code>
             </td>
             <td><p>pagination options</p>
+</td>
+          </tr>
+          <tr>
+            <td>pageOptions.start</td>
+            <td>
+              <code>[<code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>]</code>
+            </td>
+            <td><p>start reading features past the provided id</p>
+</td>
+          </tr>
+          <tr>
+            <td>pageOptions.maxFeatures</td>
+            <td>
+              <code>[<code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>]</code>
+            </td>
+            <td><p>maximum number of features to return</p>
 </td>
           </tr>
           <tr>
@@ -881,6 +728,35 @@
 
 
 
+    <h4>Examples</h4>
+<pre><span class="hljs-comment">// List all the features in a dataset</span>
+cardboard.list(<span class="hljs-string">'my-dataset'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, collection</span>) </span>{
+  <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> err;
+  collection.type === <span class="hljs-string">'FeatureCollection'</span>; <span class="hljs-comment">// true</span>
+});</pre><pre><span class="hljs-comment">// Stream all the features in a dataset</span>
+cardboard.list(<span class="hljs-string">'my-dataset'</span>)
+  .on(<span class="hljs-string">'data'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">feature</span>) </span>{
+    <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'Got feature: %j'</span>, feature);
+  })
+  .on(<span class="hljs-string">'end'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+    <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'All done!'</span>);
+  });</pre><pre><span class="hljs-comment">// List one page with a max of 10 features from a dataset</span>
+cardboard.list(<span class="hljs-string">'my-dataset'</span>, { maxFeatures: <span class="hljs-number">10</span> }, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, collection</span>) </span>{
+  <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> err;
+  collection.type === <span class="hljs-string">'FeatureCollection'</span>; <span class="hljs-comment">// true</span>
+  collection.features.length &lt;= <span class="hljs-number">10</span>; <span class="hljs-comment">// true</span>
+});</pre><pre><span class="hljs-comment">// Paginate through all the features in a dataset</span>
+(<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">list</span>(<span class="hljs-params">startAfter</span>) </span>{
+  <span class="hljs-keyword">var</span> options = { maxFeatures: <span class="hljs-number">10</span> };
+  <span class="hljs-keyword">if</span> (startAfter) options.start = startFrom;
+  cardabord.list(<span class="hljs-string">'my-dataset'</span>, options, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, collection</span>) </span>{
+    <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> err;
+    <span class="hljs-keyword">if</span> (!collection.features.length) <span class="hljs-keyword">return</span> <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'All done!'</span>);
+
+    <span class="hljs-keyword">var</span> lastId = collection.features.slice(-<span class="hljs-number">1</span>)[<span class="hljs-number">0</span>].id;
+    list(lastId);
+  });
+})();</pre>
 
 
 
@@ -957,6 +833,180 @@
               <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
             </td>
             <td><p>the name of the dataset that this feature belongs to</p>
+</td>
+          </tr>
+          <tr>
+            <td>callback</td>
+            <td>
+              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function">function</a></code>
+            </td>
+            <td><p>the callback function to handle the response</p>
+</td>
+          </tr>
+      </table>
+    </p>
+
+
+
+
+    <h4>Examples</h4>
+<pre><span class="hljs-comment">// Create a point, allowing Cardboard to assign it an id.</span>
+<span class="hljs-keyword">var</span> feature = {
+  type: <span class="hljs-string">'Feature'</span>,
+  properties: {},
+  geometry: {
+    type: <span class="hljs-string">'Point'</span>,
+    coordinates: [<span class="hljs-number">0</span>, <span class="hljs-number">0</span>]
+  }
+};
+
+cardboard.put(feature, <span class="hljs-string">'my-dataset'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, result</span>) </span>{
+  <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> err;
+  !!result.id; <span class="hljs-comment">// true: an id has been assigned</span>
+});</pre><pre><span class="hljs-comment">// Create a point, using a custom id.</span>
+<span class="hljs-keyword">var</span> feature = {
+  id: <span class="hljs-string">'my-custom-id'</span>,
+  type: <span class="hljs-string">'Feature'</span>,
+  properties: {},
+  geometry: {
+    type: <span class="hljs-string">'Point'</span>,
+    coordinates: [<span class="hljs-number">0</span>, <span class="hljs-number">0</span>]
+  }
+};
+
+cardboard.put(feature, <span class="hljs-string">'my-dataset'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, result</span>) </span>{
+  <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> err;
+  result.id === feature.id; <span class="hljs-comment">// true: the custom id was preserved</span>
+});</pre><pre><span class="hljs-comment">// Create a point, then move it.</span>
+<span class="hljs-keyword">var</span> feature = {
+  type: <span class="hljs-string">'Feature'</span>,
+  properties: {},
+  geometry: {
+    type: <span class="hljs-string">'Point'</span>,
+    coordinates: [<span class="hljs-number">0</span>, <span class="hljs-number">0</span>]
+  }
+};
+
+cardboard.put(feature, <span class="hljs-string">'my-dataset'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, result</span>) </span>{
+  <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> err;
+  result.geometry.coordinates = [<span class="hljs-number">1</span>, <span class="hljs-number">1</span>];
+
+  cardboard.put(result, <span class="hljs-string">'my-dataset'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, final</span>) </span>{
+    <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> err;
+    final.geometry.coordinates[<span class="hljs-number">0</span>] === <span class="hljs-number">1</span>; <span class="hljs-comment">// true: the feature was moved</span>
+  });
+});</pre>
+
+
+
+</section>
+      </div>
+
+
+</section>
+<section id='cardboard-batch'class='mt2 mb2 py1 px2 keyline-top'>
+  <h3 class='regular'>
+    <a class='black' href='#cardboard-batch'>
+      <code>
+        cardboard.batch<span class='gray'></span>
+      </code>
+    </a>
+  </h3>
+  <p>A module for batch requests</p>
+
+
+
+
+
+
+
+      <div class='section-indent'>
+<section id='cardboard-batch/put'class='mt2 mb2 py1 px2 keyline-top'>
+  <h3 class='regular'>
+    <a class='black' href='#cardboard-batch/put'>
+      <code>
+        put<span class='gray'>(collection, dataset, callback)</span>
+      </code>
+    </a>
+  </h3>
+  <p>Insert or update a set of GeoJSON features</p>
+
+
+    <p>
+      <table class='table-light overflow-hidden bg-cloudy-light'>
+        <thead>
+          <th class='col-3'>parameter</th>
+          <th class='col-3'>type</th>
+          <th class='col-6'>description</th>
+        </thead>
+          <tr>
+            <td>collection</td>
+            <td>
+              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></code>
+            </td>
+            <td><p>a GeoJSON FeatureCollection containing features to insert and/or update</p>
+</td>
+          </tr>
+          <tr>
+            <td>dataset</td>
+            <td>
+              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+            </td>
+            <td><p>the name of the dataset that these features belongs to</p>
+</td>
+          </tr>
+          <tr>
+            <td>callback</td>
+            <td>
+              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function">function</a></code>
+            </td>
+            <td><p>the callback function to handle the response</p>
+</td>
+          </tr>
+      </table>
+    </p>
+
+
+
+
+
+
+
+</section>
+      </div>
+      <div class='section-indent'>
+<section id='cardboard-batch/remove'class='mt2 mb2 py1 px2 keyline-top'>
+  <h3 class='regular'>
+    <a class='black' href='#cardboard-batch/remove'>
+      <code>
+        remove<span class='gray'>(ids, dataset, callback)</span>
+      </code>
+    </a>
+  </h3>
+  <p>Remove a set of features</p>
+
+
+    <p>
+      <table class='table-light overflow-hidden bg-cloudy-light'>
+        <thead>
+          <th class='col-3'>parameter</th>
+          <th class='col-3'>type</th>
+          <th class='col-6'>description</th>
+        </thead>
+          <tr>
+            <td>ids</td>
+            <td>
+              Array<<code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>>
+            </td>
+            <td><p>an array of feature ids to remove</p>
+</td>
+          </tr>
+          <tr>
+            <td>dataset</td>
+            <td>
+              <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+            </td>
+            <td><p>the name of the dataset that these features belong to</p>
 </td>
           </tr>
           <tr>
@@ -1307,7 +1357,7 @@
             <td>
               Array<<code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></code>>
             </td>
-            <td><p>an array of items returned from DynamoDB in object format</p>
+            <td><p>an array of items returned from DynamoDB in simplified JSON format</p>
 </td>
           </tr>
           <tr>
@@ -1372,7 +1422,7 @@
       <code>Array<<code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></code>></code>
       :
       <span class='force-inline'>
-        <p>an array: The first element is a DynamoDB record suitable for inserting via dyno.putItem, the second are parameters suitable for uploading via s3.putObject.</p>
+        <p>the first element is a DynamoDB record suitable for inserting via <code>dyno.putItem</code>, the second are parameters suitable for uploading via <code>s3.putObject</code>.</p>
 
       </span>
 
