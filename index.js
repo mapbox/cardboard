@@ -201,7 +201,7 @@ var Cardboard = module.exports = function(config) {
      * // Attempt to retrieve a feature that does not exist
      * cardboard.get('non-existent-feature', 'my-dataset', function(err, result) {
      *   err.message === 'Feature non-existent-feature does not exist'; // true
-     *   !!result; // false: nothing was removed
+     *   !!result; // false: nothing was retrieved
      * });
      */
     cardboard.get = function(primary, dataset, callback) {
@@ -387,6 +387,12 @@ var Cardboard = module.exports = function(config) {
     /**
      * List datasets available in this database
      * @param {function} callback - the callback function to handle the response
+     * @example
+     * cardboard.listDatasets(function(err, datasets) {
+     *   if (err) throw err;
+     *   Array.isArray(datasets); // true
+     *   console.log(datasets[0]); // 'my-dataset'
+     * });
      */
     cardboard.listDatasets = function(callback) {
         var opts = { attributes: ['dataset'], pages:0 };
@@ -406,6 +412,22 @@ var Cardboard = module.exports = function(config) {
      * Get cached metadata about a dataset
      * @param {string} dataset - the name of the dataset
      * @param {function} callback - the callback function to handle the response
+     * @example
+     * cardboard.getDatasetInfo('my-dataset', function(err, metadata) {
+     *   if (err) throw err;
+     *   console.log(Object.keys(metadatata));
+     *   // [
+     *   //   'dataset',
+     *   //   'id',
+     *   //   'west',
+     *   //   'south',
+     *   //   'east',
+     *   //   'north',
+     *   //   'count',
+     *   //   'size',
+     *   //   'updated'
+     *   // ]
+     * });
      */
     cardboard.getDatasetInfo = function(dataset, callback) {
         Metadata(config.dyno, dataset).getInfo(callback);
@@ -415,6 +437,22 @@ var Cardboard = module.exports = function(config) {
      * Calculate metadata about a dataset
      * @param {string} dataset - the name of the dataset
      * @param {function} callback - the callback function to handle the response
+     * @example
+     * cardboard.calculateDatasetInfo('my-dataset', function(err, metadata) {
+     *   if (err) throw err;
+     *   console.log(Object.keys(metadatata));
+     *   // [
+     *   //   'dataset',
+     *   //   'id',
+     *   //   'west',
+     *   //   'south',
+     *   //   'east',
+     *   //   'north',
+     *   //   'count',
+     *   //   'size',
+     *   //   'updated'
+     *   // ]
+     * });
      */
     cardboard.calculateDatasetInfo = function(dataset, callback) {
         Metadata(config.dyno, dataset).calculateInfo(callback);
@@ -425,6 +463,12 @@ var Cardboard = module.exports = function(config) {
      * @param {number[]} bbox - the bounding box as `[west, south, east, north]`
      * @param {string} dataset - the name of the dataset
      * @param {function} callback - the callback function to handle the response
+     * @example
+     * var bbox = [-120, 30, -115, 32]; // west, south, east, north
+     * carboard.bboxQuery(bbox, 'my-dataset', function(err, collection) {
+     *   if (err) throw err;
+     *   collection.type === 'FeatureCollection'; // true
+     * });
      */
     cardboard.bboxQuery = function(bbox, dataset, callback) {
         var q = queue(100);

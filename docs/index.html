@@ -310,6 +310,12 @@
 
 
 
+    <h4>Examples</h4>
+<pre><span class="hljs-keyword">var</span> bbox = [-<span class="hljs-number">120</span>, <span class="hljs-number">30</span>, -<span class="hljs-number">115</span>, <span class="hljs-number">32</span>]; <span class="hljs-comment">// west, south, east, north</span>
+carboard.bboxQuery(bbox, <span class="hljs-string">'my-dataset'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, collection</span>) </span>{
+  <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> err;
+  collection.type === <span class="hljs-string">'FeatureCollection'</span>; <span class="hljs-comment">// true</span>
+});</pre>
 
 
 
@@ -356,6 +362,22 @@
 
 
 
+    <h4>Examples</h4>
+<pre>cardboard.calculateDatasetInfo(<span class="hljs-string">'my-dataset'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, metadata</span>) </span>{
+  <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> err;
+  <span class="hljs-built_in">console</span>.log(<span class="hljs-built_in">Object</span>.keys(metadatata));
+  <span class="hljs-comment">// [</span>
+  <span class="hljs-comment">//   'dataset',</span>
+  <span class="hljs-comment">//   'id',</span>
+  <span class="hljs-comment">//   'west',</span>
+  <span class="hljs-comment">//   'south',</span>
+  <span class="hljs-comment">//   'east',</span>
+  <span class="hljs-comment">//   'north',</span>
+  <span class="hljs-comment">//   'count',</span>
+  <span class="hljs-comment">//   'size',</span>
+  <span class="hljs-comment">//   'updated'</span>
+  <span class="hljs-comment">// ]</span>
+});</pre>
 
 
 
@@ -610,7 +632,7 @@ cardboard.put(feature, <span class="hljs-string">'my-dataset'</span>, <span clas
 });</pre><pre><span class="hljs-comment">// Attempt to retrieve a feature that does not exist</span>
 cardboard.get(<span class="hljs-string">'non-existent-feature'</span>, <span class="hljs-string">'my-dataset'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, result</span>) </span>{
   err.message === <span class="hljs-string">'Feature non-existent-feature does not exist'</span>; <span class="hljs-comment">// true</span>
-  !!result; <span class="hljs-comment">// false: nothing was removed</span>
+  !!result; <span class="hljs-comment">// false: nothing was retrieved</span>
 });</pre>
 
 
@@ -658,6 +680,22 @@ cardboard.get(<span class="hljs-string">'non-existent-feature'</span>, <span cla
 
 
 
+    <h4>Examples</h4>
+<pre>cardboard.getDatasetInfo(<span class="hljs-string">'my-dataset'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, metadata</span>) </span>{
+  <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> err;
+  <span class="hljs-built_in">console</span>.log(<span class="hljs-built_in">Object</span>.keys(metadatata));
+  <span class="hljs-comment">// [</span>
+  <span class="hljs-comment">//   'dataset',</span>
+  <span class="hljs-comment">//   'id',</span>
+  <span class="hljs-comment">//   'west',</span>
+  <span class="hljs-comment">//   'south',</span>
+  <span class="hljs-comment">//   'east',</span>
+  <span class="hljs-comment">//   'north',</span>
+  <span class="hljs-comment">//   'count',</span>
+  <span class="hljs-comment">//   'size',</span>
+  <span class="hljs-comment">//   'updated'</span>
+  <span class="hljs-comment">// ]</span>
+});</pre>
 
 
 
@@ -795,6 +833,12 @@ cardboard.list(<span class="hljs-string">'my-dataset'</span>, { maxFeatures: <sp
 
 
 
+    <h4>Examples</h4>
+<pre>cardboard.listDatasets(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err, datasets</span>) </span>{
+  <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> err;
+  <span class="hljs-built_in">Array</span>.isArray(datasets); <span class="hljs-comment">// true</span>
+  <span class="hljs-built_in">console</span>.log(datasets[<span class="hljs-number">0</span>]); <span class="hljs-comment">// 'my-dataset'</span>
+});</pre>
 
 
 
