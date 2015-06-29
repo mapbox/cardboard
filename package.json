@@ -7,7 +7,7 @@
     "pretest": "jshint index.js lib test && jscs index.js lib test",
     "test": "node test/index.js",
     "coverage": "istanbul cover test/index.js && coveralls < ./coverage/lcov.info",
-    "docs": "documentation -f md -g index.js -o api.md && documentation -f html -g index.js -o docs"
+    "docs": "node ./docs/generate.js"
   },
   "bin": {
     "cardboard": "./bin/cardboard.js"

@@ -1,16 +1,10 @@
-## `Cardboard`
+## [Cardboard](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/index.js#L39-L599)
 
 Cardboard client generator
 
 ### Parameters
 
 * `config` **`object`** a configuration object
-* `config.table` **`string`** the name of a DynamoDB table to connect to
-* `config.region` **`string`** the AWS region containing the DynamoDB table
-* `config.bucket` **`string`** the name of an S3 bucket to use
-* `config.prefix` **`string`** the name of a folder within the indicated S3 bucket
-* `config.dyno` **`[dyno]`** a pre-configured [dyno client](https://github.com/mapbox/dyno) for connecting to DynamoDB
-* `config.s3` **`[s3]`** a pre-configured [S3 client](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html)
 
 
 ### Examples
@@ -34,31 +28,32 @@ var cardboard = require('cardboard')({
 Returns `cardboard` a cardboard client
 
 
-## `addFeature`
 
-Given a GeoJSON feature, perform all required metadata updates. This operation **will** create a metadata record if one does not exist.
 
-### Parameters
 
-* `feature` **`object`** a GeoJSON feature being added to the dataset
-* `callback` **`function`** a function to handle the response
+## [cardboard](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/index.js#L57-L59)
+
+A client configured to interact with a backend cardboard database
 
 
 
 
 
-## `bboxQuery`
+
+
+
+### [bboxQuery](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/index.js#L473-L596)
 
 Find GeoJSON features that intersect a bounding box
 
-### Parameters
+#### Parameters
 
 * `bbox` **`Array<number>`** the bounding box as `[west, south, east, north]`
 * `dataset` **`string`** the name of the dataset
 * `callback` **`function`** the callback function to handle the response
 
 
-### Examples
+#### Examples
 
 ```js
 var bbox = [-120, 30, -115, 32]; // west, south, east, north
@@ -70,17 +65,17 @@ carboard.bboxQuery(bbox, 'my-dataset', function(err, collection) {
 
 
 
-## `calculateDatasetInfo`
+### [calculateDatasetInfo](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/index.js#L457-L459)
 
 Calculate metadata about a dataset
 
-### Parameters
+#### Parameters
 
 * `dataset` **`string`** the name of the dataset
 * `callback` **`function`** the callback function to handle the response
 
 
-### Examples
+#### Examples
 
 ```js
 cardboard.calculateDatasetInfo('my-dataset', function(err, metadata) {
@@ -102,47 +97,17 @@ cardboard.calculateDatasetInfo('my-dataset', function(err, metadata) {
 
 
 
-## `calculateInfo`
-
-Find all features in a dataset and bring metadata record up-to-date
-
-### Parameters
-
-* `callback` **`function`** a function to handle the response
-
-
-
-
-
-## `cardboard`
-
-A client configured to interact with a backend cardboard database
-
-
-
-
-
-
-## `cardboard.batch`
-
-A module for batch requests
-
-
-
-
-
-
-## `createTable`
+### [createTable](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/index.js#L235-L244)
 
 Create a DynamoDB table with Cardboard's schema
 
-### Parameters
+#### Parameters
 
 * `tableName` **`[string]`** the name of the table to create, if not provided, defaults to the tablename defined in client configuration.
 * `callback` **`function`** the callback function to handle the response
 
 
-### Examples
+#### Examples
 
 ```js
 // Create the cardboard table specified by the client config
@@ -159,18 +124,18 @@ cardboard.createTable('new-cardboard-table', function(err) {
 
 
 
-## `del`
+### [del](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/index.js#L165-L173)
 
 Remove a single GeoJSON feature
 
-### Parameters
+#### Parameters
 
 * `primary` **`string`** the id for a feature
 * `dataset` **`string`** the name of the dataset that this feature belongs to
 * `callback` **`function`** the callback function to handle the response
 
 
-### Examples
+#### Examples
 
 ```js
 // Create a point, then delete it
@@ -203,11 +168,11 @@ cardboard.del('non-existent-feature', 'my-dataset', function(err, result) {
 
 
 
-## `delDataset`
+### [delDataset](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/index.js#L269-L281)
 
 Remove an entire dataset
 
-### Parameters
+#### Parameters
 
 * `dataset` **`string`** the name of the dataset
 * `callback` **`function`** the callback function to handle the response
@@ -216,31 +181,18 @@ Remove an entire dataset
 
 
 
-## `deleteFeature`
-
-Given a GeoJSON feature to remove, perform all required metadata updates. This operation **will not** create a metadata record if one does not exist. This operation **will not** shrink metadata bounds.
-
-### Parameters
-
-* `feature` **`object`** a GeoJSON feature to remove from the dataset
-* `callback` **`function`** a function to handle the response
-
-
-
-
-
-## `get`
+### [get](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/index.js#L207-L218)
 
 Retreive a single GeoJSON feature
 
-### Parameters
+#### Parameters
 
 * `primary` **`string`** the id for a feature
 * `dataset` **`string`** the name of the dataset that this feature belongs to
 * `callback` **`function`** the callback function to handle the response
 
 
-### Examples
+#### Examples
 
 ```js
 // Create a point, then retrieve it.
@@ -273,17 +225,17 @@ cardboard.get('non-existent-feature', 'my-dataset', function(err, result) {
 
 
 
-## `getDatasetInfo`
+### [getDatasetInfo](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/index.js#L432-L434)
 
 Get cached metadata about a dataset
 
-### Parameters
+#### Parameters
 
 * `dataset` **`string`** the name of the dataset
 * `callback` **`function`** the callback function to handle the response
 
 
-### Examples
+#### Examples
 
 ```js
 cardboard.getDatasetInfo('my-dataset', function(err, metadata) {
@@ -305,45 +257,18 @@ cardboard.getDatasetInfo('my-dataset', function(err, metadata) {
 
 
 
-## `getFeatureInfo`
-
-Return the details for a given GeoJSON feature
-
-### Parameters
-
-* `feature` **`object`** a GeoJSON feature
-
-
-
-Returns `object` an object describing the feature's size and extent
-
-
-## `getInfo`
-
-Return dataset metadata or an empty object
-
-### Parameters
-
-* `callback` **`function`** a callback function to handle the response
-
-
-
-
-
-## `list`
+### [list](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/index.js#L326-L385)
 
 List the GeoJSON features that belong to a particular dataset
 
-### Parameters
+#### Parameters
 
 * `dataset` **`string`** the name of the dataset
 * `pageOptions` **`[object]`** pagination options
-* `pageOptions.start` **`[string]`** start reading features past the provided id
-* `pageOptions.maxFeatures` **`[number]`** maximum number of features to return
 * `callback` **`function`** the callback function to handle the response
 
 
-### Examples
+#### Examples
 
 ```js
 // List all the features in a dataset
@@ -387,16 +312,16 @@ cardboard.list('my-dataset', { maxFeatures: 10 }, function(err, collection) {
 
 
 
-## `listDatasets`
+### [listDatasets](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/index.js#L397-L409)
 
 List datasets available in this database
 
-### Parameters
+#### Parameters
 
 * `callback` **`function`** the callback function to handle the response
 
 
-### Examples
+#### Examples
 
 ```js
 cardboard.listDatasets(function(err, datasets) {
@@ -408,27 +333,18 @@ cardboard.listDatasets(function(err, datasets) {
 
 
 
-## `metadata`
-
-A client for interacting with the metadata for a dataset
-
-
-
-
-
-
-## `put`
+### [put](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/index.js#L118-L131)
 
 Insert or update a single GeoJSON feature
 
-### Parameters
+#### Parameters
 
 * `feature` **`object`** a GeoJSON feature
 * `dataset` **`string`** the name of the dataset that this feature belongs to
 * `callback` **`function`** the callback function to handle the response
 
 
-### Examples
+#### Examples
 
 ```js
 // Create a point, allowing Cardboard to assign it an id.
@@ -487,11 +403,23 @@ cardboard.put(feature, 'my-dataset', function(err, result) {
 
 
 
-## `put`
+
+## [cardboard.batch](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/lib/batch.js#L17-L17)
+
+A module for batch requests
+
+
+
+
+
+
+
+
+### [put](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/lib/batch.js#L27-L54)
 
 Insert or update a set of GeoJSON features
 
-### Parameters
+#### Parameters
 
 * `collection` **`object`** a GeoJSON FeatureCollection containing features to insert and/or update
 * `dataset` **`string`** the name of the dataset that these features belongs to
@@ -501,11 +429,11 @@ Insert or update a set of GeoJSON features
 
 
 
-## `remove`
+### [remove](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/lib/batch.js#L64-L72)
 
 Remove a set of features
 
-### Parameters
+#### Parameters
 
 * `ids` **`Array<string>`** an array of feature ids to remove
 * `dataset` **`string`** the name of the dataset that these features belong to
@@ -515,38 +443,86 @@ Remove a set of features
 
 
 
-## `resolveFeatures`
 
-Convert a set of backend records into a GeoJSON features
+## [metadata](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/lib/metadata.js#L10-L10)
 
-### Parameters
+A client for interacting with the metadata for a dataset
 
-* `dynamoRecords` **`Array<object>`** an array of items returned from DynamoDB in simplified JSON format
+
+
+
+
+
+
+
+### [addFeature](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/lib/metadata.js#L166-L177)
+
+Given a GeoJSON feature, perform all required metadata updates. This operation **will** create a metadata record if one does not exist.
+
+#### Parameters
+
+* `feature` **`object`** a GeoJSON feature being added to the dataset
+* `callback` **`function`** a function to handle the response
+
+
+
+
+
+### [calculateInfo](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/lib/metadata.js#L87-L120)
+
+Find all features in a dataset and bring metadata record up-to-date
+
+#### Parameters
+
+* `callback` **`function`** a function to handle the response
+
+
+
+
+
+### [deleteFeature](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/lib/metadata.js#L202-L208)
+
+Given a GeoJSON feature to remove, perform all required metadata updates. This operation **will not** create a metadata record if one does not exist. This operation **will not** shrink metadata bounds.
+
+#### Parameters
+
+* `feature` **`object`** a GeoJSON feature to remove from the dataset
+* `callback` **`function`** a function to handle the response
+
+
+
+
+
+### [getFeatureInfo](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/lib/metadata.js#L48-L58)
+
+Return the details for a given GeoJSON feature
+
+#### Parameters
+
+* `feature` **`object`** a GeoJSON feature
+
+
+
+Returns `object` an object describing the feature's size and extent
+
+
+### [getInfo](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/lib/metadata.js#L35-L41)
+
+Return dataset metadata or an empty object
+
+#### Parameters
+
 * `callback` **`function`** a callback function to handle the response
 
 
 
 
 
-## `toDatabaseRecord`
-
-Converts a single GeoJSON feature into backend format
-
-### Parameters
-
-* `feature` **`object`** a GeoJSON feature
-* `dataset` **`string`** the name of the dataset the feature belongs to
-
-
-
-Returns  the first element is a DynamoDB record suitable for inserting via `dyno.putItem`, the second are parameters suitable for uploading via `s3.putObject`.
-
-
-## `updateFeature`
+### [updateFeature](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/lib/metadata.js#L185-L195)
 
 Given before and after states of a GeoJSON feature, perform all required metadata adjustments. This operation **will not** create a metadata record if one does not exist.
 
-### Parameters
+#### Parameters
 
 * `from` **`object`** a GeoJSON feature representing the state of the feature *before* the update
 * `to` **`object`** a GeoJSON feature representing the state of the feature *after* the update
@@ -556,12 +532,43 @@ Given before and after states of a GeoJSON feature, perform all required metadat
 
 
 
-## `utils`
+
+## [utils](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/lib/utils.js#L14-L14)
 
 A module containing internal utility functions
 
 
 
+
+
+
+
+
+### [resolveFeatures](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/lib/utils.js#L21-L45)
+
+Convert a set of backend records into a GeoJSON features
+
+#### Parameters
+
+* `dynamoRecords` **`Array<object>`** an array of items returned from DynamoDB in simplified JSON format
+* `callback` **`function`** a callback function to handle the response
+
+
+
+
+
+### [toDatabaseRecord](https://github.com/mapbox/cardboard/blob/bd91103dc02c9a240b166fdb23b625a253da38af/lib/utils.js#L63-L92)
+
+Converts a single GeoJSON feature into backend format
+
+#### Parameters
+
+* `feature` **`object`** a GeoJSON feature
+* `dataset` **`string`** the name of the dataset the feature belongs to
+
+
+
+Returns  the first element is a DynamoDB record suitable for inserting via `dyno.putItem`, the second are parameters suitable for uploading via `s3.putObject`.
 
 
 
