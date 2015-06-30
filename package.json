@@ -6,7 +6,8 @@
   "scripts": {
     "pretest": "jshint index.js lib test && jscs index.js lib test",
     "test": "node test/index.js",
-    "coverage": "istanbul cover test/index.js && coveralls < ./coverage/lcov.info"
+    "coverage": "istanbul cover test/index.js && coveralls < ./coverage/lcov.info",
+    "docs": "node ./docs/generate.js"
   },
   "bin": {
     "cardboard": "./bin/cardboard.js"
@@ -42,6 +43,7 @@
   },
   "devDependencies": {
     "coveralls": "^2.11.2",
+    "documentation": "^1.4.0",
     "dynalite": "^0.14.0",
     "dynamodb-test": "^0.1.3",
     "geojson-fixtures": "0.1.0",

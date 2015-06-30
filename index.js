@@ -12,9 +12,33 @@ var stream = require('stream');
 
 var MAX_GEOMETRY_SIZE = 1024 * 10;  // 10KB
 
-module.exports = function Cardboard(config) {
+/**
+ * Cardboard client generator
+ * @param {object} config - a configuration object
+ * @param {string} config.table - the name of a DynamoDB table to connect to
+ * @param {string} config.region - the AWS region containing the DynamoDB table
+ * @param {string} config.bucket - the name of an S3 bucket to use
+ * @param {string} config.prefix - the name of a folder within the indicated S3 bucket
+ * @param {dyno} [config.dyno] - a pre-configured [dyno client](https://github.com/mapbox/dyno) for connecting to DynamoDB
+ * @param {s3} [config.s3] - a pre-configured [S3 client](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html)
+ * @returns {cardboard} a cardboard client
+ * @example
+ * var cardboard = require('cardboard')({
+ *   table: 'my-cardboard-table',
+ *   region: 'us-east-1',
+ *   bucket: 'my-cardboard-bucket',
+ *   prefix: 'my-cardboard-prefix'
+ * });
+ * @example
+ * var cardboard = require('cardboard')({
+ *   dyno: require('dyno')(dynoConfig),
+ *   bucket: 'my-cardboard-bucket',
+ *   prefix: 'my-cardboard-prefix'
+ * });
+ */
+var Cardboard = module.exports = function(config) {
     config = config || {};
-    config.MAX_GEOMETRY_SIZE = MAX_GEOMETRY_SIZE;
+    config.MAX_GEOMETRY_SIZE = config.MAX_GEOMETRY_SIZE || MAX_GEOMETRY_SIZE;
 
     // Allow caller to pass in aws-sdk clients
     if (!config.s3) config.s3 = new AWS.S3(config);
@@ -26,10 +50,71 @@ module.exports = function Cardboard(config) {
     if (!config.prefix) throw new Error('No s3 prefix set');
 
     var utils = require('./lib/utils')(config);
+
+    /**
+     * A client configured to interact with a backend cardboard database
+     */
     var cardboard = {
         batch: require('./lib/batch')(config)
     };
 
+    /**
+     * Insert or update a single GeoJSON feature
+     * @param {object} feature - a GeoJSON feature
+     * @param {string} dataset - the name of the dataset that this feature belongs to
+     * @param {function} callback - the callback function to handle the response
+     * @example
+     * // Create a point, allowing Cardboard to assign it an id.
+     * var feature = {
+     *   type: 'Feature',
+     *   properties: {},
+     *   geometry: {
+     *     type: 'Point',
+     *     coordinates: [0, 0]
+     *   }
+     * };
+     *
+     * cardboard.put(feature, 'my-dataset', function(err, result) {
+     *   if (err) throw err;
+     *   !!result.id; // true: an id has been assigned
+     * });
+     * @example
+     * // Create a point, using a custom id.
+     * var feature = {
+     *   id: 'my-custom-id',
+     *   type: 'Feature',
+     *   properties: {},
+     *   geometry: {
+     *     type: 'Point',
+     *     coordinates: [0, 0]
+     *   }
+     * };
+     *
+     * cardboard.put(feature, 'my-dataset', function(err, result) {
+     *   if (err) throw err;
+     *   result.id === feature.id; // true: the custom id was preserved
+     * });
+     * @example
+     * // Create a point, then move it.
+     * var feature = {
+     *   type: 'Feature',
+     *   properties: {},
+     *   geometry: {
+     *     type: 'Point',
+     *     coordinates: [0, 0]
+     *   }
+     * };
+     *
+     * cardboard.put(feature, 'my-dataset', function(err, result) {
+     *   if (err) throw err;
+     *   result.geometry.coordinates = [1, 1];
+     *
+     *   cardboard.put(result, 'my-dataset', function(err, final) {
+     *     if (err) throw err;
+     *     final.geometry.coordinates[0] === 1; // true: the feature was moved
+     *   });
+     * });
+     */
     cardboard.put = function(feature, dataset, callback) {
         var encoded;
         try { encoded = utils.toDatabaseRecord(feature, dataset); }
@@ -45,6 +130,38 @@ module.exports = function Cardboard(config) {
         });
     };
 
+    /**
+     * Remove a single GeoJSON feature
+     * @param {string} primary - the id for a feature
+     * @param {string} dataset - the name of the dataset that this feature belongs to
+     * @param {function} callback - the callback function to handle the response
+     * @example
+     * // Create a point, then delete it
+     * var feature = {
+     *   id: 'my-custom-id',
+     *   type: 'Feature',
+     *   properties: {},
+     *   geometry: {
+     *     type: 'Point',
+     *     coordinates: [0, 0]
+     *   }
+     * };
+     *
+     * cardboard.put(feature, 'my-dataset', function(err, result) {
+     *   if (err) throw err;
+     *
+     *   cardboard.del(result.id, 'my-dataset', function(err, result) {
+     *     if (err) throw err;
+     *     !!result; // true: the feature was removed
+     *   });
+     * });
+     * @example
+     * // Attempt to delete a feature that does not exist
+     * cardboard.del('non-existent-feature', 'my-dataset', function(err, result) {
+     *   err.message === 'Feature does not exist'; // true
+     *   !!result; // false: nothing was removed
+     * });
+     */
     cardboard.del = function(primary, dataset, callback) {
         var key = { dataset: dataset, id: 'id!' + primary };
 
@@ -55,6 +172,38 @@ module.exports = function Cardboard(config) {
         });
     };
 
+    /**
+     * Retreive a single GeoJSON feature
+     * @param {string} primary - the id for a feature
+     * @param {string} dataset - the name of the dataset that this feature belongs to
+     * @param {function} callback - the callback function to handle the response
+     * @example
+     * // Create a point, then retrieve it.
+     * var feature = {
+     *   type: 'Feature',
+     *   properties: {},
+     *   geometry: {
+     *     type: 'Point',
+     *     coordinates: [0, 0]
+     *   }
+     * };
+     *
+     * cardboard.put(feature, 'my-dataset', function(err, result) {
+     *   if (err) throw err;
+     *   result.geometry.coordinates = [1, 1];
+     *
+     *   cardboard.get(result.id, 'my-dataset', function(err, final) {
+     *     if (err) throw err;
+     *     final === result; // true: the feature was retrieved
+     *   });
+     * });
+     * @example
+     * // Attempt to retrieve a feature that does not exist
+     * cardboard.get('non-existent-feature', 'my-dataset', function(err, result) {
+     *   err.message === 'Feature non-existent-feature does not exist'; // true
+     *   !!result; // false: nothing was retrieved
+     * });
+     */
     cardboard.get = function(primary, dataset, callback) {
         var key = { dataset: dataset, id: 'id!' + primary };
 
@@ -68,6 +217,21 @@ module.exports = function Cardboard(config) {
         });
     };
 
+    /**
+     * Create a DynamoDB table with Cardboard's schema
+     * @param {string} [tableName] - the name of the table to create, if not provided, defaults to the tablename defined in client configuration.
+     * @param {function} callback - the callback function to handle the response
+     * @example
+     * // Create the cardboard table specified by the client config
+     * cardboard.createTable(function(err) {
+     *   if (err) throw err;
+     * });
+     * @example
+     * // Create the another cardboard table
+     * cardboard.createTable('new-cardboard-table', function(err) {
+     *   if (err) throw err;
+     * });
+     */
     cardboard.createTable = function(tableName, callback) {
         if (typeof tableName === 'function') {
             callback = tableName;
@@ -79,6 +243,12 @@ module.exports = function Cardboard(config) {
         config.dyno.createTable(table, callback);
     };
 
+    /**
+     * List the ids available in a dataset
+     * @private
+     * @param {string} dataset - the name of the dataset
+     * @param {function} callback - the callback function to handle the response
+     */
     function listIds(dataset, callback) {
         var query = { dataset: { EQ: dataset }, id: {BEGINS_WITH: 'id!'} };
         var opts = { attributes: ['id'], pages: 0 };
@@ -91,6 +261,11 @@ module.exports = function Cardboard(config) {
         });
     }
 
+    /**
+     * Remove an entire dataset
+     * @param {string} dataset - the name of the dataset
+     * @param {function} callback - the callback function to handle the response
+     */
     cardboard.delDataset = function(dataset, callback) {
         listIds(dataset, function(err, res) {
             var keys = res.map(function(id) {
@@ -105,6 +280,49 @@ module.exports = function Cardboard(config) {
         });
     };
 
+    /**
+     * List the GeoJSON features that belong to a particular dataset
+     * @param {string} dataset - the name of the dataset
+     * @param {object} [pageOptions] - pagination options
+     * @param {string} [pageOptions.start] - start reading features past the provided id
+     * @param {number} [pageOptions.maxFeatures] - maximum number of features to return
+     * @param {function} callback - the callback function to handle the response
+     * @example
+     * // List all the features in a dataset
+     * cardboard.list('my-dataset', function(err, collection) {
+     *   if (err) throw err;
+     *   collection.type === 'FeatureCollection'; // true
+     * });
+     * @example
+     * // Stream all the features in a dataset
+     * cardboard.list('my-dataset')
+     *   .on('data', function(feature) {
+     *     console.log('Got feature: %j', feature);
+     *   })
+     *   .on('end', function() {
+     *     console.log('All done!');
+     *   });
+     * @example
+     * // List one page with a max of 10 features from a dataset
+     * cardboard.list('my-dataset', { maxFeatures: 10 }, function(err, collection) {
+     *   if (err) throw err;
+     *   collection.type === 'FeatureCollection'; // true
+     *   collection.features.length <= 10; // true
+     * });
+     * @example
+     * // Paginate through all the features in a dataset
+     * (function list(startAfter) {
+     *   var options = { maxFeatures: 10 };
+     *   if (startAfter) options.start = startFrom;
+     *   cardabord.list('my-dataset', options, function(err, collection) {
+     *     if (err) throw err;
+     *     if (!collection.features.length) return console.log('All done!');
+     *
+     *     var lastId = collection.features.slice(-1)[0].id;
+     *     list(lastId);
+     *   });
+     * })();
+     */
     cardboard.list = function(dataset, pageOptions, callback) {
         var opts = {};
 
@@ -166,6 +384,16 @@ module.exports = function Cardboard(config) {
         });
     };
 
+    /**
+     * List datasets available in this database
+     * @param {function} callback - the callback function to handle the response
+     * @example
+     * cardboard.listDatasets(function(err, datasets) {
+     *   if (err) throw err;
+     *   Array.isArray(datasets); // true
+     *   console.log(datasets[0]); // 'my-dataset'
+     * });
+     */
     cardboard.listDatasets = function(callback) {
         var opts = { attributes: ['dataset'], pages:0 };
 
@@ -180,14 +408,68 @@ module.exports = function Cardboard(config) {
         });
     };
 
+    /**
+     * Get cached metadata about a dataset
+     * @param {string} dataset - the name of the dataset
+     * @param {function} callback - the callback function to handle the response
+     * @example
+     * cardboard.getDatasetInfo('my-dataset', function(err, metadata) {
+     *   if (err) throw err;
+     *   console.log(Object.keys(metadatata));
+     *   // [
+     *   //   'dataset',
+     *   //   'id',
+     *   //   'west',
+     *   //   'south',
+     *   //   'east',
+     *   //   'north',
+     *   //   'count',
+     *   //   'size',
+     *   //   'updated'
+     *   // ]
+     * });
+     */
     cardboard.getDatasetInfo = function(dataset, callback) {
         Metadata(config.dyno, dataset).getInfo(callback);
     };
 
+    /**
+     * Calculate metadata about a dataset
+     * @param {string} dataset - the name of the dataset
+     * @param {function} callback - the callback function to handle the response
+     * @example
+     * cardboard.calculateDatasetInfo('my-dataset', function(err, metadata) {
+     *   if (err) throw err;
+     *   console.log(Object.keys(metadatata));
+     *   // [
+     *   //   'dataset',
+     *   //   'id',
+     *   //   'west',
+     *   //   'south',
+     *   //   'east',
+     *   //   'north',
+     *   //   'count',
+     *   //   'size',
+     *   //   'updated'
+     *   // ]
+     * });
+     */
     cardboard.calculateDatasetInfo = function(dataset, callback) {
         Metadata(config.dyno, dataset).calculateInfo(callback);
     };
 
+    /**
+     * Find GeoJSON features that intersect a bounding box
+     * @param {number[]} bbox - the bounding box as `[west, south, east, north]`
+     * @param {string} dataset - the name of the dataset
+     * @param {function} callback - the callback function to handle the response
+     * @example
+     * var bbox = [-120, 30, -115, 32]; // west, south, east, north
+     * carboard.bboxQuery(bbox, 'my-dataset', function(err, collection) {
+     *   if (err) throw err;
+     *   collection.type === 'FeatureCollection'; // true
+     * });
+     */
     cardboard.bboxQuery = function(bbox, dataset, callback) {
         var q = queue(100);
 
