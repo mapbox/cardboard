@@ -52,6 +52,10 @@ cardboard.createTable(callback);
 
 You don't have to create the table each time; you can provide the name of a pre-existing table to your configuration options to use that table.
 
+## API documentation
+
+See [api.md](https://github.com/mapbox/cardboard/blob/master/api.md).
+
 ## Concepts
 
 ### Datasets
