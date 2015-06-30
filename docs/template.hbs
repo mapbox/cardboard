@@ -1,5 +1,6 @@
 {{#.}}
-## [{{name}}]({{context.github}})
+## [{{name}}{{#if params}}({{#each params}}{{#if @index}}, {{/if}}{{name}}{{/each}}){{/if}}]({{context.github}})
+
 
 {{#description}}
 {{inlines .}}
@@ -46,7 +47,7 @@ Returns {{#type.name}}`{{.}}`{{/type.name}} {{inlines description}}
 
 {{#if members.instance}}
 {{#each members.instance ~}}
-### [{{name}}]({{context.github}})
+### [{{name}}{{#if params}}({{#each params}}{{#if @index}}, {{/if}}{{name}}{{/each}}){{/if}}]({{context.github}})
 
 {{#description}}
 {{inlines .}}
@@ -95,7 +96,7 @@ Returns {{#type.name}}`{{.}}`{{/type.name}} {{inlines description}}
 
 {{#if members.static}}
 {{#each members.static ~}}
-### [{{name}}]({{context.github}})
+### [{{name}}{{#if params}}({{#each params}}{{#if @index}}, {{/if}}{{name}}{{/each}}){{/if}}]({{context.github}})
 
 {{#description}}
 {{inlines .}}
