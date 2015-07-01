@@ -121,7 +121,46 @@ test('[utils] toDatabaseRecord - with ID', function(assert) {
     assert.end();
 });
 
-test('[utils] toDatabaseRecord - zero is an unacceptable ID', function(assert) {
+test('[utils] toDatabaseRecord - numeric IDs become strings', function(assert) {
+    var numericId = {
+        id: 12,
+        type: 'Feature',
+        properties: {
+            hasAn: 'id'
+        },
+        geometry: {
+            type: 'Point',
+            coordinates: [0, 0]
+        }
+    };
+
+    var encoded = utils.toDatabaseRecord(numericId, 'dataset');
+    var item = encoded[0];
+    var buf = encoded[1];
+
+    assert.equal(item.id.split('!')[1], numericId.id.toString(), 'used numeric user-assigned id as a string');
+
+    assert.ok(item.west === 0 &&
+        item.south === 0 &&
+        item.east === 0 &&
+        item.north === 0, 'correct extent');
+    assert.ok(item.size, 'size was calculated');
+
+    assert.equal(item.cell, 'cell!3000000000000000000000000000', 'expected cell');
+
+    assert.ok(item.s3url.indexOf('s3://test/test/dataset/' + item.id.split('!')[1]) === 0, 's3url was assigned correctly');
+
+    assert.deepEqual(item.val, buf.Body, 'geobuf was stored in the item');
+    assert.equal(buf.Bucket, config.bucket, 'S3 params include proper bucket');
+    assert.equal(buf.Key, item.s3url.split('s3://test/')[1], 'S3 params include proper key');
+
+    numericId.id = numericId.id.toString();
+    assert.deepEqual(geobuf.geobufToFeature(buf.Body), numericId, 'geobuf encoded as expected');
+
+    assert.end();
+});
+
+test('[utils] toDatabaseRecord - zero is an acceptable ID', function(assert) {
     var zeroId = {
         id: 0,
         type: 'Feature',
@@ -138,8 +177,7 @@ test('[utils] toDatabaseRecord - zero is an unacceptable ID', function(assert) {
     var item = encoded[0];
     var buf = encoded[1];
 
-    assert.notEqual(item.id, 'id!0', 'zero id was rejected');
-    assert.ok(item.id, 'an id was assigned');
+    assert.equal(item.id.split('!')[1], zeroId.id.toString(), 'used zero (as a string) for id');
 
     assert.ok(item.west === 0 &&
         item.south === 0 &&
@@ -178,7 +216,7 @@ test('[utils] toDatabaseRecord - null ID', function(assert) {
     var item = encoded[0];
     var buf = encoded[1];
 
-    assert.notEqual(item.id, 'id!null', 'null id was rejected');
+    assert.notEqual(item.id, 'id!null', 'null id was treated as undefined');
     assert.ok(item.id, 'an id was assigned');
 
     assert.ok(item.west === 0 &&
