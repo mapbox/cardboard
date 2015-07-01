@@ -44,7 +44,6 @@ test('[utils] resolveFeatures', function(assert) {
     });
 });
 
-
 test('[utils] toDatabaseRecord - no ID', function(assert) {
     var noId = {
         type: 'Feature',
