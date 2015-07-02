@@ -284,7 +284,7 @@ var Cardboard = module.exports = function(config) {
      * @param {object} [pageOptions] - pagination options
      * @param {string} [pageOptions.start] - start reading features past the provided id
      * @param {number} [pageOptions.maxFeatures] - maximum number of features to return
-     * @param {function} callback - the callback function to handle the response
+     * @param {function} [callback] - the callback function to handle the response
      * @returns {object} a readable stream
      * @example
      * // List all the features in a dataset
