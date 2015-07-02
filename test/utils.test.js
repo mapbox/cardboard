@@ -280,4 +280,10 @@ test('[utils] idFromRecord - has ! in the id', function(assert) {
     assert.end();
 });
 
+test('[utils] idFromRecord - emoji', function(assert) {
+    var record = { id: 'id!\u1F471' };
+    assert.equal(utils.idFromRecord(record), '\u1F471', 'expected value');
+    assert.end();
+});
+
 dynamodb.close();
