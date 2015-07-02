@@ -125,7 +125,7 @@ var Cardboard = module.exports = function(config) {
         q.defer(config.dyno.putItem, encoded[0]);
         q.await(function(err) {
             var result = geobuf.geobufToFeature(encoded[1].Body);
-            result.id = encoded[0].id.split('!')[1];
+            result.id = utils.idFromRecord(encoded[0]);
             callback(err, result);
         });
     };
@@ -255,9 +255,7 @@ var Cardboard = module.exports = function(config) {
 
         config.dyno.query(query, opts, function(err, items) {
             if (err) return callback(err);
-            callback(err, items.map(function(_) {
-                return _.id.split('!')[1];
-            }));
+            callback(err, items.map(utils.idFromRecord));
         });
     }
 
@@ -287,6 +285,7 @@ var Cardboard = module.exports = function(config) {
      * @param {string} [pageOptions.start] - start reading features past the provided id
      * @param {number} [pageOptions.maxFeatures] - maximum number of features to return
      * @param {function} callback - the callback function to handle the response
+     * @returns {object} a readable stream
      * @example
      * // List all the features in a dataset
      * cardboard.list('my-dataset', function(err, collection) {
