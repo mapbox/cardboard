@@ -1,4 +1,4 @@
-## [Cardboard(config)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/index.js#L39-L599)
+## [Cardboard(config)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/index.js#L39-L598)
 
 
 Cardboard client generator
@@ -32,7 +32,7 @@ Returns `cardboard` a cardboard client
 
 
 
-## [cardboard](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/index.js#L57-L59)
+## [cardboard](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/index.js#L57-L59)
 
 
 A client configured to interact with a backend cardboard database
@@ -44,7 +44,7 @@ A client configured to interact with a backend cardboard database
 
 
 
-### [bboxQuery(bbox, dataset, callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/index.js#L473-L596)
+### [bboxQuery(bbox, dataset, callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/index.js#L472-L595)
 
 Find GeoJSON features that intersect a bounding box
 
@@ -67,7 +67,7 @@ carboard.bboxQuery(bbox, 'my-dataset', function(err, collection) {
 
 
 
-### [calculateDatasetInfo(dataset, callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/index.js#L457-L459)
+### [calculateDatasetInfo(dataset, callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/index.js#L456-L458)
 
 Calculate metadata about a dataset
 
@@ -99,7 +99,7 @@ cardboard.calculateDatasetInfo('my-dataset', function(err, metadata) {
 
 
 
-### [createTable(tableName, callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/index.js#L235-L244)
+### [createTable(tableName, callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/index.js#L235-L244)
 
 Create a DynamoDB table with Cardboard's schema
 
@@ -126,7 +126,7 @@ cardboard.createTable('new-cardboard-table', function(err) {
 
 
 
-### [del(primary, dataset, callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/index.js#L165-L173)
+### [del(primary, dataset, callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/index.js#L165-L173)
 
 Remove a single GeoJSON feature
 
@@ -170,7 +170,7 @@ cardboard.del('non-existent-feature', 'my-dataset', function(err, result) {
 
 
 
-### [delDataset(dataset, callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/index.js#L269-L281)
+### [delDataset(dataset, callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/index.js#L267-L279)
 
 Remove an entire dataset
 
@@ -183,7 +183,7 @@ Remove an entire dataset
 
 
 
-### [get(primary, dataset, callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/index.js#L207-L218)
+### [get(primary, dataset, callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/index.js#L207-L218)
 
 Retreive a single GeoJSON feature
 
@@ -227,7 +227,7 @@ cardboard.get('non-existent-feature', 'my-dataset', function(err, result) {
 
 
 
-### [getDatasetInfo(dataset, callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/index.js#L432-L434)
+### [getDatasetInfo(dataset, callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/index.js#L431-L433)
 
 Get cached metadata about a dataset
 
@@ -259,7 +259,7 @@ cardboard.getDatasetInfo('my-dataset', function(err, metadata) {
 
 
 
-### [list(dataset, pageOptions, callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/index.js#L326-L385)
+### [list(dataset, pageOptions, callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/index.js#L325-L384)
 
 List the GeoJSON features that belong to a particular dataset
 
@@ -267,7 +267,7 @@ List the GeoJSON features that belong to a particular dataset
 
 * `dataset` **`string`** the name of the dataset
 * `pageOptions` **`[object]`** pagination options
-* `callback` **`function`** the callback function to handle the response
+* `callback` **`[function]`** the callback function to handle the response
 
 
 #### Examples
@@ -312,9 +312,10 @@ cardboard.list('my-dataset', { maxFeatures: 10 }, function(err, collection) {
 })();
 ```
 
+Returns `object` a readable stream
 
 
-### [listDatasets(callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/index.js#L397-L409)
+### [listDatasets(callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/index.js#L396-L408)
 
 List datasets available in this database
 
@@ -335,7 +336,7 @@ cardboard.listDatasets(function(err, datasets) {
 
 
 
-### [put(feature, dataset, callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/index.js#L118-L131)
+### [put(feature, dataset, callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/index.js#L118-L131)
 
 Insert or update a single GeoJSON feature
 
@@ -406,7 +407,7 @@ cardboard.put(feature, 'my-dataset', function(err, result) {
 
 
 
-## [cardboard.batch](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/lib/batch.js#L17-L17)
+## [cardboard.batch](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/lib/batch.js#L17-L17)
 
 
 A module for batch requests
@@ -418,7 +419,7 @@ A module for batch requests
 
 
 
-### [put(collection, dataset, callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/lib/batch.js#L27-L54)
+### [put(collection, dataset, callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/lib/batch.js#L27-L54)
 
 Insert or update a set of GeoJSON features
 
@@ -432,7 +433,7 @@ Insert or update a set of GeoJSON features
 
 
 
-### [remove(ids, dataset, callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/lib/batch.js#L64-L72)
+### [remove(ids, dataset, callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/lib/batch.js#L64-L72)
 
 Remove a set of features
 
@@ -447,7 +448,7 @@ Remove a set of features
 
 
 
-## [metadata](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/lib/metadata.js#L10-L10)
+## [metadata](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/lib/metadata.js#L10-L10)
 
 
 A client for interacting with the metadata for a dataset
@@ -459,7 +460,7 @@ A client for interacting with the metadata for a dataset
 
 
 
-### [addFeature(feature, callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/lib/metadata.js#L166-L177)
+### [addFeature(feature, callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/lib/metadata.js#L166-L177)
 
 Given a GeoJSON feature, perform all required metadata updates. This operation **will** create a metadata record if one does not exist.
 
@@ -472,7 +473,7 @@ Given a GeoJSON feature, perform all required metadata updates. This operation *
 
 
 
-### [calculateInfo(callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/lib/metadata.js#L87-L120)
+### [calculateInfo(callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/lib/metadata.js#L87-L120)
 
 Find all features in a dataset and bring metadata record up-to-date
 
@@ -484,7 +485,7 @@ Find all features in a dataset and bring metadata record up-to-date
 
 
 
-### [deleteFeature(feature, callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/lib/metadata.js#L202-L208)
+### [deleteFeature(feature, callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/lib/metadata.js#L202-L208)
 
 Given a GeoJSON feature to remove, perform all required metadata updates. This operation **will not** create a metadata record if one does not exist. This operation **will not** shrink metadata bounds.
 
@@ -497,7 +498,7 @@ Given a GeoJSON feature to remove, perform all required metadata updates. This o
 
 
 
-### [getFeatureInfo(feature)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/lib/metadata.js#L48-L58)
+### [getFeatureInfo(feature)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/lib/metadata.js#L48-L58)
 
 Return the details for a given GeoJSON feature
 
@@ -510,7 +511,7 @@ Return the details for a given GeoJSON feature
 Returns `object` an object describing the feature's size and extent
 
 
-### [getInfo(callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/lib/metadata.js#L35-L41)
+### [getInfo(callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/lib/metadata.js#L35-L41)
 
 Return dataset metadata or an empty object
 
@@ -522,7 +523,7 @@ Return dataset metadata or an empty object
 
 
 
-### [updateFeature(from, to, callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/lib/metadata.js#L185-L195)
+### [updateFeature(from, to, callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/lib/metadata.js#L185-L195)
 
 Given before and after states of a GeoJSON feature, perform all required metadata adjustments. This operation **will not** create a metadata record if one does not exist.
 
@@ -537,7 +538,7 @@ Given before and after states of a GeoJSON feature, perform all required metadat
 
 
 
-## [utils](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/lib/utils.js#L14-L14)
+## [utils](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/lib/utils.js#L14-L14)
 
 
 A module containing internal utility functions
@@ -549,7 +550,20 @@ A module containing internal utility functions
 
 
 
-### [resolveFeatures(dynamoRecords, callback)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/lib/utils.js#L21-L45)
+### [idFromRecord(record)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/lib/utils.js#L100-L104)
+
+Strips database-information from a DynamoDB record's id
+
+#### Parameters
+
+* `record` **`object`** a DynamoDB record
+
+
+
+Returns `string` id - the feature's identifier
+
+
+### [resolveFeatures(dynamoRecords, callback)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/lib/utils.js#L21-L45)
 
 Convert a set of backend records into a GeoJSON features
 
@@ -562,7 +576,7 @@ Convert a set of backend records into a GeoJSON features
 
 
 
-### [toDatabaseRecord(feature, dataset)](https://github.com/mapbox/cardboard/blob/854eef859461a91b631ed6f63dc55b5358eaf45c/lib/utils.js#L63-L92)
+### [toDatabaseRecord(feature, dataset)](https://github.com/mapbox/cardboard/blob/c364c347aa7d57b259fa74189d710b1b5bc62cee/lib/utils.js#L63-L93)
 
 Converts a single GeoJSON feature into backend format
 

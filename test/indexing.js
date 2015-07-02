@@ -11,6 +11,7 @@ var geojsonStream = require('geojson-stream');
 var geobuf = require('geobuf');
 var fixtures = require('./fixtures');
 var fakeAWS = require('mock-aws-s3');
+var crypto = require('crypto');
 
 var s = require('./setup');
 var config = s.config;
@@ -44,6 +45,29 @@ test('insert', function(t) {
     cardboard.put(fixtures.nullIsland, dataset, function(err, res) {
         t.equal(err, null);
         t.pass('inserted');
+        t.end();
+    });
+});
+
+test('teardown', s.teardown);
+
+test('setup', s.setup);
+
+test('insert, ! in the id is reflected properly', function(t) {
+    var cardboard = new Cardboard(config);
+    var feature = {
+        type: 'Feature',
+        id: '1235456!654321',
+        properties: {},
+        geometry: {
+            type: 'Point',
+            coordinates: [0, 0]
+        }
+    };
+
+    cardboard.put(feature, 'default', function(err, result) {
+        t.ifError(err, 'put feature');
+        t.equal(result.id, feature.id, 'reflects correct id');
         t.end();
     });
 });
@@ -309,6 +333,35 @@ test('insert & delDataset', function(t) {
                     t.notOk(data);
                     t.end();
                 });
+            });
+        });
+    });
+});
+
+test('teardown', s.teardown);
+
+test('setup', s.setup);
+
+test('delDataset - user-provide ids with !', function(t) {
+    var cardboard = new Cardboard(config);
+    var collection = fixtures.random(10);
+
+    collection.features = collection.features.map(function(f) {
+        f.id = crypto.randomBytes(4).toString('hex') + '!' + crypto.randomBytes(4).toString('hex');
+        return f;
+    });
+
+    cardboard.batch.put(collection, 'default', function(err, results) {
+        t.ifError(err, 'put success');
+        var expected = collection.features.map(function(f) { return f.id; });
+
+        cardboard.delDataset('default', function(err) {
+            t.ifError(err, 'delDataset success');
+
+            cardboard.list('default', function(err, collection) {
+                t.ifError(err, 'list success');
+                t.equal(collection.features.length, 0, 'everything was deleted');
+                t.end();
             });
         });
     });

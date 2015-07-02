@@ -70,13 +70,13 @@ test('[utils] toDatabaseRecord - no ID', function(assert) {
 
     assert.equal(item.cell, 'cell!3000000000000000000000000000', 'expected cell');
 
-    assert.ok(item.s3url.indexOf('s3://test/test/dataset/' + item.id.split('!')[1]) === 0, 's3url was assigned correctly');
+    assert.ok(item.s3url.indexOf('s3://test/test/dataset/' + utils.idFromRecord(item)) === 0, 's3url was assigned correctly');
 
     assert.deepEqual(item.val, buf.Body, 'geobuf was stored in the item');
     assert.equal(buf.Bucket, config.bucket, 'S3 params include proper bucket');
     assert.equal(buf.Key, item.s3url.split('s3://test/')[1], 'S3 params include proper key');
 
-    noId.id = item.id.split('!')[1];
+    noId.id = utils.idFromRecord(item);
     assert.deepEqual(geobuf.geobufToFeature(buf.Body), noId, 'geobuf encoded as expected');
 
     assert.end();
@@ -99,7 +99,7 @@ test('[utils] toDatabaseRecord - with ID', function(assert) {
     var item = encoded[0];
     var buf = encoded[1];
 
-    assert.equal(item.id.split('!')[1], hasId.id, 'used user-assigned id');
+    assert.equal(utils.idFromRecord(item), hasId.id, 'used user-assigned id');
 
     assert.ok(item.west === 0 &&
         item.south === 0 &&
@@ -109,7 +109,7 @@ test('[utils] toDatabaseRecord - with ID', function(assert) {
 
     assert.equal(item.cell, 'cell!3000000000000000000000000000', 'expected cell');
 
-    assert.ok(item.s3url.indexOf('s3://test/test/dataset/' + item.id.split('!')[1]) === 0, 's3url was assigned correctly');
+    assert.ok(item.s3url.indexOf('s3://test/test/dataset/' + utils.idFromRecord(item)) === 0, 's3url was assigned correctly');
 
     assert.deepEqual(item.val, buf.Body, 'geobuf was stored in the item');
     assert.equal(buf.Bucket, config.bucket, 'S3 params include proper bucket');
@@ -137,7 +137,7 @@ test('[utils] toDatabaseRecord - numeric IDs become strings', function(assert) {
     var item = encoded[0];
     var buf = encoded[1];
 
-    assert.equal(item.id.split('!')[1], numericId.id.toString(), 'used numeric user-assigned id as a string');
+    assert.equal(utils.idFromRecord(item), numericId.id.toString(), 'used numeric user-assigned id as a string');
 
     assert.ok(item.west === 0 &&
         item.south === 0 &&
@@ -147,7 +147,7 @@ test('[utils] toDatabaseRecord - numeric IDs become strings', function(assert) {
 
     assert.equal(item.cell, 'cell!3000000000000000000000000000', 'expected cell');
 
-    assert.ok(item.s3url.indexOf('s3://test/test/dataset/' + item.id.split('!')[1]) === 0, 's3url was assigned correctly');
+    assert.ok(item.s3url.indexOf('s3://test/test/dataset/' + utils.idFromRecord(item)) === 0, 's3url was assigned correctly');
 
     assert.deepEqual(item.val, buf.Body, 'geobuf was stored in the item');
     assert.equal(buf.Bucket, config.bucket, 'S3 params include proper bucket');
@@ -176,7 +176,7 @@ test('[utils] toDatabaseRecord - zero is an acceptable ID', function(assert) {
     var item = encoded[0];
     var buf = encoded[1];
 
-    assert.equal(item.id.split('!')[1], zeroId.id.toString(), 'used zero (as a string) for id');
+    assert.equal(utils.idFromRecord(item), zeroId.id.toString(), 'used zero (as a string) for id');
 
     assert.ok(item.west === 0 &&
         item.south === 0 &&
@@ -186,13 +186,13 @@ test('[utils] toDatabaseRecord - zero is an acceptable ID', function(assert) {
 
     assert.equal(item.cell, 'cell!3000000000000000000000000000', 'expected cell');
 
-    assert.ok(item.s3url.indexOf('s3://test/test/dataset/' + item.id.split('!')[1]) === 0, 's3url was assigned correctly');
+    assert.ok(item.s3url.indexOf('s3://test/test/dataset/' + utils.idFromRecord(item)) === 0, 's3url was assigned correctly');
 
     assert.deepEqual(item.val, buf.Body, 'geobuf was stored in the item');
     assert.equal(buf.Bucket, config.bucket, 'S3 params include proper bucket');
     assert.equal(buf.Key, item.s3url.split('s3://test/')[1], 'S3 params include proper key');
 
-    zeroId.id = item.id.split('!')[1];
+    zeroId.id = utils.idFromRecord(item);
     assert.deepEqual(geobuf.geobufToFeature(buf.Body), zeroId, 'geobuf encoded as expected');
 
     assert.end();
@@ -226,13 +226,13 @@ test('[utils] toDatabaseRecord - null ID', function(assert) {
 
     assert.equal(item.cell, 'cell!3000000000000000000000000000', 'expected cell');
 
-    assert.ok(item.s3url.indexOf('s3://test/test/dataset/' + item.id.split('!')[1]) === 0, 's3url was assigned correctly');
+    assert.ok(item.s3url.indexOf('s3://test/test/dataset/' + utils.idFromRecord(item)) === 0, 's3url was assigned correctly');
 
     assert.deepEqual(item.val, buf.Body, 'geobuf was stored in the item');
     assert.equal(buf.Bucket, config.bucket, 'S3 params include proper bucket');
     assert.equal(buf.Key, item.s3url.split('s3://test/')[1], 'S3 params include proper key');
 
-    nullId.id = item.id.split('!')[1];
+    nullId.id = utils.idFromRecord(item);
     assert.deepEqual(geobuf.geobufToFeature(buf.Body), nullId, 'geobuf encoded as expected');
 
     assert.end();
@@ -265,6 +265,24 @@ test('[utils] toDatabaseRecord - large feature', function(assert) {
     var buf = encoded[1];
 
     assert.notOk(item.val, 'large geobuf not stored in database record');
+    assert.end();
+});
+
+test('[utils] idFromRecord - no ! in the id', function(assert) {
+    var record = { id: 'id!123456' };
+    assert.equal(utils.idFromRecord(record), '123456', 'expected value');
+    assert.end();
+});
+
+test('[utils] idFromRecord - has ! in the id', function(assert) {
+    var record = { id: 'id!123456!654321' };
+    assert.equal(utils.idFromRecord(record), '123456!654321', 'expected value');
+    assert.end();
+});
+
+test('[utils] idFromRecord - emoji', function(assert) {
+    var record = { id: 'id!\u1F471' };
+    assert.equal(utils.idFromRecord(record), '\u1F471', 'expected value');
     assert.end();
 });
 
