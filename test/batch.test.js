@@ -2,6 +2,7 @@ var test = require('tape');
 var dynamodb = require('dynamodb-test')(test, 'cardboard', require('../lib/table.json'));
 var fs = require('fs');
 var path = require('path');
+var fixtures = require('./fixtures');
 
 var states = fs.readFileSync(path.resolve(__dirname, 'data', 'states.geojson'), 'utf8');
 states = JSON.parse(states);
@@ -38,6 +39,23 @@ test('[batch] put', function(assert) {
             assert.end();
         });
     });
+});
+
+dynamodb.empty();
+
+test('[batch] does not duplicate auto-generated ids', function(assert) {
+    var ids = [];
+    (function push(attempts) {
+        attempts++;
+        cardboard.batch.put(fixtures.random(100), 'default', function(err, collection) {
+            collection.features.forEach(function(f) {
+                if (ids.indexOf(f.id) > -1) assert.fail('id was duplicated');
+                else ids.push(f.id);
+            });
+            if (attempts < 50) return push(attempts);
+            assert.end();
+        });
+    })(0);
 });
 
 dynamodb.empty();
