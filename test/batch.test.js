@@ -52,6 +52,7 @@ test('[batch] does not duplicate auto-generated ids', function(assert) {
                 if (ids.indexOf(f.id) > -1) assert.fail('id was duplicated');
                 else ids.push(f.id);
             });
+
             if (attempts < 50) return push(attempts);
             assert.end();
         });
