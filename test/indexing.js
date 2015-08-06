@@ -986,12 +986,13 @@ test('metadata: add a feature', function(t) {
     var feature = geojsonFixtures.feature.one;
     var expectedSize = Buffer.byteLength(JSON.stringify(feature));
     var expectedBounds = geojsonExtent(feature);
+    var cardboard = Cardboard(config);
 
-    metadata.addFeature(feature, brandNew);
+    cardboard.metadata.addFeature(dataset, feature, brandNew);
 
     function brandNew(err) {
         t.ifError(err, 'used feature to make new metadata');
-        metadata.getInfo(function(err, info) {
+        cardboard.getDatasetInfo(dataset, function(err, info) {
             t.ifError(err, 'got metadata');
             t.equal(info.count, 1, 'correct feature count');
             t.equal(info.size, expectedSize, 'correct size');
@@ -1006,12 +1007,12 @@ test('metadata: add a feature', function(t) {
 
     function replacedMetadata(err) {
         t.ifError(err, 'replaced metadata');
-        metadata.addFeature(feature, adjusted);
+        cardboard.metadata.addFeature(dataset, feature, adjusted);
     }
 
     function adjusted(err) {
         t.ifError(err, 'adjusted existing metadata');
-        metadata.getInfo(function(err, info) {
+        cardboard.getDatasetInfo(dataset, function(err, info) {
             t.ifError(err, 'got metadata');
             t.equal(info.count, initial.count + 1, 'correct feature count');
             t.equal(info.size, initial.size + expectedSize, 'correct size');
@@ -1044,10 +1045,11 @@ test('metadata: update a feature', function(t) {
     var edited = geojsonFixtures.featurecollection.idaho.features[0];
     var expectedSize = JSON.stringify(edited).length - JSON.stringify(original).length;
     var expectedBounds = geojsonExtent(edited);
+    var cardboard = Cardboard(config);
 
-    metadata.updateFeature(original, edited, function(err) {
+    cardboard.metadata.updateFeature(dataset, original, edited, function(err) {
         t.ifError(err, 'graceful exit if no metadata exists');
-        metadata.getInfo(checkEmpty);
+        cardboard.getDatasetInfo(dataset, checkEmpty);
     });
 
     function checkEmpty(err, info) {
@@ -1058,12 +1060,12 @@ test('metadata: update a feature', function(t) {
 
     function andThen(err) {
         t.ifError(err, 'default metadata');
-        metadata.updateFeature(original, edited, checkInfo);
+        cardboard.metadata.updateFeature(dataset, original, edited, checkInfo);
     }
 
     function checkInfo(err) {
         t.ifError(err, 'updated metadata');
-        metadata.getInfo(function(err, info) {
+        cardboard.getDatasetInfo(dataset, function(err, info) {
             t.ifError(err, 'got metadata');
             t.equal(info.count, 0, 'correct feature count');
             t.equal(info.size, expectedSize, 'correct size');
@@ -1084,10 +1086,11 @@ test('setup', s.setup);
 test('metadata: remove a feature', function(t) {
     var feature = geojsonFixtures.feature.one;
     var expectedSize = Buffer.byteLength(JSON.stringify(feature));
+    var cardboard = Cardboard(config);
 
-    metadata.deleteFeature(feature, function(err) {
+    cardboard.metadata.deleteFeature(dataset, feature, function(err) {
         t.ifError(err, 'graceful exit if no metadata exists');
-        metadata.getInfo(checkEmpty);
+        cardboard.getDatasetInfo(dataset, checkEmpty);
     });
 
     function checkEmpty(err, info) {
@@ -1098,12 +1101,12 @@ test('metadata: remove a feature', function(t) {
 
     function del(err) {
         t.ifError(err, 'put default metadata');
-        metadata.deleteFeature(feature, checkInfo);
+        cardboard.metadata.deleteFeature(dataset, feature, checkInfo);
     }
 
     function checkInfo(err) {
         t.ifError(err, 'updated metadata');
-        metadata.getInfo(function(err, info) {
+        cardboard.getDatasetInfo(dataset, function(err, info) {
             t.ifError(err, 'got info');
             t.equal(info.count, initial.count - 1, 'correct feature count');
             t.equal(info.size, initial.size - expectedSize, 'correct size');
