@@ -483,7 +483,7 @@ var Cardboard = module.exports = function(config) {
     /**
      * Given a GeoJSON feature to remove, perform all required metadata updates. This operation **will not** create a metadata record if one does not exist. This operation **will not** shrink metadata bounds.
      * @param {object} dataset - the name of the dataset
-     * @param {object} feature - a GeoJSON feature to remove from the dataset
+     * @param {object|number} feature - a GeoJSON feature to remove from the dataset or the size of the GeoJSON feature provided as a number
      * @param {function} callback - a function to handle the response
      */
     cardboard.metadata.deleteFeature = function(dataset, feature, callback) {

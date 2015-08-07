@@ -680,3 +680,43 @@ test('calculateDatasetInfo', function(t) {
 });
 
 test('teardown', s.teardown);
+
+test('setup', s.setup);
+
+test('metadata: remove a feature with just the featureSize', function(t) {
+    var feature = geojsonFixtures.feature.one;
+    var expectedSize = Buffer.byteLength(JSON.stringify(feature));
+    var cardboard = Cardboard(config);
+
+    cardboard.metadata.deleteFeature(dataset, expectedSize, function(err) {
+        t.ifError(err, 'graceful exit if no metadata exists');
+        cardboard.getDatasetInfo(dataset, checkEmpty);
+    });
+
+    function checkEmpty(err, info) {
+        t.ifError(err, 'gets empty record');
+        t.deepEqual(info, {}, 'no record created by adjustBounds routine');
+        dyno.putItem(initial, del);
+    }
+
+    function del(err) {
+        t.ifError(err, 'put default metadata');
+        cardboard.metadata.deleteFeature(dataset, expectedSize, checkInfo);
+    }
+
+    function checkInfo(err) {
+        t.ifError(err, 'updated metadata');
+        cardboard.getDatasetInfo(dataset, function(err, info) {
+            t.ifError(err, 'got info');
+            t.equal(info.count, initial.count - 1, 'correct feature count');
+            t.equal(info.size, initial.size - expectedSize, 'correct size');
+            t.equal(info.west, initial.west, 'correct west');
+            t.equal(info.south, initial.south, 'correct south');
+            t.equal(info.east, initial.east, 'correct east');
+            t.equal(info.north, initial.north, 'correct north');
+            t.end();
+        });
+    }
+});
+
+test('teardown', s.teardown);
