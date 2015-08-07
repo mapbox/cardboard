@@ -135,11 +135,13 @@ east | east-bound of dataset's extent
 north | north-bound of dataset's extent
 count | number of features in the dataset
 size | approximate size (in bytes) of the entire dataset
-updated | unix timestamp of the last update to this metadata record
+updated | unix timestamp of the last update to this metadata record,
+minzoom | suggested minimum zoom for this dataset
+maxzoom | suggested maximum zoom for this dataset
 
-Use the `cardboard.datasets.info` function to retrieve a dataset's metadata. By default, dataset metadata *is not* updated incrementally as features are added, updated, or removed. The metadata record can be updated by calling `cardboard.datasets.calculateInfo`. This operation gathers all the features in the dataset and recalculates the metadata cache.
+Use the `cardboard.getDatasetInfo` function to retrieve a dataset's metadata. By default, dataset metadata *is not* updated incrementally as features are added, updated, or removed. The metadata record can be updated by calling `cardboard.calculateDatasetInfo`. This operation gathers all the features in the dataset and recalculates the metadata cache.
 
-`cardboard.datasets.addFeature`, `cardboard.datasets.updateFeature`, and `cardboard.datasets.removeFeature` provide mechanisms to incrementally adjust metadata information on a per-feature basis. Note that these operations *will only expand* the extent information. If you've performed numerous deletes and need to contract the extent, use `cardboard.datasets.calculateInfo`.
+`cardboard.metadata.addFeature`, `cardboard.metadata.updateFeature`, and `cardboard.metadata.removeFeature` provide mechanisms to incrementally adjust metadata information on a per-feature basis. Note that these operations *will only expand* the extent information. If you've performed numerous deletes and need to contract the extent, use `cardboard.calculateDatasetInfo`.
 
 ### Precision
 
