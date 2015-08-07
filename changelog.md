@@ -1,3 +1,11 @@
+### Pending
+
+- Calculates an ideal min/max zoom for a dataset when metadata is read
+
+### v1.1.0
+
+- Exposes methods for incremental updates to dataset metadata
+
 ### v1.0.2
 
 - Improves responses in the event of partial failure during a `cardboard.batch.put` or `cardboard.batch.remove` operation
