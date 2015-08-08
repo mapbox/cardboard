@@ -54,10 +54,8 @@ var Cardboard = module.exports = function(config) {
     /**
      * A client configured to interact with a backend cardboard database
      */
-    var cardboard = {
-        batch: require('./lib/batch')(config),
-        metadata: {}
-    };
+    var cardboard = {};
+    cardboard.batch = require('./lib/batch')(config);
 
     /**
      * Insert or update a single GeoJSON feature
@@ -459,36 +457,50 @@ var Cardboard = module.exports = function(config) {
     };
 
     /**
+     * A module for incremental metadata adjustments
+     * @name cardboard.metadata
+     */
+    var metadata = {};
+
+    /**
      * Incrementally update a dataset's metadata with a new feature. This operation **will** create a metadata record if one does not exist.
+     * @static
+     * @memberof cardboard.metadata
      * @param {object} dataset - the name of the dataset
-     * @param {object} feature - a GeoJSON feature being added to the dataset
+     * @param {object} feature - a GeoJSON feature (or backend record) being added to the dataset
      * @param {function} callback - a function to handle the response
      */
-    cardboard.metadata.addFeature = function(dataset, feature, callback) {
+    metadata.addFeature = function(dataset, feature, callback) {
         Metadata(config.dyno, dataset).addFeature(feature, callback);
     };
 
     /**
      *
      * Update a dataset's metadata with a change to a single feature. This operation **will not** create a metadata record if one does not exist.
+     * @static
+     * @memberof cardboard.metadata
      * @param {object} dataset - the name of the dataset
-     * @param {object} from - a GeoJSON feature representing the state of the feature *before* the update
-     * @param {object} to - a GeoJSON feature representing the state of the feature *after* the update
+     * @param {object} from - a GeoJSON feature (or backend record) representing the state of the feature *before* the update
+     * @param {object} to - a GeoJSON feature (or backend record) representing the state of the feature *after* the update
      * @param {function} callback - a function to handle the response
      */
-    cardboard.metadata.updateFeature = function(dataset, from, to, callback) {
+    metadata.updateFeature = function(dataset, from, to, callback) {
         Metadata(config.dyno, dataset).updateFeature(from, to, callback);
     };
 
     /**
      * Given a GeoJSON feature to remove, perform all required metadata updates. This operation **will not** create a metadata record if one does not exist. This operation **will not** shrink metadata bounds.
+     * @static
+     * @memberof cardboard.metadata
      * @param {object} dataset - the name of the dataset
-     * @param {object|number} feature - a GeoJSON feature to remove from the dataset or the size of the GeoJSON feature provided as a number
+     * @param {object} feature - a GeoJSON feature (or backend record) to remove from the dataset
      * @param {function} callback - a function to handle the response
      */
-    cardboard.metadata.deleteFeature = function(dataset, feature, callback) {
+    metadata.deleteFeature = function(dataset, feature, callback) {
         Metadata(config.dyno, dataset).deleteFeature(feature, callback);
     };
+
+    cardboard.metadata = metadata;
 
     /**
      * Find GeoJSON features that intersect a bounding box
