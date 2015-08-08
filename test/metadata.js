@@ -4,6 +4,7 @@ var queue = require('queue-async');
 var _ = require('lodash');
 var Cardboard = require('../');
 var Metadata = require('../lib/metadata');
+var Utils = require('../lib/utils');
 var geojsonExtent = require('geojson-extent');
 var geojsonFixtures = require('geojson-fixtures');
 var geojsonNormalize = require('geojson-normalize');
@@ -195,8 +196,8 @@ test('metadata: adjust bounds', function(t) {
             north: initial.north > bbox[3] ? initial.north : bbox[3],
             count: initial.count,
             size: initial.size,
-            minzoom: 8,
-            maxzoom: 9
+            minzoom: 0,
+            maxzoom: 1
         };
         t.deepEqual(_.omit(info, 'updated'), expected, 'updated metadata correctly');
         t.end();
@@ -208,7 +209,7 @@ test('teardown', s.teardown);
 test('setup', s.setup);
 
 test('metadata: add a feature', function(t) {
-    var feature = geojsonFixtures.feature.one;
+    var feature = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
     var expectedSize = Buffer.byteLength(JSON.stringify(feature));
     var expectedBounds = geojsonExtent(feature);
     var cardboard = Cardboard(config);
@@ -265,9 +266,68 @@ test('teardown', s.teardown);
 
 test('setup', s.setup);
 
+test('metadata: add a feature via database record', function(t) {
+    var feature = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
+    var expectedSize = Buffer.byteLength(JSON.stringify(feature));
+    var expectedBounds = geojsonExtent(feature);
+    var cardboard = Cardboard(config);
+    var utils = Utils(config);
+    var encoded = utils.toDatabaseRecord(feature, dataset)[0];
+    cardboard.metadata.addFeature(dataset, encoded, brandNew);
+
+    function brandNew(err) {
+        t.ifError(err, 'used feature to make new metadata');
+        cardboard.getDatasetInfo(dataset, function(err, info) {
+            t.ifError(err, 'got metadata');
+            t.equal(info.count, 1, 'correct feature count');
+            t.equal(info.size, expectedSize, 'correct size');
+            t.equal(info.west, expectedBounds[0], 'correct west');
+            t.equal(info.south, expectedBounds[1], 'correct south');
+            t.equal(info.east, expectedBounds[2], 'correct east');
+            t.equal(info.north, expectedBounds[3], 'correct north');
+
+            dyno.putItem(initial, replacedMetadata);
+        });
+    }
+
+    function replacedMetadata(err) {
+        t.ifError(err, 'replaced metadata');
+        cardboard.metadata.addFeature(dataset, feature, adjusted);
+    }
+
+    function adjusted(err) {
+        t.ifError(err, 'adjusted existing metadata');
+        cardboard.getDatasetInfo(dataset, function(err, info) {
+            t.ifError(err, 'got metadata');
+            t.equal(info.count, initial.count + 1, 'correct feature count');
+            t.equal(info.size, initial.size + expectedSize, 'correct size');
+
+            var expectedWest = expectedBounds[0] < initial.west ?
+                expectedBounds[0] : initial.west;
+            var expectedSouth = expectedBounds[1] < initial.south ?
+                expectedBounds[1] : initial.south;
+            var expectedEast = expectedBounds[2] > initial.east ?
+                expectedBounds[2] : initial.east;
+            var expectedNorth = expectedBounds[3] > initial.north ?
+                expectedBounds[3] : initial.north;
+
+            t.equal(info.west, expectedWest, 'correct west');
+            t.equal(info.south, expectedSouth, 'correct south');
+            t.equal(info.east, expectedEast, 'correct east');
+            t.equal(info.north, expectedNorth, 'correct north');
+
+            t.end();
+        });
+    }
+});
+
+test('teardown', s.teardown);
+
+test('setup', s.setup);
+
 test('metadata: update a feature', function(t) {
-    var original = geojsonFixtures.feature.one;
-    var edited = geojsonFixtures.featurecollection.idaho.features[0];
+    var original = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
+    var edited = _.extend({ id: 'test-feature' }, geojsonFixtures.featurecollection.idaho.features[0]);
     var expectedSize = JSON.stringify(edited).length - JSON.stringify(original).length;
     var expectedBounds = geojsonExtent(edited);
     var cardboard = Cardboard(config);
@@ -308,12 +368,102 @@ test('teardown', s.teardown);
 
 test('setup', s.setup);
 
+test('metadata: update a feature via database record', function(t) {
+    var original = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
+    var edited = _.extend({ id: 'test-feature' }, geojsonFixtures.featurecollection.idaho.features[0]);
+    var expectedSize = JSON.stringify(edited).length - JSON.stringify(original).length;
+    var expectedBounds = geojsonExtent(edited);
+    var cardboard = Cardboard(config);
+
+    var utils = Utils(config);
+    var encodedOriginal = utils.toDatabaseRecord(original, dataset)[0];
+    var encodedEdited = utils.toDatabaseRecord(edited, dataset)[0];
+
+    cardboard.metadata.updateFeature(dataset, encodedOriginal, encodedEdited, function(err) {
+        t.ifError(err, 'graceful exit if no metadata exists');
+        cardboard.getDatasetInfo(dataset, checkEmpty);
+    });
+
+    function checkEmpty(err, info) {
+        t.ifError(err, 'gets empty record');
+        t.deepEqual(info, {}, 'no record created by updateFeature routine');
+        metadata.defaultInfo(andThen);
+    }
+
+    function andThen(err) {
+        t.ifError(err, 'default metadata');
+        cardboard.metadata.updateFeature(dataset, original, edited, checkInfo);
+    }
+
+    function checkInfo(err) {
+        t.ifError(err, 'updated metadata');
+        cardboard.getDatasetInfo(dataset, function(err, info) {
+            t.ifError(err, 'got metadata');
+            t.equal(info.count, 0, 'correct feature count');
+            t.equal(info.size, expectedSize, 'correct size');
+            t.equal(info.west, expectedBounds[0], 'correct west');
+            t.equal(info.south, expectedBounds[1], 'correct south');
+            t.equal(info.east, expectedBounds[2], 'correct east');
+            t.equal(info.north, expectedBounds[3], 'correct north');
+            t.end();
+        });
+    }
+
+});
+
+test('teardown', s.teardown);
+
+test('setup', s.setup);
+
 test('metadata: remove a feature', function(t) {
-    var feature = geojsonFixtures.feature.one;
+    var feature = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
     var expectedSize = Buffer.byteLength(JSON.stringify(feature));
     var cardboard = Cardboard(config);
 
     cardboard.metadata.deleteFeature(dataset, feature, function(err) {
+        t.ifError(err, 'graceful exit if no metadata exists');
+        cardboard.getDatasetInfo(dataset, checkEmpty);
+    });
+
+    function checkEmpty(err, info) {
+        t.ifError(err, 'gets empty record');
+        t.deepEqual(info, {}, 'no record created by adjustBounds routine');
+        dyno.putItem(initial, del);
+    }
+
+    function del(err) {
+        t.ifError(err, 'put default metadata');
+        cardboard.metadata.deleteFeature(dataset, feature, checkInfo);
+    }
+
+    function checkInfo(err) {
+        t.ifError(err, 'updated metadata');
+        cardboard.getDatasetInfo(dataset, function(err, info) {
+            t.ifError(err, 'got info');
+            t.equal(info.count, initial.count - 1, 'correct feature count');
+            t.equal(info.size, initial.size - expectedSize, 'correct size');
+            t.equal(info.west, initial.west, 'correct west');
+            t.equal(info.south, initial.south, 'correct south');
+            t.equal(info.east, initial.east, 'correct east');
+            t.equal(info.north, initial.north, 'correct north');
+            t.end();
+        });
+    }
+});
+
+test('teardown', s.teardown);
+
+test('setup', s.setup);
+
+test('metadata: remove a feature via database record', function(t) {
+    var feature = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
+    var expectedSize = Buffer.byteLength(JSON.stringify(feature));
+    var cardboard = Cardboard(config);
+
+    var utils = Utils(config);
+    var encoded = utils.toDatabaseRecord(feature, dataset)[0];
+
+    cardboard.metadata.deleteFeature(dataset, encoded, function(err) {
         t.ifError(err, 'graceful exit if no metadata exists');
         cardboard.getDatasetInfo(dataset, checkEmpty);
     });
@@ -375,8 +525,8 @@ test('metadata: calculate dataset info', function(t) {
             south: expectedBounds[1],
             east: expectedBounds[2],
             north: expectedBounds[3],
-            minzoom: 2,
-            maxzoom: 3
+            minzoom: 5,
+            maxzoom: 11
         };
 
         metadata.calculateInfo(function(err, info) {
@@ -430,8 +580,8 @@ test('insert idaho & check metadata', function(t) {
             north: info.north,
             count: 1,
             size: info.size,
-            minzoom: 2,
-            maxzoom: 3
+            minzoom: 0,
+            maxzoom: 12
         };
         t.ok(info.updated, 'has updated date');
         t.deepEqual(_.omit(info, 'updated'), expected, 'expected metadata');
@@ -479,8 +629,8 @@ test('insert many idaho features & check metadata', function(t) {
             north: expectedBounds[3],
             count: features.length,
             size: expectedSize,
-            minzoom: 2,
-            maxzoom: 3
+            minzoom: 5,
+            maxzoom: 11
         };
         t.ok(info.updated, 'has updated date');
         t.deepEqual(_.omit(info, 'updated'), expected, 'expected metadata');
@@ -530,8 +680,8 @@ test('insert many idaho features, delete one & check metadata', function(t) {
             north: expectedBounds[3],
             count: features.length - 1,
             size: expectedSize,
-            minzoom: 2,
-            maxzoom: 3
+            minzoom: 5,
+            maxzoom: 11
         };
         t.ok(info.updated, 'has updated date');
         t.deepEqual(_.omit(info, 'updated'), expected, 'expected metadata');
@@ -587,8 +737,8 @@ test('insert idaho feature, update & check metadata', function(t) {
             north: expectedBounds[3],
             count: 1,
             size: expectedSize,
-            minzoom: 1,
-            maxzoom: 2
+            minzoom: 0,
+            maxzoom: 13
         };
         t.ok(info.updated, 'has updated date');
         t.deepEqual(_.omit(info, 'updated'), expected, 'expected metadata');
@@ -666,8 +816,8 @@ test('calculateDatasetInfo', function(t) {
             south: expectedBounds[1],
             east: expectedBounds[2],
             north: expectedBounds[3],
-            minzoom: 2,
-            maxzoom: 3
+            minzoom: 5,
+            maxzoom: 11
         };
 
         cardboard.calculateDatasetInfo(dataset, function(err, info) {
@@ -677,46 +827,6 @@ test('calculateDatasetInfo', function(t) {
             t.end();
         });
     });
-});
-
-test('teardown', s.teardown);
-
-test('setup', s.setup);
-
-test('metadata: remove a feature with just the featureSize', function(t) {
-    var feature = geojsonFixtures.feature.one;
-    var expectedSize = Buffer.byteLength(JSON.stringify(feature));
-    var cardboard = Cardboard(config);
-
-    cardboard.metadata.deleteFeature(dataset, expectedSize, function(err) {
-        t.ifError(err, 'graceful exit if no metadata exists');
-        cardboard.getDatasetInfo(dataset, checkEmpty);
-    });
-
-    function checkEmpty(err, info) {
-        t.ifError(err, 'gets empty record');
-        t.deepEqual(info, {}, 'no record created by adjustBounds routine');
-        dyno.putItem(initial, del);
-    }
-
-    function del(err) {
-        t.ifError(err, 'put default metadata');
-        cardboard.metadata.deleteFeature(dataset, expectedSize, checkInfo);
-    }
-
-    function checkInfo(err) {
-        t.ifError(err, 'updated metadata');
-        cardboard.getDatasetInfo(dataset, function(err, info) {
-            t.ifError(err, 'got info');
-            t.equal(info.count, initial.count - 1, 'correct feature count');
-            t.equal(info.size, initial.size - expectedSize, 'correct size');
-            t.equal(info.west, initial.west, 'correct west');
-            t.equal(info.south, initial.south, 'correct south');
-            t.equal(info.east, initial.east, 'correct east');
-            t.equal(info.north, initial.north, 'correct north');
-            t.end();
-        });
-    }
 });
 
 test('teardown', s.teardown);
