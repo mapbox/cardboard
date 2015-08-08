@@ -466,7 +466,7 @@ var Cardboard = module.exports = function(config) {
      * Incrementally update a dataset's metadata with a new feature. This operation **will** create a metadata record if one does not exist.
      * @static
      * @memberof cardboard.metadata
-     * @param {object} dataset - the name of the dataset
+     * @param {string} dataset - the name of the dataset
      * @param {object} feature - a GeoJSON feature (or backend record) being added to the dataset
      * @param {function} callback - a function to handle the response
      */
@@ -479,7 +479,7 @@ var Cardboard = module.exports = function(config) {
      * Update a dataset's metadata with a change to a single feature. This operation **will not** create a metadata record if one does not exist.
      * @static
      * @memberof cardboard.metadata
-     * @param {object} dataset - the name of the dataset
+     * @param {string} dataset - the name of the dataset
      * @param {object} from - a GeoJSON feature (or backend record) representing the state of the feature *before* the update
      * @param {object} to - a GeoJSON feature (or backend record) representing the state of the feature *after* the update
      * @param {function} callback - a function to handle the response
@@ -492,7 +492,7 @@ var Cardboard = module.exports = function(config) {
      * Given a GeoJSON feature to remove, perform all required metadata updates. This operation **will not** create a metadata record if one does not exist. This operation **will not** shrink metadata bounds.
      * @static
      * @memberof cardboard.metadata
-     * @param {object} dataset - the name of the dataset
+     * @param {string} dataset - the name of the dataset
      * @param {object} feature - a GeoJSON feature (or backend record) to remove from the dataset
      * @param {function} callback - a function to handle the response
      */
