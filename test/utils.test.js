@@ -82,6 +82,30 @@ test('[utils] toDatabaseRecord - no ID', function(assert) {
     assert.end();
 });
 
+test('[utils] toDatabaseRecord - no ID + rack', function(assert) {
+    var noId = {
+        type: 'Feature',
+        properties: {
+            hasNo: 'id'
+        },
+        geometry: {
+            type: 'Point',
+            coordinates: [0, 0]
+        }
+    };
+
+    var rack = function() {
+        return 'big-mac';
+    };
+
+    var encoded = utils.toDatabaseRecord(noId, 'dataset', rack);
+    var item = encoded[0];
+
+    assert.equal(item.id, 'id!big-mac', 'an id was assigned');
+
+    assert.end();
+});
+
 test('[utils] toDatabaseRecord - with ID', function(assert) {
     var hasId = {
         id: 'bacon-lettuce-tomato',

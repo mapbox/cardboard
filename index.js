@@ -5,7 +5,6 @@ var queue = require('queue-async');
 var Dyno = require('dyno');
 var AWS = require('aws-sdk');
 var extent = require('geojson-extent');
-var cuid = require('cuid');
 var tilebelt = require('tilebelt');
 var geobuf = require('geobuf');
 var stream = require('stream');
