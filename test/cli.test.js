@@ -119,8 +119,6 @@ test('[cli] list', function(assert) {
         exec(params.join(' '), function(err, stdout, stderr) {
             assert.ifError(err, 'success');
             var found = JSON.parse(stdout.trim());
-            found.features = _(found.features).sortBy('id').value();
-            putResults.features = _(putResults.features).sortBy('id').value();
             assert.deepEqual(found, putResults, 'got expected FeatureCollection');
             assert.end();
         });
