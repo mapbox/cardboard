@@ -1,4 +1,8 @@
-### Pending
+### v1.2.1
+
+- Switch to https://github.com/substack/node-hat for id generation
+
+### v1.2.0
 
 - Calculates an ideal min/max zoom for a dataset when metadata is read
 
