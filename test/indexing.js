@@ -454,10 +454,13 @@ test('list first page with maxFeatures', function(t) {
     cardboard.batch.put(features, 'default', function page(err, putResult) {
         t.equal(err, null);
         t.pass('collection inserted');
+
+        var indexed = _.indexBy(putResult.features, 'id');
+
         cardboard.list('default', {maxFeatures: 1}, function(err, data) {
             t.equal(err, null, 'no error');
             t.deepEqual(data.features.length, 1, 'first page has one feature');
-            t.deepEqual(data.features[0].id, putResult.features[0].id, 'id as expected');
+            t.deepEqual(data.features[0], indexed[data.features[0].id], 'obj as expected');
             t.end();
         });
     });
