@@ -1,3 +1,7 @@
+### v1.2.2
+
+- Switch back to https://github.com/ericelliott/cuid for id generation -- some downstream applications expect ordered ids
+
 ### v1.2.1
 
 - Switch to https://github.com/substack/node-hat for id generation
