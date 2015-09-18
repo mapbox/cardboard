@@ -71,7 +71,7 @@ test('teardown', s.teardown);
 
 test('setup', s.setup);
 
-test('insert, get by primary index', function(t) {
+test('insert, get by primary index (small feature)', function(t) {
     var cardboard = Cardboard(config);
 
     cardboard.put(fixtures.haitiLine, 'default', function(err, res) {
@@ -84,7 +84,55 @@ test('insert, get by primary index', function(t) {
             var f = geobuf.geobufToFeature(geobuf.featureToGeobuf(fixtures.haitiLine).toBuffer());
             delete fixtures.haitiLine.id;
             t.deepEqual(data, f);
-            t.end();
+
+            // data should not be on S3
+            s.config.s3.listObjects({
+                Bucket: 'test',
+                Prefix: 'test/default/' + res.id
+            }, function(err, data) {
+                t.equal(data.Contents.length, 0, 'nothing on S3');
+                t.end();
+            });
+        });
+    });
+});
+
+test('teardown', s.teardown);
+
+test('setup', s.setup);
+
+test('insert, get by primary index (large feature)', function(t) {
+    var cardboard = Cardboard(config);
+
+    var feature = {
+        type: 'Feature',
+        properties: {
+            data: (new Buffer(15 * 1024)).toString('hex')
+        },
+        geometry: {
+            type: 'Point',
+            coordinates: [1, 1]
+        }
+    };
+
+    cardboard.put(feature, 'default', function(err, res) {
+        t.ifError(err, 'inserted');
+        cardboard.get(res.id, 'default', function(err, data) {
+            t.equal(err, null);
+            feature.id = res.id;
+
+            // round-trip through geobuf will always truncate coords to 6 decimal places
+            var f = geobuf.geobufToFeature(geobuf.featureToGeobuf(feature).toBuffer());
+            t.deepEqual(data, f);
+
+            // data should be on S3
+            s.config.s3.listObjects({
+                Bucket: 'test',
+                Prefix: 'test/default/' + res.id
+            }, function(err, data) {
+                t.equal(data.Contents.length, 1, 'data on S3');
+                t.end();
+            });
         });
     });
 });
@@ -781,7 +829,6 @@ test('Insert with and without ids specified', function(t) {
             t.deepEqual(feature, f, 'retrieved record');
             cardboard.get(putResults.features[1].id, 'default', function(err, feature) {
                 var f = _.extend({ id: putResults.features[1].id }, fixtures.haiti);
-                console.log(f);
                 f = geobuf.geobufToFeature(geobuf.featureToGeobuf(f).toBuffer());
                 t.deepEqual(feature, f, 'retrieved record');
                 t.end();

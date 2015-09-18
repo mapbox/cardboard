@@ -77,6 +77,44 @@ test('[utils] toDatabaseRecord - no ID', function(assert) {
     assert.end();
 });
 
+test('[utils] toDatabaseRecord - large feature', function(assert) {
+    var noId = {
+        type: 'Feature',
+        properties: {
+            hasNo: 'id',
+            biggie: (new Buffer(15 * 1024)).toString('hex')
+        },
+        geometry: {
+            type: 'Point',
+            coordinates: [0, 0]
+        }
+    };
+
+    var encoded = utils.toDatabaseRecord(noId, 'dataset');
+    var item = encoded[0];
+    var s3params = encoded[1];
+
+    assert.notOk(item.val, 'geobuf was not stored in the item');
+    assert.ok(s3params, 'S3 data stored for a large item');
+    assert.ok(item.id, 'an id was assigned');
+
+    assert.ok(item.west === 0 &&
+        item.south === 0 &&
+        item.east === 0 &&
+        item.north === 0, 'correct extent');
+    assert.ok(item.size, 'size was calculated');
+
+    assert.equal(item.cell, 'cell!3000000000000000000000000000', 'expected cell');
+    assert.ok(item.s3url.indexOf('s3://test/test/dataset/' + utils.idFromRecord(item)) === 0, 's3url was assigned correctly');
+
+    noId.id = utils.idFromRecord(item);
+    assert.deepEqual(geobuf.geobufToFeature(s3params.Body), noId, 'geobuf encoded as expected');
+    assert.equal(s3params.Bucket, config.bucket, 'S3 params include proper bucket');
+    assert.equal(s3params.Key, item.s3url.split('s3://test/')[1], 'S3 params include proper key');
+
+    assert.end();
+});
+
 test('[utils] toDatabaseRecord - with ID', function(assert) {
     var hasId = {
         id: 'bacon-lettuce-tomato',
