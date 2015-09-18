@@ -331,8 +331,8 @@ function Cardboard(config) {
 
         pageOptions = pageOptions || {};
         if (pageOptions.start) opts.start = {
-            dataset: {S: dataset},
-            id: {S: 'id!' + pageOptions.start}
+            dataset: dataset,
+            id: 'id!' + pageOptions.start
         };
         if (pageOptions.maxFeatures) opts.limit = pageOptions.maxFeatures;
 
