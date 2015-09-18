@@ -130,7 +130,7 @@ test('[batch] unprocessed delete returns array of ids', function(assert) {
     var data = fixtures.random(1);
     data.features[0].id = 'abc';
 
-    cardboard.batch.put(data, 'default', function(err, collection) {
+    cardboard.batch.put(data, 'default', function(err) {
         if (err) throw err;
 
         mockcardboard.batch.remove(['abc'], 'default', function(err) {

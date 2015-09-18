@@ -1,18 +1,10 @@
 var test = require('tape');
-var fs = require('fs');
 var Cardboard = require('../');
 var _ = require('lodash');
 var Dyno = require('dyno');
 
 var s = require('./setup');
 var config = s.config;
-
-function featureCollection(features) {
-    return {
-        type: 'FeatureCollection',
-        features: features || []
-    };
-}
 
 test('setup', function(t) { s.setup(t, true); });
 

@@ -1,16 +1,11 @@
 var test = require('tape');
-var fs = require('fs');
 var queue = require('queue-async');
 var _ = require('lodash');
 var Cardboard = require('../');
-var Metadata = require('../lib/metadata');
-var geojsonExtent = require('geojson-extent');
 var geojsonFixtures = require('geojson-fixtures');
 var geojsonNormalize = require('geojson-normalize');
-var geojsonStream = require('geojson-stream');
 var geobuf = require('geobuf');
 var fixtures = require('./fixtures');
-var fakeAWS = require('mock-aws-s3');
 var crypto = require('crypto');
 
 var s = require('./setup');
@@ -42,7 +37,7 @@ test('insert', function(t) {
     var cardboard = Cardboard(config);
     var dataset = 'default';
 
-    cardboard.put(fixtures.nullIsland, dataset, function(err, res) {
+    cardboard.put(fixtures.nullIsland, dataset, function(err) {
         t.equal(err, null);
         t.pass('inserted');
         t.end();
@@ -105,7 +100,7 @@ test('insert feature with no geometry', function(t) {
         type: 'Feature'
     };
 
-    cardboard.put(d, 'default', function(err, res) {
+    cardboard.put(d, 'default', function(err) {
         t.ok(err, 'should return an error');
         t.equal(err.message, 'Unlocated features can not be stored.');
         t.end();
@@ -124,7 +119,7 @@ test('insert feature with no coordinates', function(t) {
         type: 'Feature'
     };
 
-    cardboard.put(d, 'default', function(err, res) {
+    cardboard.put(d, 'default', function(err) {
         t.ok(err, 'should return an error');
         t.equal(err.message, 'Unlocated features can not be stored.');
         t.end();
@@ -247,7 +242,7 @@ test('insert & update', function(t) {
 
         t.ok(putResult.id, 'got id');
         t.pass('inserted');
-        update = _.defaults({ id: putResult.id }, fixtures.haitiLine);
+        var update = _.defaults({ id: putResult.id }, fixtures.haitiLine);
         update.geometry.coordinates[0][0] = -72.588671875;
 
         cardboard.put(update, 'default', function(err, updateResult) {
@@ -274,7 +269,7 @@ test('delete a non-extistent feature', function(t) {
         t.ok(err);
         t.equal(err.message, 'Feature foobar does not exist');
         t.notOk(data);
-        cardboard.del('foobar', 'default', function(err, data) {
+        cardboard.del('foobar', 'default', function(err) {
             t.ok(err, 'should return an error');
             t.equal(err.message, 'Feature does not exist');
             t.end();
@@ -297,7 +292,7 @@ test('insert & delete', function(t) {
             t.equal(err, null);
             nullIsland.id = putResult.id;
             t.deepEqual(data, nullIsland);
-            cardboard.del(putResult.id, 'default', function(err, data) {
+            cardboard.del(putResult.id, 'default', function(err) {
                 t.ifError(err, 'removed');
                 cardboard.get(putResult.id, 'default', function(err, data) {
                     t.ok(err);
@@ -325,7 +320,7 @@ test('insert & delDataset', function(t) {
             var nullIsland = _.clone(fixtures.nullIsland);
             nullIsland.id = putResult.id;
             t.deepEqual(data, nullIsland);
-            cardboard.delDataset('default', function(err, data) {
+            cardboard.delDataset('default', function(err) {
                 t.equal(err, null);
                 cardboard.get(putResult.id, 'default', function(err, data) {
                     t.ok(err);
@@ -351,9 +346,8 @@ test('delDataset - user-provide ids with !', function(t) {
         return f;
     });
 
-    cardboard.batch.put(collection, 'default', function(err, results) {
+    cardboard.batch.put(collection, 'default', function(err) {
         t.ifError(err, 'put success');
-        var expected = collection.features.map(function(f) { return f.id; });
 
         cardboard.delDataset('default', function(err) {
             t.ifError(err, 'delDataset success');
@@ -425,14 +419,12 @@ test('list stream - query error', function(t) {
     var collection = fixtures.random(20);
     t.plan(3);
 
-    cardboard.batch.put(collection, 'default', function(err, putResults) {
+    cardboard.batch.put(collection, 'default', function(err) {
         t.ifError(err, 'put success');
-
-        var streamed = [];
 
         // Should fail because empty string passed for dataset
         cardboard.list('')
-            .on('data', function(feature) {
+            .on('data', function() {
                 t.fail('Should not find any data');
             })
             .on('error', function(err) {
@@ -580,7 +572,7 @@ test('insert & query', function(t) {
         insertQueue.defer(cardboard.put, fix, 'default');
     });
 
-    insertQueue.awaitAll(function(err, res) {
+    insertQueue.awaitAll(function(err) {
         t.ifError(err, 'inserted');
         inserted();
     });
@@ -604,7 +596,7 @@ test('insert & query', function(t) {
             t.ifError(err, 'queries passed');
             t.equal(cardboard.list('default', function(err, resp) {
                 t.ifError(err, 'no error for list');
-                if (err) return callback(err);
+                if (err) throw err;
 
                 var length = queries.reduce(function(memo, query) {
                     return memo + query.length;
@@ -627,7 +619,7 @@ test('insert polygon', function(t) {
     var cardboard = Cardboard(config);
     cardboard.put(fixtures.haiti, 'default', inserted);
 
-    function inserted(err, res) {
+    function inserted(err) {
         t.notOk(err, 'no error returned');
         var queries = [
             {
@@ -664,7 +656,7 @@ test('insert linestring', function(t) {
     var cardboard = Cardboard(config);
     cardboard.put(fixtures.haitiLine, 'default', inserted);
 
-    function inserted(err, res) {
+    function inserted(err) {
         t.notOk(err, 'no error returned');
         var queries = [
             {

@@ -4,7 +4,6 @@ var Cardboard = require('../');
 
 var s = require('./setup');
 var config = s.config;
-var dyno = s.dyno;
 
 test('setup', s.setup);
 
@@ -43,7 +42,7 @@ test('queries along 0 lat/lon', function(t) {
         q.defer(cardboard.put, f, dataset);
     });
 
-    q.awaitAll(function(err, res) {
+    q.awaitAll(function(err) {
         t.ifError(err, 'inserted');
         runQueries();
     });
@@ -84,12 +83,12 @@ test('query for line crossing 0 lon n of eq', function(t) {
     var dataset = 'line-query';
 
     var feature = {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-                type: 'LineString',
-                coordinates: [[-1, 1], [1, 1]]
-            }};
+        type: 'Feature',
+        properties: {},
+        geometry: {
+            type: 'LineString',
+            coordinates: [[-1, 1], [1, 1]]
+        }};
 
     // all queries should return a single result
     var queries = [
@@ -106,7 +105,7 @@ test('query for line crossing 0 lon n of eq', function(t) {
 
     var q = queue();
     q.defer(cardboard.put, feature, dataset);
-    q.awaitAll(function(err, res) {
+    q.awaitAll(function(err) {
         t.ifError(err, 'inserted');
         runQueries();
     });
@@ -147,12 +146,12 @@ test('query for line crossing 0 lon s of eq', function(t) {
     var dataset = 'line-query';
 
     var feature = {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-                type: 'LineString',
-                coordinates: [[-1, -1], [1, -1]]
-            }};
+        type: 'Feature',
+        properties: {},
+        geometry: {
+            type: 'LineString',
+            coordinates: [[-1, -1], [1, -1]]
+        }};
 
     // all queries should return a single result
     var queries = [
@@ -169,7 +168,7 @@ test('query for line crossing 0 lon s of eq', function(t) {
 
     var q = queue();
     q.defer(cardboard.put, feature, dataset);
-    q.awaitAll(function(err, res) {
+    q.awaitAll(function(err) {
         t.ifError(err, 'inserted');
         runQueries();
     });
@@ -207,21 +206,21 @@ test('query for line near -90 lon n of eq', function(t) {
 
     // tile for this feature: [ 31, 63, 7 ]
     var wanted = {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-                type: 'LineString',
-                coordinates: [[-92, 1], [-91, 1]]
-            }};
+        type: 'Feature',
+        properties: {},
+        geometry: {
+            type: 'LineString',
+            coordinates: [[-92, 1], [-91, 1]]
+        }};
 
     // tile for this feature: [0, 0, 0]
     var unwanted = {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-                type: 'LineString',
-                coordinates: [[-1, 1], [1, 1]]
-            }};
+        type: 'Feature',
+        properties: {},
+        geometry: {
+            type: 'LineString',
+            coordinates: [[-1, 1], [1, 1]]
+        }};
 
     // all queries should return a single result
     var queries = [
@@ -233,7 +232,7 @@ test('query for line near -90 lon n of eq', function(t) {
     var q = queue();
     q.defer(cardboard.put, wanted, dataset);
     q.defer(cardboard.put, unwanted, dataset);
-    q.awaitAll(function(err, res) {
+    q.awaitAll(function(err) {
         t.ifError(err, 'inserted');
         runQueries();
     });
@@ -299,7 +298,7 @@ test('queries along antimeridian (W)', function(t) {
         q.defer(cardboard.put, f, dataset);
     });
 
-    q.awaitAll(function(err, res) {
+    q.awaitAll(function(err) {
         t.ifError(err, 'inserted');
         runQueries();
     });
