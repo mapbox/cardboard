@@ -4,13 +4,13 @@ var uniq = require('uniq');
 var queue = require('queue-async');
 var Dyno = require('dyno');
 var AWS = require('aws-sdk');
-var extent = require('geojson-extent');
-var cuid = require('cuid');
 var tilebelt = require('tilebelt');
 var geobuf = require('geobuf');
 var stream = require('stream');
 
 var MAX_GEOMETRY_SIZE = 1024 * 10;  // 10KB
+
+module.exports = Cardboard;
 
 /**
  * Cardboard client generator
@@ -36,7 +36,7 @@ var MAX_GEOMETRY_SIZE = 1024 * 10;  // 10KB
  *   prefix: 'my-cardboard-prefix'
  * });
  */
-var Cardboard = module.exports = function(config) {
+function Cardboard(config) {
     config = config || {};
     config.MAX_GEOMETRY_SIZE = config.MAX_GEOMETRY_SIZE || MAX_GEOMETRY_SIZE;
 
@@ -120,10 +120,10 @@ var Cardboard = module.exports = function(config) {
         catch (err) { return callback(err); }
 
         var q = queue(1);
-        q.defer(config.s3.putObject.bind(config.s3), encoded[1]);
+        if (encoded[1]) q.defer(config.s3.putObject.bind(config.s3), encoded[1]);
         q.defer(config.dyno.putItem, encoded[0]);
         q.await(function(err) {
-            var result = geobuf.geobufToFeature(encoded[1].Body);
+            var result = geobuf.geobufToFeature(encoded[0].val || encoded[1].Body);
             result.id = utils.idFromRecord(encoded[0]);
             callback(err, result);
         });
@@ -164,7 +164,7 @@ var Cardboard = module.exports = function(config) {
     cardboard.del = function(primary, dataset, callback) {
         var key = { dataset: dataset, id: 'id!' + primary };
 
-        config.dyno.deleteItem(key, { expected: { id: 'NOT_NULL'} }, function(err, res) {
+        config.dyno.deleteItem(key, { expected: { id: 'NOT_NULL'} }, function(err) {
             if (err && err.code === 'ConditionalCheckFailedException') return callback(new Error('Feature does not exist'));
             if (err) return callback(err, true);
             else callback();
@@ -271,7 +271,7 @@ var Cardboard = module.exports = function(config) {
 
             keys.push({ dataset: dataset, id: 'metadata!' + dataset });
 
-            config.dyno.deleteItems(keys, function(err, res) {
+            config.dyno.deleteItems(keys, function(err) {
                 callback(err);
             });
         });
@@ -640,4 +640,4 @@ var Cardboard = module.exports = function(config) {
     };
 
     return cardboard;
-};
+}

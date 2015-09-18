@@ -50,8 +50,8 @@ module.exports.dc = {
     geometry: {
         type: 'Point',
         coordinates: [
-          -77.02875137329102,
-          38.93337493490118
+            -77.02875137329102,
+            38.93337493490118
         ]
     },
     properties: {}

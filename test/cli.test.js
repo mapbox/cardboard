@@ -91,7 +91,7 @@ test('[cli] get', function(assert) {
             'get', 'test', '\'' + putResults.features[0].id + '\''
         ];
 
-        exec(params.join(' '), function(err, stdout, stderr) {
+        exec(params.join(' '), function(err, stdout) {
             assert.ifError(err, 'success');
             var found = JSON.parse(stdout.trim());
             assert.deepEqual(found, putResults.features[0], 'got expected feature');
@@ -116,7 +116,7 @@ test('[cli] list', function(assert) {
             'list', 'test'
         ];
 
-        exec(params.join(' '), function(err, stdout, stderr) {
+        exec(params.join(' '), function(err, stdout) {
             assert.ifError(err, 'success');
             var found = JSON.parse(stdout.trim());
             assert.deepEqual(found, putResults, 'got expected FeatureCollection');
@@ -145,7 +145,7 @@ test('[cli] bbox', function(assert) {
             return state.properties.name === 'California';
         })[0];
 
-        exec(params.join(' '), function(err, stdout, stderr) {
+        exec(params.join(' '), function(err, stdout) {
             assert.ifError(err, 'success');
             var found = JSON.parse(stdout.trim());
             assert.deepEqual(found, {type: 'FeatureCollection', features: [cali]}, 'found California');
@@ -176,7 +176,7 @@ test('[cli] put', function(assert) {
         'put', 'test'
     ];
 
-    var proc = exec(params.join(' '), function(err, stdout, stderr) {
+    var proc = exec(params.join(' '), function(err) {
         assert.ifError(err, 'success');
 
         var found = {type: 'FeatureCollection', features: []};

@@ -1,5 +1,4 @@
 var test = require('tape');
-var fs = require('fs');
 var queue = require('queue-async');
 var _ = require('lodash');
 var Cardboard = require('../');
@@ -7,12 +6,6 @@ var Metadata = require('../lib/metadata');
 var Utils = require('../lib/utils');
 var geojsonExtent = require('geojson-extent');
 var geojsonFixtures = require('geojson-fixtures');
-var geojsonNormalize = require('geojson-normalize');
-var geojsonStream = require('geojson-stream');
-var geobuf = require('geobuf');
-var fixtures = require('./fixtures');
-var fakeAWS = require('mock-aws-s3');
-var crypto = require('crypto');
 
 var s = require('./setup');
 var config = s.config;
@@ -28,15 +21,15 @@ function featureCollection(features) {
 var dataset = 'metadatatest';
 var metadata = Metadata(dyno, dataset);
 var initial = {
-        id: metadata.recordId,
-        dataset: dataset,
-        count: 12,
-        size: 1024,
-        west: -10,
-        south: -10,
-        east: 10,
-        north: 10
-    };
+    id: metadata.recordId,
+    dataset: dataset,
+    count: 12,
+    size: 1024,
+    west: -10,
+    south: -10,
+    east: 10,
+    north: 10
+};
 
 test('setup', s.setup);
 
@@ -50,7 +43,7 @@ test('metadata: get', function(t) {
         dyno.putItem(initial, withMetadata);
     }
 
-    function withMetadata(err, res) {
+    function withMetadata(err) {
         t.ifError(err, 'put test metadata');
         metadata.getInfo(function(err, info) {
             t.ifError(err, 'get metadata');
@@ -72,7 +65,7 @@ test('metadata: defaultInfo', function(t) {
         dyno.putItem(initial, overwrite);
     });
 
-    function overwrite(err, res) {
+    function overwrite(err) {
         t.ifError(err, 'overwrote default record');
         metadata.defaultInfo(applyDefaults);
     }
@@ -96,7 +89,7 @@ test('setup', s.setup);
 
 test('metadata: adjust size or count', function(t) {
 
-    metadata.adjustProperties({ count: 10 }, function(err, res) {
+    metadata.adjustProperties({ count: 10 }, function(err) {
         t.ifError(err, 'graceful if no metadata exists');
         metadata.getInfo(checkEmpty);
     });
@@ -115,37 +108,37 @@ test('metadata: adjust size or count', function(t) {
         dyno.putItem(initial, addCount);
     }
 
-    function addCount(err, res) {
+    function addCount(err) {
         t.ifError(err, 'put metadata record');
-        metadata.adjustProperties({ count: 1 }, function(err, res) {
+        metadata.adjustProperties({ count: 1 }, function(err) {
             t.ifError(err, 'incremented count by 1');
             checkRecord('count', initial.count + 1, subtractCount);
         });
     }
 
     function subtractCount() {
-        metadata.adjustProperties({ count: -1 }, function(err, res) {
+        metadata.adjustProperties({ count: -1 }, function(err) {
             t.ifError(err, 'decrement count by 1');
             checkRecord('count', initial.count, addSize);
         });
     }
 
     function addSize() {
-        metadata.adjustProperties({ size: 1024 }, function(err, res) {
+        metadata.adjustProperties({ size: 1024 }, function(err) {
             t.ifError(err, 'incremented size by 1024');
             checkRecord('size', initial.size + 1024, subtractSize);
         });
     }
 
     function subtractSize() {
-        metadata.adjustProperties({ size: -1024 }, function(err, res) {
+        metadata.adjustProperties({ size: -1024 }, function(err) {
             t.ifError(err, 'decrement size by 1024');
             checkRecord('size', initial.size, addBoth);
         });
     }
 
     function addBoth() {
-        metadata.adjustProperties({ count: 1, size: 1024 }, function(err, res) {
+        metadata.adjustProperties({ count: 1, size: 1024 }, function(err) {
             t.ifError(err, 'increment size and count');
             checkRecord('size', initial.size + 1024, function() {
                 checkRecord('count', initial.count + 1, function() {
@@ -175,12 +168,12 @@ test('metadata: adjust bounds', function(t) {
         dyno.putItem(initial, adjust);
     }
 
-    function adjust(err, res) {
+    function adjust(err) {
         t.ifError(err, 'put metadata record');
         metadata.adjustBounds(bbox, adjusted);
     }
 
-    function adjusted(err, res) {
+    function adjusted(err) {
         t.ifError(err, 'adjusted bounds without error');
         metadata.getInfo(checkNewInfo);
     }
@@ -555,14 +548,12 @@ test('insert idaho & check metadata', function(t) {
         return f.properties.GEOID === '16049960100';
     })[0];
 
-    var info = metadata.getFeatureInfo(f);
-
     queue()
         .defer(cardboard.put, f, dataset)
         .defer(metadata.addFeature, f)
         .awaitAll(inserted);
 
-    function inserted(err, res) {
+    function inserted(err) {
         if (err) console.error(err);
         t.notOk(err, 'no error returned');
         t.pass('inserted idaho');
@@ -611,7 +602,7 @@ test('insert many idaho features & check metadata', function(t) {
 
     q.awaitAll(inserted);
 
-    function inserted(err, res) {
+    function inserted(err) {
         if (err) console.error(err);
         t.notOk(err, 'no error returned');
         t.pass('inserted idaho features');
@@ -662,7 +653,7 @@ test('insert many idaho features, delete one & check metadata', function(t) {
     q.defer(metadata.deleteFeature, deleteThis);
     q.awaitAll(inserted);
 
-    function inserted(err, res) {
+    function inserted(err) {
         if (err) console.error(err);
         t.notOk(err, 'no error returned');
         t.pass('inserted idaho features and deleted one');
@@ -721,7 +712,7 @@ test('insert idaho feature, update & check metadata', function(t) {
             .awaitAll(updated);
     }
 
-    function updated(err, res) {
+    function updated(err) {
         t.ifError(err, 'updated feature');
         metadata.getInfo(checkInfo);
     }

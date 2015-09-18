@@ -1,4 +1,3 @@
-var test = require('tape');
 var Dynalite = require('dynalite');
 var Cardboard = require('../');
 var fakeAWS = require('mock-aws-s3');
@@ -35,7 +34,7 @@ module.exports.setup = function(t, multi) {
             q.defer(cardboard.createTable, 'test-cardboard-write');
         }
 
-        q.awaitAll(function(err, resp) {
+        q.awaitAll(function(err) {
             t.notOk(err);
             t.end();
         });
