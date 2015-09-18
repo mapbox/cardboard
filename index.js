@@ -581,8 +581,8 @@ function Cardboard(config) {
 
         // Deduplicate subquery tiles.
         uniq(tiles, function(a, b) {
-                return !tilebelt.tilesEqual(a, b);
-            });
+            return !tilebelt.tilesEqual(a, b);
+        });
 
         if (tiles.length > 1) {
             // Filter out the z0 tile -- we'll always search it eventually.
