@@ -520,23 +520,27 @@ test('list all pages', function(t) {
     function page(err, putResults) {
         t.equal(err, null);
         t.pass('collection inserted');
-        var i = 0;
 
-        function testPage(next) {
-            t.notEqual(next, null, 'next key is not null');
-            var opts = {maxFeatures:1};
-            if (next) opts.start = next;
-            cardboard.list('default', opts, function(err, data, last) {
-                t.equal(err, null, 'no error');
-
-                if (!last) {
+        var pages = [];
+        function testPage(start) {
+            cardboard.list('default', {
+                maxFeatures: 1,
+                start: start
+            }, function(err, data) {
+                t.ifError(err);
+                if (!data.features.length) {
+                    var items = pages.reduce(function(memo, page) {
+                        memo = memo.concat(page);
+                        return memo;
+                    }, []);
+                    t.equal(pages.length, 3);
+                    t.equal(items.length, 3);
+                    t.deepEqual(items, putResults.features);
                     t.end();
                     return;
                 }
-
+                pages.push(data.features);
                 t.deepEqual(data.features.length, 1, 'page has one feature');
-                t.deepEqual(data.features[0].id, putResults.features[i].id, 'id as expected');
-                i++;
                 testPage(data.features.slice(-1)[0].id);
             });
         }

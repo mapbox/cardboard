@@ -309,15 +309,14 @@ function Cardboard(config) {
      * });
      * @example
      * // Paginate through all the features in a dataset
-     * (function list(startAfter) {
-     *   var options = { maxFeatures: 10 };
-     *   if (startAfter) options.start = startFrom;
-     *   cardabord.list('my-dataset', options, function(err, collection) {
+     * (function list(start) {
+     *   cardabord.list('my-dataset', {
+     *     maxFeatures: 10,
+     *     start: start
+     *   }, function(err, collection) {
      *     if (err) throw err;
      *     if (!collection.features.length) return console.log('All done!');
-     *
-     *     var lastId = collection.features.slice(-1)[0].id;
-     *     list(lastId);
+     *     list(collection.features.slice(-1)[0].id);
      *   });
      * })();
      */
@@ -331,7 +330,10 @@ function Cardboard(config) {
         }
 
         pageOptions = pageOptions || {};
-        if (pageOptions.start) opts.start = pageOptions.start;
+        if (pageOptions.start) opts.start = {
+            dataset: dataset,
+            id: 'id!' + pageOptions.start
+        };
         if (pageOptions.maxFeatures) opts.limit = pageOptions.maxFeatures;
 
         var query = { dataset: { EQ: dataset }, id: { BEGINS_WITH: 'id!' } };
@@ -579,8 +581,8 @@ function Cardboard(config) {
 
         // Deduplicate subquery tiles.
         uniq(tiles, function(a, b) {
-                return !tilebelt.tilesEqual(a, b);
-            });
+            return !tilebelt.tilesEqual(a, b);
+        });
 
         if (tiles.length > 1) {
             // Filter out the z0 tile -- we'll always search it eventually.
