@@ -1,3 +1,8 @@
+### v1.3.0
+
+- Features are now only stored in S3 if they don't fit in DynamoDB
+- Fix feature pagination
+
 ### v1.2.2
 
 - Switch back to https://github.com/ericelliott/cuid for id generation -- some downstream applications expect ordered ids
