@@ -172,7 +172,7 @@ function Cardboard(config) {
     };
 
     /**
-     * Retreive a single GeoJSON feature
+     * Retrieve a single GeoJSON feature
      * @param {string} primary - the id for a feature
      * @param {string} dataset - the name of the dataset that this feature belongs to
      * @param {function} callback - the callback function to handle the response
