@@ -1,3 +1,7 @@
+### v1.3.1
+
+- Wrap geobuf parsing inside a try/catch.
+
 ### v1.3.0
 
 - Features are now only stored in S3 if they don't fit in DynamoDB
