@@ -5,6 +5,7 @@ var path = require('path');
 var _ = require('lodash');
 var geobuf = require('geobuf');
 var fixtures = require('./fixtures');
+var url = require('url');
 
 var states = fs.readFileSync(path.resolve(__dirname, 'data', 'states.geojson'), 'utf8');
 states = JSON.parse(states);
@@ -38,6 +39,68 @@ test('[utils] resolveFeatures', function(assert) {
                 });
 
                 assert.end();
+            });
+        });
+    });
+});
+
+test('[utils] resolveFeatures - large feature', function(assert) {
+
+    var feature = {
+        type: 'Feature',
+        properties: {
+            data: (new Buffer(15 * 1024)).toString('hex')
+        },
+        geometry: {
+            type: 'Point',
+            coordinates: [1, 1]
+        }
+    };
+
+    cardboard.put(feature, 'large', function(err, putResults) {
+        if (err) throw err;
+        var key = { dataset: 'large', id: 'id!' + putResults.id };
+        dynamodb.dyno.getItem(key, function(err, items) {
+            if (err) throw err;
+            utils.resolveFeatures([items], function(err, resolveResults) {
+                assert.ifError(err, 'success');
+                delete resolveResults.features[0].id;
+                assert.deepEqual(resolveResults.features[0], feature, 'expected feature');
+                assert.end();
+            });
+        });
+    });
+});
+
+test('[utils] resolveFeatures - large, corrupt feature', function(assert) {
+
+    var feature = {
+        type: 'Feature',
+        properties: {
+            data: (new Buffer(15 * 1024)).toString('hex')
+        },
+        geometry: {
+            type: 'Point',
+            coordinates: [1, 1]
+        }
+    };
+
+    cardboard.put(feature, 'large', function(err, putResults) {
+        if (err) throw err;
+        var key = { dataset: 'large', id: 'id!' + putResults.id };
+        dynamodb.dyno.getItem(key, function(err, item) {
+            if (err) throw err;
+            var uri = url.parse(item.s3url);
+            config.s3.putObject({
+                Bucket: uri.host,
+                Key: uri.pathname.substr(1),
+                Body: new Buffer('this is not a valid protobuf')
+            }, function(err) {
+                if (err) throw err;
+                utils.resolveFeatures([item], function(err) {
+                    assert.equal(err.message, 'Illegal group end indicator for Message .featurecollection: 14 (not a group)');
+                    assert.end();
+                });
             });
         });
     });
