@@ -526,7 +526,9 @@ function Cardboard(config) {
 
         options = _.defaults(options, { limit: 100 });
 
-        // First find features indexed in children of this tile
+        // List all features with a filterquery for the bounds.
+        // This isnt meant to be fast, but it is meant to page by feature id.
+
         var query = {
             dataset: { EQ: dataset },
             id: {BEGINS_WITH: 'id!'}
