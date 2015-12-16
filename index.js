@@ -1,10 +1,8 @@
 var _ = require('lodash');
 var Metadata = require('./lib/metadata');
-var uniq = require('uniq');
 var queue = require('queue-async');
 var Dyno = require('dyno');
 var AWS = require('aws-sdk');
-var tilebelt = require('tilebelt');
 var geobuf = require('geobuf');
 var stream = require('stream');
 
