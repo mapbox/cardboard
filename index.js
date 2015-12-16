@@ -508,6 +508,10 @@ function Cardboard(config) {
      * Find GeoJSON features that intersect a bounding box
      * @param {number[]} bbox - the bounding box as `[west, south, east, north]`
      * @param {string} dataset - the name of the dataset
+     * @param {Object} [options] - Paginiation options. If omitted, the the bbox will
+     *   return the first page, limited to 100 features
+     * @param {Object} [options.limit] - Limit the number of item per page.
+     * @param {Object} [options.start] - Exclusive start key to use for loading the next page. This is a feature id.
      * @param {function} callback - the callback function to handle the response
      * @example
      * var bbox = [-120, 30, -115, 32]; // west, south, east, north
@@ -526,7 +530,8 @@ function Cardboard(config) {
 
         // First find features indexed in children of this tile
         var query = {
-            dataset: { EQ: dataset }
+            dataset: { EQ: dataset },
+            id: {BEGINS_WITH: 'id!'}
         };
 
         var queryOptions = {
@@ -540,6 +545,13 @@ function Cardboard(config) {
             }
         };
 
+        if (options.start) {
+            queryOptions.start =  {
+                dataset: dataset,
+                id: 'id!'+options.start
+            };
+        }
+
         var maxPages = 10;
         var page = 0;
         var combinedFeatures = [];
@@ -551,7 +563,7 @@ function Cardboard(config) {
                     if (err) return callback(err);
                     combinedFeatures = combinedFeatures.concat(data.features);
                     if (combinedFeatures.length >= options.limit || page >= maxPages || !meta[0].last) {
-                        data.features = combinedFeatures.slice(0,options.limit);
+                        data.features = combinedFeatures.slice(0, options.limit);
                         return callback(err, data);
                     }
                     page +=1;

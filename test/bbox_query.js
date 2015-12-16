@@ -353,10 +353,10 @@ test('paging', function(t) {
     });
 
     function runQuery() {
-        cardboard.bboxQuery([0,0,2,2], dataset, {limit:2}, function(err, res) {
+        cardboard.bboxQuery([0,0,2,2], dataset, {limit:10}, function(err, res) {
             t.ifError(err, 'bbox paged query');
-            t.equal(res.features.length, 2, ' returned 2 features');
-            cardboard.bboxQuery([0,0,2,2], dataset, {limit:2, start: res.features[1].id}, function(err, res) {
+            t.equal(res.features.length, 4, ' returned 4 features');
+            cardboard.bboxQuery([0,0,2,2], dataset, {limit:10, start: res.features[1].id}, function(err, res) {
                 t.ifError(err, 'bbox paged query');
                 t.equal(res.features.length, 2, ' returned 2 features');
                 t.end();
