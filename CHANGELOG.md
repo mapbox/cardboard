@@ -1,3 +1,7 @@
+### v1.4.0
+
+- Made BBOX queries simpler (and slower) but added paging to BBOX. -- future index changes help bbox speed.
+
 ### v1.3.1
 
 - Wrap geobuf parsing inside a try/catch.
