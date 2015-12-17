@@ -40,8 +40,7 @@
     "queue-async": "~1.0.7",
     "sphericalmercator": "^1.0.3",
     "through2": "^2.0.0",
-    "tilebelt": "^0.5.2",
-    "uniq": "~1.0.0"
+    "tilebelt": "^0.5.2"
   },
   "devDependencies": {
     "coveralls": "^2.11.2",

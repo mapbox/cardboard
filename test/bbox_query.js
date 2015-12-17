@@ -325,4 +325,44 @@ test('queries along antimeridian (W)', function(t) {
     }
 });
 
+test('paging', function(t) {
+    var cardboard = Cardboard(config);
+    var dataset = 'default';
+
+    // Insert 8 features
+    var features = [[1, 1], [1, 2], [2, 1], [2, 2], [-1, -1], [-1, -2], [-2, -1], [-2, -2]].map(function(coords) {
+        return {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+                type: 'Point',
+                coordinates: coords
+            }
+        };
+    });
+
+    var q = queue();
+
+    features.forEach(function(f) {
+        q.defer(cardboard.put, f, dataset);
+    });
+
+    q.awaitAll(function(err) {
+        t.ifError(err, 'inserted');
+        runQuery();
+    });
+
+    function runQuery() {
+        cardboard.bboxQuery([0,0,2,2], dataset, {maxFeatures:10}, function(err, res) {
+            t.ifError(err, 'bbox paged query');
+            t.equal(res.features.length, 4, ' returned 4 features');
+            cardboard.bboxQuery([0,0,2,2], dataset, {maxFeatures:10, start: res.features[1].id}, function(err, res) {
+                t.ifError(err, 'bbox paged query');
+                t.equal(res.features.length, 2, ' returned 2 features');
+                t.end();
+            });
+        });
+    }
+});
+
 test('teardown', s.teardown);

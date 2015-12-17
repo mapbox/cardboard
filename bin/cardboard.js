@@ -131,6 +131,7 @@ cardboard.createTable(function(err){
 
             cardboard.batch.put(aggregator.collection(), dataset, function(err) {
                 if (err) return aggregator.emit('error', err);
+                aggregator.count += aggregator.features.length;
                 aggregator.done();
             });
         };
