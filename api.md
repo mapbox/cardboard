@@ -1,6 +1,6 @@
 # Cardboard
 
-[index.js:39-645](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/index.js#L39-L645 "Source code on GitHub")
+[index.js:37-579](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/index.js#L37-L579 "Source code on GitHub")
 
 Cardboard client generator
 
@@ -37,7 +37,7 @@ Returns **cardboard** a cardboard client
 
 # addFeature
 
-[index.js:475-477](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/index.js#L475-L477 "Source code on GitHub")
+[index.js:473-475](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/index.js#L473-L475 "Source code on GitHub")
 
 Incrementally update a dataset's metadata with a new feature. This operation **will** create a metadata record if one does not exist.
 
@@ -49,7 +49,7 @@ Incrementally update a dataset's metadata with a new feature. This operation **w
 
 # deleteFeature
 
-[index.js:501-503](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/index.js#L501-L503 "Source code on GitHub")
+[index.js:499-501](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/index.js#L499-L501 "Source code on GitHub")
 
 Given a GeoJSON feature to remove, perform all required metadata updates. This operation **will not** create a metadata record if one does not exist. This operation **will not** shrink metadata bounds.
 
@@ -61,7 +61,7 @@ Given a GeoJSON feature to remove, perform all required metadata updates. This o
 
 # updateFeature
 
-[index.js:489-491](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/index.js#L489-L491 "Source code on GitHub")
+[index.js:487-489](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/index.js#L487-L489 "Source code on GitHub")
 
 Update a dataset's metadata with a change to a single feature. This operation **will not** create a metadata record if one does not exist.
 
@@ -74,7 +74,7 @@ Update a dataset's metadata with a change to a single feature. This operation **
 
 # put
 
-[lib/batch.js:29-68](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/lib/batch.js#L29-L68 "Source code on GitHub")
+[lib/batch.js:29-68](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/lib/batch.js#L29-L68 "Source code on GitHub")
 
 Insert or update a set of GeoJSON features
 
@@ -86,7 +86,7 @@ Insert or update a set of GeoJSON features
 
 # remove
 
-[lib/batch.js:78-93](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/lib/batch.js#L78-L93 "Source code on GitHub")
+[lib/batch.js:78-93](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/lib/batch.js#L78-L93 "Source code on GitHub")
 
 Remove a set of features
 
@@ -98,13 +98,13 @@ Remove a set of features
 
 # cardboard
 
-[index.js:57-57](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/index.js#L57-L57 "Source code on GitHub")
+[index.js:55-55](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/index.js#L55-L55 "Source code on GitHub")
 
 A client configured to interact with a backend cardboard database
 
 ## bboxQuery
 
-[index.js:519-642](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/index.js#L519-L642 "Source code on GitHub")
+[index.js:521-576](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/index.js#L521-L576 "Source code on GitHub")
 
 Find GeoJSON features that intersect a bounding box
 
@@ -112,6 +112,10 @@ Find GeoJSON features that intersect a bounding box
 
 -   `bbox` **Array&lt;number&gt;** the bounding box as `[west, south, east, north]`
 -   `dataset` **string** the name of the dataset
+-   `options` **[Object]** Paginiation options. If omitted, the the bbox will
+      return the first page, limited to 100 features
+    -   `options.maxFeatures` **[number]** maximum number of features to return
+    -   `options.start` **[Object]** Exclusive start key to use for loading the next page. This is a feature id.
 -   `callback` **function** the callback function to handle the response
 
 **Examples**
@@ -126,7 +130,7 @@ carboard.bboxQuery(bbox, 'my-dataset', function(err, collection) {
 
 ## calculateDatasetInfo
 
-[index.js:457-459](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/index.js#L457-L459 "Source code on GitHub")
+[index.js:455-457](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/index.js#L455-L457 "Source code on GitHub")
 
 Calculate metadata about a dataset
 
@@ -157,7 +161,7 @@ cardboard.calculateDatasetInfo('my-dataset', function(err, metadata) {
 
 ## createTable
 
-[index.js:234-243](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/index.js#L234-L243 "Source code on GitHub")
+[index.js:232-241](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/index.js#L232-L241 "Source code on GitHub")
 
 Create a DynamoDB table with Cardboard's schema
 
@@ -184,7 +188,7 @@ cardboard.createTable('new-cardboard-table', function(err) {
 
 ## del
 
-[index.js:164-172](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/index.js#L164-L172 "Source code on GitHub")
+[index.js:162-170](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/index.js#L162-L170 "Source code on GitHub")
 
 Remove a single GeoJSON feature
 
@@ -228,7 +232,7 @@ cardboard.del('non-existent-feature', 'my-dataset', function(err, result) {
 
 ## delDataset
 
-[index.js:266-278](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/index.js#L266-L278 "Source code on GitHub")
+[index.js:264-276](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/index.js#L264-L276 "Source code on GitHub")
 
 Remove an entire dataset
 
@@ -239,7 +243,7 @@ Remove an entire dataset
 
 ## get
 
-[index.js:206-217](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/index.js#L206-L217 "Source code on GitHub")
+[index.js:204-215](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/index.js#L204-L215 "Source code on GitHub")
 
 Retrieve a single GeoJSON feature
 
@@ -283,7 +287,7 @@ cardboard.get('non-existent-feature', 'my-dataset', function(err, result) {
 
 ## getDatasetInfo
 
-[index.js:432-434](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/index.js#L432-L434 "Source code on GitHub")
+[index.js:430-432](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/index.js#L430-L432 "Source code on GitHub")
 
 Get cached metadata about a dataset
 
@@ -314,7 +318,7 @@ cardboard.getDatasetInfo('my-dataset', function(err, metadata) {
 
 ## list
 
-[index.js:323-385](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/index.js#L323-L385 "Source code on GitHub")
+[index.js:321-383](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/index.js#L321-L383 "Source code on GitHub")
 
 List the GeoJSON features that belong to a particular dataset
 
@@ -374,7 +378,7 @@ Returns **object** a readable stream
 
 ## listDatasets
 
-[index.js:397-409](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/index.js#L397-L409 "Source code on GitHub")
+[index.js:395-407](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/index.js#L395-L407 "Source code on GitHub")
 
 List datasets available in this database
 
@@ -394,7 +398,7 @@ cardboard.listDatasets(function(err, datasets) {
 
 ## put
 
-[index.js:117-130](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/index.js#L117-L130 "Source code on GitHub")
+[index.js:115-128](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/index.js#L115-L128 "Source code on GitHub")
 
 Insert or update a single GeoJSON feature
 
@@ -465,25 +469,25 @@ cardboard.put(feature, 'my-dataset', function(err, result) {
 
 # cardboard.batch
 
-[lib/batch.js:19-19](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/lib/batch.js#L19-L19 "Source code on GitHub")
+[lib/batch.js:19-19](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/lib/batch.js#L19-L19 "Source code on GitHub")
 
 A module for batch requests
 
 # cardboard.metadata
 
-[index.js:465-465](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/index.js#L465-L465 "Source code on GitHub")
+[index.js:463-463](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/index.js#L463-L463 "Source code on GitHub")
 
 A module for incremental metadata adjustments
 
 # utils
 
-[lib/utils.js:16-16](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/lib/utils.js#L16-L16 "Source code on GitHub")
+[lib/utils.js:16-16](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/lib/utils.js#L16-L16 "Source code on GitHub")
 
 A module containing internal utility functions
 
 ## idFromRecord
 
-[lib/utils.js:106-111](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/lib/utils.js#L106-L111 "Source code on GitHub")
+[lib/utils.js:118-123](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/lib/utils.js#L118-L123 "Source code on GitHub")
 
 Strips database-information from a DynamoDB record's id
 
@@ -495,7 +499,7 @@ Returns **string** id - the feature's identifier
 
 ## resolveFeatures
 
-[lib/utils.js:23-48](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/lib/utils.js#L23-L48 "Source code on GitHub")
+[lib/utils.js:23-60](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/lib/utils.js#L23-L60 "Source code on GitHub")
 
 Convert a set of backend records into a GeoJSON features
 
@@ -506,7 +510,7 @@ Convert a set of backend records into a GeoJSON features
 
 ## toDatabaseRecord
 
-[lib/utils.js:65-99](https://github.com/mapbox/cardboard/blob/3b3ae0afbaf603775988d942e10339a7e67986cb/lib/utils.js#L65-L99 "Source code on GitHub")
+[lib/utils.js:77-111](https://github.com/mapbox/cardboard/blob/fd3db9ca7455e6d76ab1654e77cd6e8b6e882734/lib/utils.js#L77-L111 "Source code on GitHub")
 
 Converts a single GeoJSON feature into backend format
 
