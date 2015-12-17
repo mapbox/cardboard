@@ -508,7 +508,7 @@ function Cardboard(config) {
      * @param {string} dataset - the name of the dataset
      * @param {Object} [options] - Paginiation options. If omitted, the the bbox will
      *   return the first page, limited to 100 features
-     * @param {Object} [options.limit] - Limit the number of item per page.
+     * @param {number} [options.maxFeatures] - maximum number of features to return
      * @param {Object} [options.start] - Exclusive start key to use for loading the next page. This is a feature id.
      * @param {function} callback - the callback function to handle the response
      * @example
@@ -524,7 +524,7 @@ function Cardboard(config) {
             options = {};
         }
 
-        options = _.defaults(options, { limit: 100 });
+        if (!options.maxFeatures) options.maxFeatures = 100;
 
         // List all features with a filterquery for the bounds.
         // This isnt meant to be fast, but it is meant to page by feature id.
@@ -536,7 +536,7 @@ function Cardboard(config) {
 
         var queryOptions = {
             pages: 1,
-            limit: options.limit,
+            limit: options.maxFeatures,
             filter: {
                 west: { LE: bbox[2] },
                 east: { GE: bbox[0] },
@@ -562,11 +562,11 @@ function Cardboard(config) {
                 utils.resolveFeatures(items, function(err, data) {
                     if (err) return callback(err);
                     combinedFeatures = combinedFeatures.concat(data.features);
-                    if (combinedFeatures.length >= options.limit || page >= maxPages || !meta[0].last) {
-                        data.features = combinedFeatures.slice(0, options.limit);
+                    if (combinedFeatures.length >= options.maxFeatures || page >= maxPages || !meta[0].last) {
+                        data.features = combinedFeatures.slice(0, options.maxFeatures);
                         return callback(err, data);
                     }
-                    page +=1;
+                    page += 1;
                     queryOptions.start = meta[0].last;
                     getPageOfBbox();
                 });
