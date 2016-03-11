@@ -847,8 +847,8 @@ test('pre-flight feature info', function(t) {
     var cardboard = Cardboard(config);
     var haiti = _.clone(fixtures.haiti);
     var info = cardboard.metadata.featureInfo('abc', haiti);
-    t.deepEqual(info,  {
-        size: 278,
+    t.deepEqual(info, {
+        size: 106,
         bounds: [-73.388671875, 18.771115062337024, -72.1142578125, 19.80805412808859],
         west: -73.388671875,
         south: 18.771115062337024,
