@@ -842,3 +842,18 @@ test('Insert with and without ids specified', function(t) {
 });
 
 test('teardown', s.teardown);
+
+test('pre-flight feature info', function(t) {
+    var cardboard = Cardboard(config);
+    var haiti = _.clone(fixtures.haiti);
+    var info = cardboard.metadata.featureInfo('abc', haiti);
+    t.deepEqual(info,  {
+        size: 278,
+        bounds: [-73.388671875, 18.771115062337024, -72.1142578125, 19.80805412808859],
+        west: -73.388671875,
+        south: 18.771115062337024,
+        east: -72.1142578125,
+        north: 19.80805412808859
+    }, 'expected info');
+    t.end();
+});
