@@ -6,6 +6,7 @@ var Metadata = require('../lib/metadata');
 var Utils = require('../lib/utils');
 var geojsonExtent = require('geojson-extent');
 var geojsonFixtures = require('geojson-fixtures');
+var geobuf = require('geobuf');
 
 var s = require('./setup');
 var config = s.config;
@@ -203,7 +204,7 @@ test('setup', s.setup);
 
 test('metadata: add a feature', function(t) {
     var feature = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
-    var expectedSize = Buffer.byteLength(JSON.stringify(feature));
+    var expectedSize = geobuf.featureToGeobuf(feature).toBuffer().length;
     var expectedBounds = geojsonExtent(feature);
     var cardboard = Cardboard(config);
 
@@ -261,7 +262,7 @@ test('setup', s.setup);
 
 test('metadata: add a feature via database record', function(t) {
     var feature = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
-    var expectedSize = Buffer.byteLength(JSON.stringify(feature));
+    var expectedSize = geobuf.featureToGeobuf(feature).toBuffer().length;
     var expectedBounds = geojsonExtent(feature);
     var cardboard = Cardboard(config);
     var utils = Utils(config);
@@ -321,7 +322,7 @@ test('setup', s.setup);
 test('metadata: update a feature', function(t) {
     var original = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
     var edited = _.extend({ id: 'test-feature' }, geojsonFixtures.featurecollection.idaho.features[0]);
-    var expectedSize = JSON.stringify(edited).length - JSON.stringify(original).length;
+    var expectedSize = geobuf.featureToGeobuf(edited).toBuffer().length - geobuf.featureToGeobuf(original).toBuffer().length;
     var expectedBounds = geojsonExtent(edited);
     var cardboard = Cardboard(config);
 
@@ -364,7 +365,7 @@ test('setup', s.setup);
 test('metadata: update a feature via database record', function(t) {
     var original = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
     var edited = _.extend({ id: 'test-feature' }, geojsonFixtures.featurecollection.idaho.features[0]);
-    var expectedSize = JSON.stringify(edited).length - JSON.stringify(original).length;
+    var expectedSize = geobuf.featureToGeobuf(edited).toBuffer().length - geobuf.featureToGeobuf(original).toBuffer().length;
     var expectedBounds = geojsonExtent(edited);
     var cardboard = Cardboard(config);
 
@@ -410,7 +411,7 @@ test('setup', s.setup);
 
 test('metadata: remove a feature', function(t) {
     var feature = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
-    var expectedSize = Buffer.byteLength(JSON.stringify(feature));
+    var expectedSize = geobuf.featureToGeobuf(feature).toBuffer().length;
     var cardboard = Cardboard(config);
 
     cardboard.metadata.deleteFeature(dataset, feature, function(err) {
@@ -450,7 +451,7 @@ test('setup', s.setup);
 
 test('metadata: remove a feature via database record', function(t) {
     var feature = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
-    var expectedSize = Buffer.byteLength(JSON.stringify(feature));
+    var expectedSize = geobuf.featureToGeobuf(feature).toBuffer().length;
     var cardboard = Cardboard(config);
 
     var utils = Utils(config);
@@ -505,7 +506,7 @@ test('metadata: calculate dataset info', function(t) {
         });
 
         var expectedSize = features.reduce(function(memo, feature) {
-            memo = memo + Buffer.byteLength(JSON.stringify(feature));
+            memo = memo + geobuf.featureToGeobuf(feature).toBuffer().length;
             return memo;
         }, 0);
 
@@ -518,7 +519,7 @@ test('metadata: calculate dataset info', function(t) {
             south: expectedBounds[1],
             east: expectedBounds[2],
             north: expectedBounds[3],
-            minzoom: 5,
+            minzoom: 3,
             maxzoom: 11
         };
 
@@ -589,7 +590,7 @@ test('insert many idaho features & check metadata', function(t) {
     var features = geojsonFixtures.featurecollection.idaho.features.slice(0, 50);
     var expectedBounds = geojsonExtent({ type: 'FeatureCollection', features: features });
     var expectedSize = features.reduce(function(memo, feature) {
-        memo = memo + Buffer.byteLength(JSON.stringify(feature));
+        memo = memo + geobuf.featureToGeobuf(feature).toBuffer().length;
         return memo;
     }, 0);
 
@@ -620,7 +621,7 @@ test('insert many idaho features & check metadata', function(t) {
             north: expectedBounds[3],
             count: features.length,
             size: expectedSize,
-            minzoom: 5,
+            minzoom: 3,
             maxzoom: 11
         };
         t.ok(info.updated, 'has updated date');
@@ -639,9 +640,9 @@ test('insert many idaho features, delete one & check metadata', function(t) {
     var deleteThis = features[9];
     var expectedBounds = geojsonExtent({ type: 'FeatureCollection', features: features });
     var expectedSize = features.reduce(function(memo, feature) {
-        memo = memo + JSON.stringify(feature).length;
+        memo = memo + geobuf.featureToGeobuf(feature).toBuffer().length;
         return memo;
-    }, 0) - JSON.stringify(deleteThis).length;
+    }, 0) - geobuf.featureToGeobuf(deleteThis).toBuffer().length;
 
     var q = queue();
 
@@ -671,7 +672,7 @@ test('insert many idaho features, delete one & check metadata', function(t) {
             north: expectedBounds[3],
             count: features.length - 1,
             size: expectedSize,
-            minzoom: 5,
+            minzoom: 3,
             maxzoom: 11
         };
         t.ok(info.updated, 'has updated date');
@@ -705,7 +706,7 @@ test('insert idaho feature, update & check metadata', function(t) {
         t.pass('inserted idaho feature');
 
         var update = _.extend({ id: res[0] }, edited);
-        expectedSize = JSON.stringify(update).length;
+        expectedSize = geobuf.featureToGeobuf(update).toBuffer().length;
         queue()
             .defer(cardboard.put, update, dataset)
             .defer(metadata.updateFeature, original, update)
@@ -729,7 +730,7 @@ test('insert idaho feature, update & check metadata', function(t) {
             count: 1,
             size: expectedSize,
             minzoom: 0,
-            maxzoom: 13
+            maxzoom: 12
         };
         t.ok(info.updated, 'has updated date');
         t.deepEqual(_.omit(info, 'updated'), expected, 'expected metadata');
@@ -794,7 +795,7 @@ test('calculateDatasetInfo', function(t) {
         });
 
         var expectedSize = features.reduce(function(memo, feature) {
-            memo = memo + Buffer.byteLength(JSON.stringify(feature));
+            memo = memo + geobuf.featureToGeobuf(feature).toBuffer().length;
             return memo;
         }, 0);
 
@@ -807,7 +808,7 @@ test('calculateDatasetInfo', function(t) {
             south: expectedBounds[1],
             east: expectedBounds[2],
             north: expectedBounds[3],
-            minzoom: 5,
+            minzoom: 3,
             maxzoom: 11
         };
 

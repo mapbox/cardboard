@@ -463,6 +463,17 @@ function Cardboard(config) {
     var metadata = {};
 
     /**
+     * Pre-flight function to request information about the size and extent of a feature
+     *
+     * @param {string} dataset - the name of the dataset
+     * @param {object} feature - a GeoJSON feature being added to the dataset
+     * @returns {object} an object describing the feature's size and extent
+     */
+    metadata.featureInfo = function(dataset, feature) {
+        return Metadata(config.dyno, dataset).getFeatureInfo(feature);
+    };
+
+    /**
      * Incrementally update a dataset's metadata with a new feature. This operation **will** create a metadata record if one does not exist.
      * @static
      * @memberof cardboard.metadata
