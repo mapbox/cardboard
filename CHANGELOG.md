@@ -1,3 +1,8 @@
+### v1.5.0
+
+- Add cardboard.metadata.featureInfo(), a pre-flight function to check metadata about a feature
+- Adjusts size calculations to be based on geobuf sizes instead of JSON.stringify(feature).length
+
 ### v1.4.0
 
 - Made BBOX queries simpler (and slower) but added paging to BBOX. -- future index changes help bbox speed.
