@@ -366,3 +366,99 @@ test('paging', function(t) {
 });
 
 test('teardown', s.teardown);
+
+// Test findability of a linestring crossing the dateline east to west.
+test('setup', s.setup);
+test('query for line crossing dateline', function(t) {
+    var cardboard = Cardboard(config);
+    var dataset = 'line-query';
+
+    var feature = {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+                type: 'LineString',
+                coordinates: [[-175, 1], [175, 1]]
+            }};
+
+    // all queries should return a single result
+    var queries = [
+        [179, 0, -179, 10],
+        [176, 0, 180, 10],
+        [-180, 0, -176, 10],
+    ];
+
+    var q = queue();
+    q.defer(cardboard.put, feature, dataset);
+    q.awaitAll(function(err, res) {
+        t.ifError(err, 'inserted');
+        runQueries();
+    });
+
+    function runQueries() {
+        var q = queue();
+        queries.forEach(function(query) {
+            function deal(callback) {
+                cardboard.bboxQuery(query, dataset, function(err, res) {
+                    if (err) return callback(err);
+                    t.equal(res.features.length, 1, query.join(',') + ' returned one feature');
+                    callback();
+                });
+            }
+            q.defer(deal);
+        });
+        q.await(function(err) {
+            t.ifError(err, 'passed queries');
+            t.end();
+        })
+    }
+});
+test('teardown', s.teardown);
+
+// Test findability of a linestring crossing the dateline west to east.
+test('setup', s.setup);
+test('query for line crossing dateline', function(t) {
+    var cardboard = Cardboard(config);
+    var dataset = 'line-query';
+
+    var feature = {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+                type: 'LineString',
+                coordinates: [[175, 1], [-175, 1]]
+            }};
+
+    // all queries should return a single result
+    var queries = [
+        [179, 0, -179, 10],
+        [176, 0, 180, 10],
+        [-180, 0, -176, 10],
+    ];
+
+    var q = queue();
+    q.defer(cardboard.put, feature, dataset);
+    q.awaitAll(function(err, res) {
+        t.ifError(err, 'inserted');
+        runQueries();
+    });
+
+    function runQueries() {
+        var q = queue();
+        queries.forEach(function(query) {
+            function deal(callback) {
+                cardboard.bboxQuery(query, dataset, function(err, res) {
+                    if (err) return callback(err);
+                    t.equal(res.features.length, 1, query.join(',') + ' returned one feature');
+                    callback();
+                });
+            }
+            q.defer(deal);
+        });
+        q.await(function(err) {
+            t.ifError(err, 'passed queries');
+            t.end();
+        })
+    }
+});
+test('teardown', s.teardown);
