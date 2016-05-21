@@ -20,7 +20,7 @@ test('pass preconfigured dyno object', function(t) {
         endpoint: 'http://localhost:4567'
     };
 
-    omitConfig.dyno = Dyno.multi(dynoconfig, dynoconfig);
+    omitConfig.dyno = Dyno(dynoconfig, dynoconfig);
     var cardboard = Cardboard(omitConfig);
     var geojson = {type: 'Feature', properties: {}, geometry: {type: 'Point', coordinates:[1, 2]}};
 

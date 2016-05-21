@@ -10,6 +10,7 @@ var config = {
     bucket: 'test',
     prefix: 'test',
     dyno: require('dyno')({
+        table: 'fake',
         region: 'fake',
         accessKeyId: 'fake',
         secretAccessKey: 'fake',

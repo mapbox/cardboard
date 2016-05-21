@@ -41,7 +41,7 @@ test('metadata: get', function(t) {
     function noMetadataYet(err, info) {
         t.ifError(err, 'get non-extistent metadata');
         t.deepEqual({}, info, 'returned blank obj when no info exists');
-        dyno.putItem(initial, withMetadata);
+        dyno.putItem({Item: initial}, withMetadata);
     }
 
     function withMetadata(err) {
@@ -63,7 +63,7 @@ test('metadata: defaultInfo', function(t) {
     metadata.defaultInfo(function(err, res) {
         t.ifError(err, 'no error when creating record');
         t.ok(res, 'response indicates record was created');
-        dyno.putItem(initial, overwrite);
+        dyno.putItem({Item: initial}, overwrite);
     });
 
     function overwrite(err) {
@@ -106,7 +106,7 @@ test('metadata: adjust size or count', function(t) {
     function checkEmpty(err, info) {
         t.ifError(err, 'gets empty record');
         t.deepEqual(info, {}, 'no record created by adjustProperties routine');
-        dyno.putItem(initial, addCount);
+        dyno.putItem({ Item: initial }, addCount);
     }
 
     function addCount(err) {
@@ -166,7 +166,7 @@ test('metadata: adjust bounds', function(t) {
     function checkEmpty(err, info) {
         t.ifError(err, 'gets empty record');
         t.deepEqual(info, {}, 'no record created by adjustBounds routine');
-        dyno.putItem(initial, adjust);
+        dyno.putItem({Item: initial}, adjust);
     }
 
     function adjust(err) {
@@ -221,7 +221,7 @@ test('metadata: add a feature', function(t) {
             t.equal(info.east, expectedBounds[2], 'correct east');
             t.equal(info.north, expectedBounds[3], 'correct north');
 
-            dyno.putItem(initial, replacedMetadata);
+            dyno.putItem({Item: initial}, replacedMetadata);
         });
     }
 
@@ -280,7 +280,7 @@ test('metadata: add a feature via database record', function(t) {
             t.equal(info.east, expectedBounds[2], 'correct east');
             t.equal(info.north, expectedBounds[3], 'correct north');
 
-            dyno.putItem(initial, replacedMetadata);
+            dyno.putItem({Item: initial}, replacedMetadata);
         });
     }
 
@@ -422,7 +422,7 @@ test('metadata: remove a feature', function(t) {
     function checkEmpty(err, info) {
         t.ifError(err, 'gets empty record');
         t.deepEqual(info, {}, 'no record created by adjustBounds routine');
-        dyno.putItem(initial, del);
+        dyno.putItem({Item: initial}, del);
     }
 
     function del(err) {
@@ -465,7 +465,7 @@ test('metadata: remove a feature via database record', function(t) {
     function checkEmpty(err, info) {
         t.ifError(err, 'gets empty record');
         t.deepEqual(info, {}, 'no record created by adjustBounds routine');
-        dyno.putItem(initial, del);
+        dyno.putItem({Item: initial}, del);
     }
 
     function del(err) {
@@ -744,7 +744,7 @@ test('setup', s.setup);
 
 test('delDataset removes metadata', function(t) {
     var cardboard = new Cardboard(config);
-    dyno.putItem(initial, function(err) {
+    dyno.putItem({Item: initial}, function(err) {
         t.ifError(err, 'put initial metadata');
         cardboard.delDataset(dataset, removed);
     });
@@ -765,7 +765,7 @@ test('setup', s.setup);
 
 test('getDatasetInfo', function(t) {
     var cardboard = new Cardboard(config);
-    dyno.putItem(initial, function(err) {
+    dyno.putItem({Item: initial}, function(err) {
         t.ifError(err, 'put initial metadata');
         cardboard.getDatasetInfo(dataset, checkInfo);
     });

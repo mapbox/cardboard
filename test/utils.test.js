@@ -25,8 +25,8 @@ dynamodb.start();
 test('[utils] resolveFeatures', function(assert) {
     cardboard.batch.put(states, 'test', function(err, putResults) {
         if (err) throw err;
-        dynamodb.dyno.scan(function(err, items) {
-            if (err) throw err;
+        var items = [];
+        dynamodb.dyno.scanStream().on('data', function(d) { items.push(d); }).on('end', function() {
             utils.resolveFeatures(items, function(err, resolveResults) {
                 assert.ifError(err, 'success');
 
@@ -60,9 +60,9 @@ test('[utils] resolveFeatures - large feature', function(assert) {
     cardboard.put(feature, 'large', function(err, putResults) {
         if (err) throw err;
         var key = { dataset: 'large', id: 'id!' + putResults.id };
-        dynamodb.dyno.getItem(key, function(err, items) {
+        dynamodb.dyno.getItem({Key: key}, function(err, data) {
             if (err) throw err;
-            utils.resolveFeatures([items], function(err, resolveResults) {
+            utils.resolveFeatures([data.Item], function(err, resolveResults) {
                 assert.ifError(err, 'success');
                 delete resolveResults.features[0].id;
                 assert.deepEqual(resolveResults.features[0], feature, 'expected feature');
@@ -88,16 +88,16 @@ test('[utils] resolveFeatures - large, corrupt feature', function(assert) {
     cardboard.put(feature, 'large', function(err, putResults) {
         if (err) throw err;
         var key = { dataset: 'large', id: 'id!' + putResults.id };
-        dynamodb.dyno.getItem(key, function(err, item) {
+        dynamodb.dyno.getItem({Key: key}, function(err, data) {
             if (err) throw err;
-            var uri = url.parse(item.s3url);
+            var uri = url.parse(data.Item.s3url);
             config.s3.putObject({
                 Bucket: uri.host,
                 Key: uri.pathname.substr(1),
                 Body: new Buffer('this is not a valid protobuf')
             }, function(err) {
                 if (err) throw err;
-                utils.resolveFeatures([item], function(err) {
+                utils.resolveFeatures([data.Item], function(err) {
                     assert.equal(err.message, 'Illegal group end indicator for Message .featurecollection: 14 (not a group)');
                     assert.end();
                 });

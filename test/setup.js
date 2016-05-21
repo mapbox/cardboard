@@ -44,9 +44,8 @@ module.exports.setup = function(t, multi) {
 module.exports.teardown = function(t) {
     dyno.listTables(function(err, tables) {
         var q = queue();
-
         tables.TableNames.forEach(function(table) {
-            q.defer(dyno.deleteTable, table);
+            q.defer(dyno.deleteTable, { TableName: table });
         });
 
         q.awaitAll(function(err) {

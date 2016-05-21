@@ -194,7 +194,8 @@ test('insert wildly precise feature', function(t) {
 
     cardboard.put(d, 'default', function(err, res) {
         t.ifError(err, 'inserted without error');
-        dyno.getItem({ dataset: 'default', id: 'id!' + res.id }, function(err, item) {
+        dyno.getItem({ Key: { dataset: 'default', id: 'id!' + res.id }}, function(err, data) {
+            var item = data.Item;
             t.ifError(err, 'got item');
             if (err) return t.end();
             t.equal(item.west, 0.987654, 'correct west attr');
