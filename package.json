@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "pretest": "eslint index.js lib test/*.js",
-    "test": "tape test/*.test.js",
-    "coverage": "istanbul cover test/index.js && coveralls < ./coverage/lcov.info",
+    "test": "nyc tape test/*.test.js",
+    "coverage": "nyc --reporter html tape test/*.test.js && opener ./coverage/index.html",
     "docs": "documentation -f md --github > api.md",
     "posttest": "rm -r ./test/test"
   },
@@ -51,8 +51,8 @@
     "geojson-fixtures": "0.1.0",
     "geojson-random": "^0.2.2",
     "geojson-stream": "0.0.0",
-    "istanbul": "^0.3.15",
     "mock-aws-s3": "^0.2.1",
+    "nyc": "^6.4.4",
     "tape": "^4.0.0"
   }
 }

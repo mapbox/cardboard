@@ -1,1 +1,3 @@
 test/test
+coverage/
+.nyc_output/
