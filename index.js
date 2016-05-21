@@ -119,7 +119,7 @@ function Cardboard(config) {
 
         var q = queue(1);
         if (encoded[1]) q.defer(config.s3.putObject.bind(config.s3), encoded[1]);
-        q.defer(config.dyno.putItem, encoded[0]);
+        q.defer(config.dyno.putItem, {Item: encoded[0]});
         q.await(function(err) {
             var result = geobuf.geobufToFeature(encoded[0].val || encoded[1].Body);
             result.id = utils.idFromRecord(encoded[0]);
@@ -162,7 +162,11 @@ function Cardboard(config) {
     cardboard.del = function(primary, dataset, callback) {
         var key = { dataset: dataset, id: 'id!' + primary };
 
-        config.dyno.deleteItem(key, { expected: { id: 'NOT_NULL'} }, function(err) {
+        config.dyno.deleteItem({
+            Key: key,
+            ConditionExpression: 'attribute_exists(#id)',
+            ExpressionAttributeNames: { '#id': 'id' }
+        }, function(err) {
             if (err && err.code === 'ConditionalCheckFailedException') return callback(new Error('Feature does not exist'));
             if (err) return callback(err, true);
             else callback();
@@ -204,10 +208,10 @@ function Cardboard(config) {
     cardboard.get = function(primary, dataset, callback) {
         var key = { dataset: dataset, id: 'id!' + primary };
 
-        config.dyno.getItem(key, function(err, item) {
+        config.dyno.getItem({Key: key}, function(err, data) {
             if (err) return callback(err);
-            if (!item) return callback(new Error('Feature ' + primary + ' does not exist'));
-            utils.resolveFeatures([item], function(err, features) {
+            if (!data.Item) return callback(new Error('Feature ' + primary + ' does not exist'));
+            utils.resolveFeatures([data.Item], function(err, features) {
                 if (err) return callback(err);
                 callback(null, features.features[0]);
             });
@@ -247,12 +251,18 @@ function Cardboard(config) {
      * @param {function} callback - the callback function to handle the response
      */
     function listIds(dataset, callback) {
-        var query = { dataset: { EQ: dataset }, id: {BEGINS_WITH: 'id!'} };
-        var opts = { attributes: ['id'], pages: 0 };
-
-        config.dyno.query(query, opts, function(err, items) {
-            if (err) return callback(err);
-            callback(err, items.map(utils.idFromRecord));
+        var items = [];
+        config.dyno.queryStream({
+            ExpressionAttributeNames: { '#id': 'id', '#dataset': 'dataset' },
+            ExpressionAttributeValues: { ':id': 'id!', ':dataset': dataset },
+            KeyConditionExpression: '#dataset = :dataset AND begins_with(#id, :id)',
+            ProjectionExpression: '#id'
+        }).on('data', function(d) {
+            items.push(d);
+        }).on('error', function(err) {
+            callback(err);
+        }).on('end', function() {
+            callback(null, items.map(utils.idFromRecord));
         });
     }
 
@@ -263,15 +273,16 @@ function Cardboard(config) {
      */
     cardboard.delDataset = function(dataset, callback) {
         listIds(dataset, function(err, res) {
-            var keys = res.map(function(id) {
-                return { dataset: dataset, id: 'id!' + id };
+            var params = { RequestItems: {} };
+            params.RequestItems[config.table] = res.map(function(id) {
+                return { DeleteRequest: { Key: { dataset: dataset, id: 'id!' + id } } };
             });
 
-            keys.push({ dataset: dataset, id: 'metadata!' + dataset });
-
-            config.dyno.deleteItems(keys, function(err) {
-                callback(err);
+            params.RequestItems[config.table].push({
+                DeleteRequest: { Key: { dataset: dataset, id: 'metadata!' + dataset } }
             });
+
+            config.dyno.batchWriteItemRequests(params).sendAll(10, callback);
         });
     };
 
@@ -319,22 +330,24 @@ function Cardboard(config) {
      * })();
      */
     cardboard.list = function(dataset, pageOptions, callback) {
-        var opts = {};
+        var params = {};
 
         if (typeof pageOptions === 'function') {
             callback = pageOptions;
-            opts.pages = 0;
             pageOptions = {};
         }
 
         pageOptions = pageOptions || {};
-        if (pageOptions.start) opts.start = {
+        if (pageOptions.start) params.ExclusiveStartKey = {
             dataset: dataset,
             id: 'id!' + pageOptions.start
         };
-        if (pageOptions.maxFeatures) opts.limit = pageOptions.maxFeatures;
 
-        var query = { dataset: { EQ: dataset }, id: { BEGINS_WITH: 'id!' } };
+        if (pageOptions.maxFeatures) params.Limit = pageOptions.maxFeatures;
+
+        params.ExpressionAttributeNames = { '#id': 'id', '#dataset': 'dataset' };
+        params.ExpressionAttributeValues = { ':id': 'id!', ':dataset': dataset };
+        params.KeyConditionExpression = '#dataset = :dataset and begins_with(#id, :id)';
 
         if (!callback) {
             var resolver = new stream.Transform({ objectMode: true, highWaterMark: 50 });
@@ -368,14 +381,17 @@ function Cardboard(config) {
                 resolver._resolve(callback);
             };
 
-            return config.dyno.query(query)
-                .on('error', function(err) { resolver.emit('error', err); })
+            return config.dyno.queryStream(params)
+                .on('error', function(err) {
+                    console.log('error in here');
+                    resolver.emit('error', err);
+                })
               .pipe(resolver);
         }
 
-        config.dyno.query(query, opts, function(err, items) {
+        config.dyno.query(params, function(err, data) {
             if (err) return callback(err);
-            utils.resolveFeatures(items, function(err, features) {
+            utils.resolveFeatures(data.Items, function(err, features) {
                 if (err) return callback(err);
                 callback(null, features);
             });
@@ -393,17 +409,18 @@ function Cardboard(config) {
      * });
      */
     cardboard.listDatasets = function(callback) {
-        var opts = { attributes: ['dataset'], pages:0 };
+        var items = [];
 
-        config.dyno.scan(opts, function(err, items) {
-            if (err) return callback(err);
+        config.dyno.scanStream({ ProjectionExpression: 'dataset' })
+            .on('data', function(d) { items.push(d); })
+            .on('error', function(err) { callback(err); })
+            .on('end', function() {
+                var datasets = _.uniq(items.map(function(item) {
+                    return item.dataset;
+                }));
 
-            var datasets = _.uniq(items.map(function(item) {
-                return item.dataset;
-            }));
-
-            callback(err, datasets);
-        });
+                callback(null, datasets);
+            });
     };
 
     /**
@@ -540,45 +557,46 @@ function Cardboard(config) {
         // List all features with a filterquery for the bounds.
         // This isnt meant to be fast, but it is meant to page by feature id.
 
-        var query = {
-            dataset: { EQ: dataset },
-            id: {BEGINS_WITH: 'id!'}
+        var params = {
+            ExpressionAttributeNames: { '#id': 'id', '#dataset': 'dataset' },
+            ExpressionAttributeValues: {
+                ':id': 'id!',
+                ':dataset': dataset,
+                ':west': bbox[2],
+                ':east': bbox[0],
+                ':north': bbox[1],
+                ':south': bbox[3]
+            },
+            KeyConditionExpression: '#dataset = :dataset and begins_with(#id, :id)',
+            Limit: options.maxFeatures,
+            FilterExpression: 'west <= :west and east >= :east and north >= :north and south <= :south'
         };
 
-        var queryOptions = {
-            pages: 1,
-            limit: options.maxFeatures,
-            filter: {
-                west: { LE: bbox[2] },
-                east: { GE: bbox[0] },
-                north: { GE: bbox[1] },
-                south: { LE: bbox[3] }
-            }
+        if (options.start) params.ExclusiveStartKey = {
+            dataset: dataset, id: 'id!' + options.start
         };
-
-        if (options.start) {
-            queryOptions.start =  {
-                dataset: dataset,
-                id: 'id!'+options.start
-            };
-        }
 
         var maxPages = 10;
         var page = 0;
         var combinedFeatures = [];
 
         function getPageOfBbox() {
-            config.dyno.query(query, queryOptions, function(err, items, meta) {
+            config.dyno.query(params, function(err, data) {
                 if (err) return callback(err);
+
+                var items = data.Items;
                 utils.resolveFeatures(items, function(err, data) {
                     if (err) return callback(err);
+
                     combinedFeatures = combinedFeatures.concat(data.features);
-                    if (combinedFeatures.length >= options.maxFeatures || page >= maxPages || !meta[0].last) {
+                    if (combinedFeatures.length >= options.maxFeatures || page >= maxPages || !items.length) {
                         data.features = combinedFeatures.slice(0, options.maxFeatures);
                         return callback(err, data);
                     }
                     page += 1;
-                    queryOptions.start = meta[0].last;
+                    params.ExclusiveStartKey = {
+                        dataset: dataset, id: items.slice(-1)[0].id
+                    };
                     getPageOfBbox();
                 });
             });

@@ -3,7 +3,6 @@ var dynamodb = require('dynamodb-test')(test, 'cardboard', require('../lib/table
 var fs = require('fs');
 var path = require('path');
 var fixtures = require('./fixtures');
-var Dyno = require('dyno');
 
 var states = fs.readFileSync(path.resolve(__dirname, 'data', 'states.geojson'), 'utf8');
 states = JSON.parse(states);
@@ -27,18 +26,20 @@ test('[batch] put', function(assert) {
             return hasId;
         }, true), 'all returned features have ids');
 
-        dynamodb.dyno.scan(function(err, records) {
-            if (err) throw err;
+        var records = [];
+        dynamodb.dyno.scanStream()
+            .on('data', function(d) { records.push(d); })
+            .on('error', function(err) { throw err; })
+            .on('end', function() {
+                assert.equal(records.length, states.features.length, 'inserted all the features');
 
-            assert.equal(records.length, states.features.length, 'inserted all the features');
+                assert.ok(records.reduce(function(inDataset, record) {
+                    if (record.dataset !== 'states') inDataset = false;
+                    return inDataset;
+                }, true), 'all records in the right dataset');
 
-            assert.ok(records.reduce(function(inDataset, record) {
-                if (record.dataset !== 'states') inDataset = false;
-                return inDataset;
-            }, true), 'all records in the right dataset');
-
-            assert.end();
-        });
+                assert.end();
+            });
     });
 });
 
@@ -68,12 +69,13 @@ test('[batch] unprocessed put returns feature collection', function(assert) {
         prefix: 'test',
         s3: require('mock-aws-s3').S3(),
         dyno: {
-            putItems: function(items, callback) {
-                callback({ unprocessed: {
-                    tableName: items.map(function(item) {
-                        return { PutRequest: { Item: JSON.parse(Dyno.serialize(item)) } };
-                    })
-                }});
+            config: { params: { TableName: dynamodb.tableName } },
+            batchWriteItemRequests: function(params) {
+                return {
+                    sendAll: function(concurrency, callback) {
+                        callback(null, null, dynamodb.dyno.batchWriteItemRequests(params));
+                    }
+                };
             }
         }
     });
@@ -102,7 +104,8 @@ test('[batch] remove', function(assert) {
         cardboard.batch.remove(ids, 'states', function(err) {
             assert.ifError(err, 'success');
 
-            dynamodb.dyno.scan(function(err, records) {
+            var records = [];
+            dynamodb.dyno.scanStream().on('data', function(d) { records.push(d); }).on('end', function() {
                 if (err) throw err;
                 assert.equal(records.length, 0, 'removed all the records');
                 assert.end();
@@ -117,12 +120,13 @@ test('[batch] unprocessed delete returns array of ids', function(assert) {
         prefix: 'test',
         s3: require('mock-aws-s3').S3(),
         dyno: {
-            deleteItems: function(keys, callback) {
-                callback({ unprocessed: {
-                    tableName: keys.map(function(key) {
-                        return { DeleteRequest: { Key: JSON.parse(Dyno.serialize(key)) } };
-                    })
-                }});
+            config: { params: { TableName: dynamodb.tableName } },
+            batchWriteItemRequests: function(params) {
+                return {
+                    sendAll: function(concurrency, callback) {
+                        callback(null, null, dynamodb.dyno.batchWriteItemRequests(params));
+                    }
+                };
             }
         }
     });

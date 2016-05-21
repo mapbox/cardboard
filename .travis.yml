@@ -5,7 +5,6 @@ node_js:
 sudo: false
 script:
 - npm test
-- npm run-script coverage
 env:
   global:
   - secure: iEgUpSVRZuvHapWT8fdVDyvRnxKkWXFpXRbWrP3z1qzW81fjlzkV48iYW7vRvS93P2hwjS8Bf5JY7deqgEy/FICEjLO46ztBcwD8aMAc3rmwgoMbdXZr1Rd1ftXWlKe8nex6uwV80nVwIFIqwXRofBM0AKY1WpBXEagm20RF59o=
