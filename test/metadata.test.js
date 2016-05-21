@@ -574,7 +574,7 @@ test('insert idaho & check metadata', function(t) {
             size: info.size,
             minzoom: 0,
             maxzoom: 12,
-            num_edits: 1
+            editcount: 1
         };
         t.ok(info.updated, 'has updated date');
         t.deepEqual(_.omit(info, 'updated'), expected, 'expected metadata');
@@ -624,7 +624,7 @@ test('insert many idaho features & check metadata', function(t) {
             size: expectedSize,
             minzoom: 3,
             maxzoom: 11,
-            num_edits: 50
+            editcount: 50
         };
         t.ok(info.updated, 'has updated date');
         t.deepEqual(_.omit(info, 'updated'), expected, 'expected metadata');
@@ -676,7 +676,7 @@ test('insert many idaho features, delete one & check metadata', function(t) {
             size: expectedSize,
             minzoom: 3,
             maxzoom: 11,
-            num_edits: 51
+            editcount: 51
         };
         t.ok(info.updated, 'has updated date');
         t.deepEqual(_.omit(info, 'updated'), expected, 'expected metadata');
@@ -734,7 +734,7 @@ test('insert idaho feature, update & check metadata', function(t) {
             size: expectedSize,
             minzoom: 0,
             maxzoom: 12,
-            num_edits: 2
+            editcount: 2
         };
         t.ok(info.updated, 'has updated date');
         t.deepEqual(_.omit(info, 'updated'), expected, 'expected metadata');
