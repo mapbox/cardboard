@@ -1,3 +1,7 @@
+### v1.6.0
+
+- Adds editcount to metadata. This can be used to know if a derived source is from and older version of the dataset or the current one.
+
 ### v1.5.0
 
 - Add cardboard.metadata.featureInfo(), a pre-flight function to check metadata about a feature
