@@ -1,3 +1,7 @@
+### v1.6.1
+
+- Fixes bug where editcount was being over written when recalculating the other metadata.
+
 ### v1.6.0
 
 - Adds editcount to metadata. This can be used to know if a derived source is from and older version of the dataset or the current one.
