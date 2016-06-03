@@ -520,7 +520,8 @@ test('metadata: calculate dataset info', function(t) {
             east: expectedBounds[2],
             north: expectedBounds[3],
             minzoom: 3,
-            maxzoom: 11
+            maxzoom: 11,
+            editcount: 0
         };
 
         metadata.calculateInfo(function(err, info) {
@@ -813,7 +814,8 @@ test('calculateDatasetInfo', function(t) {
             east: expectedBounds[2],
             north: expectedBounds[3],
             minzoom: 3,
-            maxzoom: 11
+            maxzoom: 11,
+            editcount: 0
         };
 
         cardboard.calculateDatasetInfo(dataset, function(err, info) {
