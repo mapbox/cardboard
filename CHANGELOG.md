@@ -1,3 +1,7 @@
+### v1.6.2
+
+- Fixes a bug that only updated dataset metadata if a metadata document did not already exist.
+
 ### v1.6.1
 
 - Fixes bug where editcount was being over written when recalculating the other metadata.
