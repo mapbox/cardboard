@@ -48,6 +48,7 @@ function Cardboard(config) {
     if (!config.prefix) throw new Error('No s3 prefix set');
 
     var utils = require('./lib/utils')(config);
+    var ids = require('./lib/ids')(config.dyno);
 
     /**
      * A client configured to interact with a backend cardboard database
