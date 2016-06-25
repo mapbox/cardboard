@@ -1,0 +1,26 @@
+{
+  "type": "Feature",
+  "properties": {
+    "@uid": 3029661,
+    "tiger:cfcc": "A63",
+    "@id": 17305827,
+    "@timestamp": 1461579648,
+    "destination": "Yarbrough Drive; Sumac Drive",
+    "tiger:reviewed": "no",
+    "@changeset": 38852794,
+    "tiger:county": "El Paso, TX",
+    "@user": "saikabhi",
+    "oneway": "yes",
+    "@version": 7,
+    "@type": "way",
+    "highway": "motorway_link"
+  },
+  "geometry": {
+    "coordinates": [
+      [-106.348721, 31.754626],
+      [-106.347656, 31.753794]
+    ],
+    "type": "LineString"
+  },
+  "id": "1"
+}

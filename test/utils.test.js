@@ -3,9 +3,9 @@ var dynamodb = require('dynamodb-test')(test, 'cardboard', require('../lib/table
 var fs = require('fs');
 var path = require('path');
 var _ = require('lodash');
-var geobuf = require('geobuf');
 var fixtures = require('./fixtures');
 var url = require('url');
+var geobuf = require('geobuf');
 
 var states = fs.readFileSync(path.resolve(__dirname, 'data', 'states.geojson'), 'utf8');
 states = JSON.parse(states);
@@ -135,7 +135,7 @@ test('[utils] toDatabaseRecord - no ID', function(assert) {
     assert.ok(item.val, 'geobuf was stored in the item');
 
     noId.id = utils.idFromRecord(item);
-    assert.deepEqual(geobuf.geobufToFeature(item.val), noId, 'geobuf encoded as expected');
+    assert.deepEqual(utils.decode(item.val), noId, 'geobuf encoded as expected');
 
     assert.end();
 });
@@ -171,7 +171,7 @@ test('[utils] toDatabaseRecord - large feature', function(assert) {
     assert.ok(item.s3url.indexOf('s3://test/test/dataset/' + utils.idFromRecord(item)) === 0, 's3url was assigned correctly');
 
     noId.id = utils.idFromRecord(item);
-    assert.deepEqual(geobuf.geobufToFeature(s3params.Body), noId, 'geobuf encoded as expected');
+    assert.deepEqual(utils.decode(s3params.Body), noId, 'geobuf encoded as expected');
     assert.equal(s3params.Bucket, config.bucket, 'S3 params include proper bucket');
     assert.equal(s3params.Key, item.s3url.split('s3://test/')[1], 'S3 params include proper key');
 
@@ -206,7 +206,7 @@ test('[utils] toDatabaseRecord - with ID', function(assert) {
     assert.equal(item.cell, 'cell!3000000000000000000000000000', 'expected cell');
     assert.notOk(item.s3url, 's3url was not assigned to a small feature');
     assert.ok(item.val, 'geobuf was stored in the item');
-    assert.deepEqual(geobuf.geobufToFeature(item.val), hasId, 'geobuf encoded as expected');
+    assert.deepEqual(utils.decode(item.val), hasId, 'geobuf encoded as expected');
 
     assert.end();
 });
@@ -241,7 +241,7 @@ test('[utils] toDatabaseRecord - numeric IDs become strings', function(assert) {
     assert.ok(item.val, 'geobuf was stored in the item');
 
     numericId.id = numericId.id.toString();
-    assert.deepEqual(geobuf.geobufToFeature(item.val), numericId, 'geobuf encoded as expected');
+    assert.deepEqual(utils.decode(item.val), numericId, 'geobuf encoded as expected');
 
     assert.end();
 });
@@ -276,7 +276,7 @@ test('[utils] toDatabaseRecord - zero is an acceptable ID', function(assert) {
     assert.ok(item.val, 'geobuf was stored in the item');
 
     zeroId.id = utils.idFromRecord(item);
-    assert.deepEqual(geobuf.geobufToFeature(item.val), zeroId, 'geobuf encoded as expected');
+    assert.deepEqual(utils.decode(item.val), zeroId, 'geobuf encoded as expected');
 
     assert.end();
 });
@@ -312,7 +312,7 @@ test('[utils] toDatabaseRecord - null ID', function(assert) {
     assert.ok(item.val, 'geobuf was stored in the item');
 
     nullId.id = utils.idFromRecord(item);
-    assert.deepEqual(geobuf.geobufToFeature(item.val), nullId, 'geobuf encoded as expected');
+    assert.deepEqual(utils.decode(item.val), nullId, 'geobuf encoded as expected');
 
     assert.end();
 });
@@ -361,6 +361,28 @@ test('[utils] idFromRecord - has ! in the id', function(assert) {
 test('[utils] idFromRecord - emoji', function(assert) {
     var record = { id: 'id!\u1F471' };
     assert.equal(utils.idFromRecord(record), '\u1F471', 'expected value');
+    assert.end();
+});
+
+test('[utils] decode - does not fail on non-stringified properties', function(assert) {
+    var feature = {
+        type: 'Feature',
+        properties: {
+            str: 'a string',
+            obj: { an: 'object' },
+            arr: ['an', 'array'],
+            num: 12,
+            bool: true
+        },
+        geometry: {
+            type: 'Point',
+            coordinates: [0, 0]
+        }
+    };
+
+    var buf = geobuf.featureToGeobuf(feature).toBuffer();
+    var output = utils.decode(buf);
+    assert.deepEqual(output.properties, feature.properties, 'reads non-stringified properties');
     assert.end();
 });
 

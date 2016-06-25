@@ -510,13 +510,13 @@ test('setup', s.setup);
 
 test('list all pages', function(t) {
     var cardboard = Cardboard(config);
+    var collection = featureCollection([
+        _.clone(fixtures.haiti),
+        _.clone(fixtures.haiti),
+        _.clone(fixtures.haiti)
+    ]);
 
-    cardboard.batch.put(
-        featureCollection([
-            _.clone(fixtures.haiti),
-            _.clone(fixtures.haiti),
-            _.clone(fixtures.haiti)
-        ]), 'default', page);
+    cardboard.batch.put(collection, 'default', page);
 
     function page(err, putResults) {
         t.equal(err, null);
@@ -534,9 +534,12 @@ test('list all pages', function(t) {
                         memo = memo.concat(page);
                         return memo;
                     }, []);
+
                     t.equal(pages.length, 3);
                     t.equal(items.length, 3);
+
                     t.deepEqual(items, putResults.features);
+
                     t.end();
                     return;
                 }
