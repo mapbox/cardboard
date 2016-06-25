@@ -5,6 +5,7 @@ var path = require('path');
 var _ = require('lodash');
 var fixtures = require('./fixtures');
 var url = require('url');
+var geobuf = require('geobuf');
 
 var states = fs.readFileSync(path.resolve(__dirname, 'data', 'states.geojson'), 'utf8');
 states = JSON.parse(states);
@@ -360,6 +361,28 @@ test('[utils] idFromRecord - has ! in the id', function(assert) {
 test('[utils] idFromRecord - emoji', function(assert) {
     var record = { id: 'id!\u1F471' };
     assert.equal(utils.idFromRecord(record), '\u1F471', 'expected value');
+    assert.end();
+});
+
+test('[utils] decode - does not fail on non-stringified properties', function(assert) {
+    var feature = {
+        type: 'Feature',
+        properties: {
+            str: 'a string',
+            obj: { an: 'object' },
+            arr: ['an', 'array'],
+            num: 12,
+            bool: true
+        },
+        geometry: {
+            type: 'Point',
+            coordinates: [0, 0]
+        }
+    };
+
+    var buf = geobuf.featureToGeobuf(feature).toBuffer();
+    var output = utils.decode(buf);
+    assert.deepEqual(output.properties, feature.properties, 'reads non-stringified properties');
     assert.end();
 });
 
