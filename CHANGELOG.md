@@ -1,3 +1,7 @@
+### v1.6.3
+
+- Fixes a bug in handling unprocessed item responses from DynamoDB.
+
 ### v1.6.2
 
 - Fixes a bug that only updated dataset metadata if a metadata document did not already exist.
