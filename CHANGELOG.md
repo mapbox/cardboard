@@ -1,3 +1,7 @@
+### v1.6.4
+
+- Fixes a bug where number property values would sometimes change when encoding and decoding them.
+
 ### v1.6.3
 
 - Fixes a bug in handling unprocessed item responses from DynamoDB.
