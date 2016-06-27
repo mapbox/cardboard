@@ -32,7 +32,7 @@
     "aws-sdk": "~2.1.5",
     "cuid": "1.2.4",
     "dyno": "^1.0.1",
-    "geobuf": "0.2.4",
+    "geobuf": "https://github.com/mapbox/geobuf/tarball/double",
     "geojson-extent": "^0.1.0",
     "geojson-normalize": "0.0.0",
     "lodash": "~2.4.1",
