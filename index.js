@@ -59,6 +59,9 @@ function Cardboard(config) {
      * Insert or update a single GeoJSON feature
      * @param {object} feature - a GeoJSON feature
      * @param {string} dataset - the name of the dataset that this feature belongs to
+     * @params {number} threshold (optional, default null) - fail put if it will result in the
+     *      dataset growing by more than the threshold. If threshold is a number the check
+     *      will be made. If it is not a number, the check will be skipped.
      * @param {function} callback - the callback function to handle the response
      * @example
      * // Create a point, allowing Cardboard to assign it an id.
@@ -112,14 +115,41 @@ function Cardboard(config) {
      *   });
      * });
      */
-    cardboard.put = function(feature, dataset, callback) {
+    cardboard.put = function(feature, dataset, threshold, callback) {
+        if(typeof threshold === 'function') {
+            callback = threshold;
+            threshold = null;
+        }
+
         var encoded;
         try { encoded = utils.toDatabaseRecord(feature, dataset); }
         catch (err) { return callback(err); }
 
+        var params = {
+            Item: encoded[0]
+        };
+
+        if (typeof threshold === 'number') {
+            var leftOver = encoded[0].size - threshold;
+            params.ExpressionAttributeNames = {
+                'id': '#id',
+                'size': '#size'
+            };
+            params.ExpressionAttributeValues = {
+                ':leftOver': leftOver,
+                ':newSize': encoded[0].size
+            };
+            // if isUpdate && old.size > leftOver - do update
+            // else if isUpdate && old.size > new.size - do update
+            // else if !isUpdate && leftOver > new.size - do update
+            // else - fail update
+            params.ConditionExpression = '(attribute_exists(#id) && (#size > :leftOver OR #size > :newSize))' +
+                ' OR (attribute_not_exists(#id) && :leftOver > :newSize)';
+        }
+
         var q = queue(1);
         if (encoded[1]) q.defer(config.s3.putObject.bind(config.s3), encoded[1]);
-        q.defer(config.dyno.putItem, {Item: encoded[0]});
+        q.defer(config.dyno.putItem, params);
         q.await(function(err) {
             var result = geobuf.geobufToFeature(encoded[0].val || encoded[1].Body);
             result.id = utils.idFromRecord(encoded[0]);
