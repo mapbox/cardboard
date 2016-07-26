@@ -79,6 +79,7 @@ test('insert, get by primary index (small feature)', function(t) {
         cardboard.get(res.id, 'default', function(err, data) {
             t.equal(err, null);
             fixtures.haitiLine.id = res.id;
+            delete data.quadkey;
 
             // round-trip through geobuf will always truncate coords to 6 decimal places
             var f = geobuf.geobufToFeature(geobuf.featureToGeobuf(fixtures.haitiLine).toBuffer());
@@ -120,6 +121,7 @@ test('insert, get by primary index (large feature)', function(t) {
         cardboard.get(res.id, 'default', function(err, data) {
             t.equal(err, null);
             feature.id = res.id;
+            delete data.quadkey;
 
             // round-trip through geobuf will always truncate coords to 6 decimal places
             var f = geobuf.geobufToFeature(geobuf.featureToGeobuf(feature).toBuffer());
@@ -273,7 +275,9 @@ test('insert feature with object property', function(t) {
         cardboard.get(res.id, 'default', function(err, data) {
             t.ifError(err, 'got item');
             d.id = res.id;
-            t.deepEqual(data, geobuf.geobufToFeature(geobuf.featureToGeobuf(d).toBuffer()));
+            var expected = geobuf.geobufToFeature(geobuf.featureToGeobuf(d).toBuffer());
+            expected.quadkey = data.quadkey;
+            t.deepEqual(data, expected);
             t.end();
         });
     });
@@ -301,6 +305,7 @@ test('insert & update', function(t) {
             cardboard.get(putResult.id, 'default', function(err, getResult) {
                 t.ifError(err, 'got record');
                 var f = geobuf.geobufToFeature(geobuf.featureToGeobuf(update).toBuffer());
+                f.quadkey = getResult.quadkey;
                 t.deepEqual(getResult, f, 'expected record');
                 t.end();
             });
@@ -340,6 +345,7 @@ test('insert & delete', function(t) {
         cardboard.get(putResult.id, 'default', function(err, data) {
             t.equal(err, null);
             nullIsland.id = putResult.id;
+            nullIsland.quadkey = putResult.quadkey;
             t.deepEqual(data, nullIsland);
             cardboard.del(putResult.id, 'default', function(err) {
                 t.ifError(err, 'removed');
@@ -368,6 +374,7 @@ test('insert & delDataset', function(t) {
             t.equal(err, null);
             var nullIsland = _.clone(fixtures.nullIsland);
             nullIsland.id = putResult.id;
+            nullIsland.quadkey = putResult.quadkey;
             t.deepEqual(data, nullIsland);
             cardboard.delDataset('default', function(err) {
                 t.equal(err, null);
@@ -423,6 +430,7 @@ test('list', function(t) {
 
         var nullIsland = _.clone(fixtures.nullIsland);
         nullIsland.id = primary.id;
+        nullIsland.quadkey = primary.quadkey;
 
         cardboard.list('default', function(err, data) {
             t.deepEqual(data.features.length, 1);
@@ -811,6 +819,7 @@ test('Insert feature with id specified by user', function(t) {
         t.deepEqual(putResult.id, haiti.id, 'Uses given id');
         cardboard.get(haiti.id, 'default', function(err, feature) {
             var f = geobuf.geobufToFeature(geobuf.featureToGeobuf(haiti).toBuffer());
+            f.quadkey = putResult.quadkey;
             t.deepEqual(feature, f, 'retrieved record');
             t.end();
         });
@@ -831,10 +840,12 @@ test('Insert with and without ids specified', function(t) {
 
         cardboard.get(haiti.id, 'default', function(err, feature) {
             var f = geobuf.geobufToFeature(geobuf.featureToGeobuf(haiti).toBuffer());
+            f.quadkey = putResults.features[0].quadkey;
             t.deepEqual(feature, f, 'retrieved record');
             cardboard.get(putResults.features[1].id, 'default', function(err, feature) {
-                var f = _.extend({ id: putResults.features[1].id }, fixtures.haiti);
+                var f = _.extend({id: putResults.features[1].id }, fixtures.haiti);
                 f = geobuf.geobufToFeature(geobuf.featureToGeobuf(f).toBuffer());
+                f.quadkey = putResults.features[1].quadkey;
                 t.deepEqual(feature, f, 'retrieved record');
                 t.end();
             });

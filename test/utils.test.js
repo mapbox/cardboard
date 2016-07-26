@@ -25,6 +25,7 @@ dynamodb.start();
 test('[utils] resolveFeatures', function(assert) {
     cardboard.batch.put(states, 'test', function(err, putResults) {
         if (err) throw err;
+
         var items = [];
         dynamodb.dyno.scanStream().on('data', function(d) { items.push(d); }).on('end', function() {
             utils.resolveFeatures(items, function(err, resolveResults) {
@@ -48,6 +49,7 @@ test('[utils] resolveFeatures - large feature', function(assert) {
 
     var feature = {
         type: 'Feature',
+        quadkey: '1222222212112112222210310',
         properties: {
             data: (new Buffer(15 * 1024)).toString('hex')
         },
@@ -361,6 +363,106 @@ test('[utils] idFromRecord - has ! in the id', function(assert) {
 test('[utils] idFromRecord - emoji', function(assert) {
     var record = { id: 'id!\u1F471' };
     assert.equal(utils.idFromRecord(record), '\u1F471', 'expected value');
+    assert.end();
+});
+
+test('[utils] getCenterpoint - bbox deep equal accross meridians' , function(assert) {
+    var bbox = [-1,-1,1,1];
+    var expected = [0,0];
+    assert.deepEqual(utils.getCenterpoint(bbox), expected, 'expected value');
+    assert.end();
+});
+
+test('[utils] getCenterpoint - bbox deep equal' , function(assert) {
+    var bbox = [-110.3,32.5,-90.5,33.2];
+    var expected = [-100.4, 32.85];
+    assert.deepEqual(utils.getCenterpoint(bbox), expected, 'expected value');
+    assert.end();
+});
+
+
+test('[utils] getCenterpoint - bbox as floating exponent' , function(assert) {
+    var bbox = [-1E-6, 1 - 1E-6, 1E+6, 1 + 1E+6];
+    var expected = [499999.9999995, 500000.9999995];
+    assert.deepEqual(utils.getCenterpoint(bbox), expected, 'expected value');
+    assert.end();
+});
+
+test('[utils] getCenterpoint - bbox of number strings' , function(assert) {
+    var bbox = ['10','-10','20','0'];
+    var expected = [15,-5];
+    assert.deepEqual(utils.getCenterpoint(bbox), expected, 'expected value');
+    assert.end();
+});
+
+test('[utils] getCenterpoint - bbox of non-number strings are NaN' , function(assert) {
+    var bbox = ['w','s','e','n'];
+    var expected = true;
+    assert.equal(isNaN(utils.getCenterpoint(bbox)[0]), expected, 'expected value');
+    assert.equal(isNaN(utils.getCenterpoint(bbox)[1]), expected, 'expected value');
+    assert.end();
+});
+
+test('[utils] getQuadkey - to be string', function(assert) {
+    var center = [0,0];
+    var expected = 'string';
+    var expectedLen = 25;
+    assert.equal(typeof utils.getQuadkey(center[0], center[1]), expected, 'expected type');
+    assert.equal(utils.getQuadkey(center[0], center[1]).length, expectedLen, 'expected length');
+    assert.end();
+});
+
+test('[utils] getQuadkey - to be quadkey', function(assert) {
+    var center = [0,0];
+    var expected = '3000000000000000000000000';
+    assert.equal(utils.getQuadkey(center[0], center[1]), expected, 'expected value');
+    assert.end();
+});
+
+test('[utils] calcQuadkeyRange - to be object', function(assert) {
+    var bbox = [-1,-1,1,1];
+    var expected = 'object';
+    var type = 'string';
+    var range = utils.calcQuadkeyRange(bbox);
+    assert.equal(typeof range, expected, 'expected type');
+    assert.equal(typeof range.nw, type, 'expected property type');
+    assert.equal(typeof range.se, type, 'expected property type');
+    assert.end();
+});
+
+test('[utils] calcQuadkeyRange - to be range', function(assert) {
+    var bbox = [-1,-1,1,1];
+    var range = utils.calcQuadkeyRange(bbox);
+    var value = range.nw < range.se;
+    var expected = true;
+    assert.deepEqual(value, expected, 'expected true');
+    assert.end();
+});
+
+test('[utils] calcQuadkeyRange - to be range', function(assert) {
+    var bbox = [-120,30,-110,40];
+    var range = utils.calcQuadkeyRange(bbox);
+    var value = range.nw < range.se;
+    var expected = true;
+    assert.deepEqual(value, expected, 'expected true');
+    assert.end();
+});
+
+test('[utils] calcQuadkeyRange - with anti-meridian lon', function(assert) {
+    var bbox = [-185,30,-110,40];
+    var range = utils.calcQuadkeyRange(bbox);
+    var value = range.nw < range.se;
+    var expected = true;
+    assert.deepEqual(value, expected, 'expected true');
+    assert.end();
+});
+
+test('[utils] calcQuadkeyRange - with anti-meridian lat', function(assert) {
+    var bbox = [-120,-100,-110,40];
+    var range = utils.calcQuadkeyRange(bbox);
+    var value = range.nw < range.se;
+    var expected = true;
+    assert.deepEqual(value, expected, 'expected true');
     assert.end();
 });
 

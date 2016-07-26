@@ -30,6 +30,7 @@ test('pass preconfigured dyno object', function(t) {
         cardboard.list('default', function(err, items) {
             t.equal(err, null);
             delete items.features[0].id;
+            delete items.features[0].quadkey;
             t.deepEqual(items, { type: 'FeatureCollection', features: [geojson] }, 'one result');
             t.end();
         });
