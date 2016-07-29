@@ -157,6 +157,27 @@ test('insert feature with no geometry', function(t) {
 
 test('teardown', s.teardown);
 
+
+test('setup', s.setup);
+test('insert feature with no geometry', function(t) {
+    var cardboard = Cardboard(config);
+    var d = {
+        properties: {},
+        geometry: {
+            type: 'GeometryCollection',
+            geometries: []
+        },
+        type: 'Feature'
+    };
+
+    cardboard.put(d, 'default', function(err) {
+        t.ok(err, 'should return an error');
+        t.equal(err.message, 'The GeometryCollection geometry type is not supported.');
+        t.end();
+    });
+});
+test('teardown', s.teardown);
+
 test('setup', s.setup);
 
 test('insert feature with no coordinates', function(t) {
