@@ -1,3 +1,7 @@
+### v2.0.0
+
+- Adds a `GeometryCollection specific error message.
+
 ### v1.6.4
 
 - Fixes a bug where number property values would sometimes change when encoding and decoding them.
