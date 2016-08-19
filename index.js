@@ -528,6 +528,18 @@ function Cardboard(config) {
         Metadata(config.dyno, dataset).deleteFeature(feature, callback);
     };
 
+    /**
+     * Perform all required metadata updates for a set of changes to features in a dataset. This operation **will** create a metadata record if one does not exist.
+     * @static
+     * @memberof cardboard.metadata
+     * @param {string} dataset - the name of the dataset
+     * @param {array} changes - a set of changes. Each change must have an `.action` property, and `.new`, `.old`, or both.
+     * @param {function} callback - a function fired when all changes have been implemented
+     */
+    metadata.applyChanges = function(dataset, changes, callback) {
+        Metadata(config.dyno, dataset).applyChanges(changes, callback);
+    };
+    
     cardboard.metadata = metadata;
 
     /**
