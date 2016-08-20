@@ -1,3 +1,7 @@
+### v2.1.0
+
+- Adds `cardboard.metadata.applyChanges` to apply a batch of feature adjustments to the dataset's metadata
+
 ### v2.0.0
 
 - Adds a `GeometryCollection specific error message.
