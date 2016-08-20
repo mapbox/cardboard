@@ -828,3 +828,108 @@ test('calculateDatasetInfo', function(t) {
 });
 
 test('teardown', s.teardown);
+
+test('setup', s.setup);
+
+test('metadata.applyChanges', function(t) {
+    var original = {
+        dataset: dataset,
+        id: 'metadata!' + dataset,
+        editcount: 1,
+        updated: 1471645277837,
+        count: 2,
+        size: 200,
+        west: -5,
+        south: -5,
+        east: 5,
+        north: 5
+    };
+
+    var changes = [
+        {
+            action: 'INSERT',
+            new: {
+                dataset: dataset,
+                id: '1',
+                cell: '01',
+                size: 150,
+                west: -6,
+                south: -6,
+                east: 4,
+                north: 4
+            }
+        },
+        {
+            action: 'MODIFY',
+            new: {
+                dataset: dataset,
+                id: '2',
+                cell: '01',
+                size: 10,
+                west: -4,
+                south: -4,
+                east: 6,
+                north: 6
+            },
+            old: {
+                dataset: dataset,
+                id: '2',
+                cell: '01',
+                size: 100,
+                west: -5,
+                south: -5,
+                east: 4,
+                north: 4
+            }
+        },
+        {
+            action: 'REMOVE',
+            old: {
+                dataset: dataset,
+                id: '3',
+                cell: '01',
+                size: 100,
+                west: -4,
+                south: -4,
+                east: 5,
+                north: 5
+            }
+        }
+    ];
+
+    var expected = {
+        dataset: dataset,
+        id: 'metadata!dataset',
+        editcount: 4,
+        count: 2,
+        size: 160,
+        west: -6,
+        south: -6,
+        east: 6,
+        north: 6
+    };
+
+    dyno.putItem({ Item: original }, function(err) {
+        if (err) throw err;
+
+        metadata.applyChanges(changes, function(err) {
+            if (err) throw err;
+
+            dyno.getItem({ Key: { dataset: dataset, id: 'metadata!' + dataset } }, function(err, data) {
+                if (err) throw err;
+
+                var info = data.Item;
+                t.equal(info.editcount, expected.editcount, 'expected editcount');
+                t.equal(info.count, expected.count, 'expected count');
+                t.equal(info.size, expected.size, 'expected size');
+                t.equal(info.west, expected.west, 'expected west');
+                t.equal(info.south, expected.south, 'expected south');
+                t.equal(info.east, expected.east, 'expected east');
+                t.equal(info.north, expected.north, 'expected north');
+                t.end();
+            });
+        });
+    });
+});
+
+test('teardown', s.teardown);
