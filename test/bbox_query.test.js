@@ -7,6 +7,49 @@ var config = s.config;
 
 test('setup', s.setup);
 
+var lotsOfPoints = require('./data/lots-of-points.json');
+
+test('confirm paging works with lots of points', function(t) {
+    var cardboard = Cardboard(config);
+    var dataset = 'default';
+
+    var bbox = [-77.028759,38.894653,-77.002,38.90];
+
+    var q = queue();
+    lotsOfPoints.forEach(function(p) {
+        q.defer(cardboard.put, p, dataset);
+    });
+
+    q.awaitAll(function(err) {
+        t.ifError(err, 'inserted');
+        pageQuery(null, function(err, fc) {
+            if (err) return t.end(err);
+            t.equal(fc.features.length, 146);
+            t.end();
+        })
+    });
+
+    function pageQuery(start, cb) {
+        var opts = { maxFeatures: 10 };
+        if (start) {
+            opts.start = start;
+        }
+        cardboard.bboxQuery(bbox, dataset, opts, function(err, fc) {
+            if (err) return cb(err);
+            if (fc.features.length === 0) return cb(err, fc);
+            pageQuery(fc.features.slice(-1)[0].id, function(err, moreFc) {
+                if (err) return cb(err);
+                fc.features = fc.features.concat(moreFc.features);
+                cb(null, fc);
+            });
+        });
+    }
+});
+
+test('teardown', s.teardown);
+
+test('setup', s.setup);
+
 test('queries along 0 lat/lon', function(t) {
     var cardboard = Cardboard(config);
     var dataset = 'default';
