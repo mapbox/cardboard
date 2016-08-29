@@ -539,7 +539,7 @@ function Cardboard(config) {
     metadata.applyChanges = function(dataset, changes, callback) {
         Metadata(config.dyno, dataset).applyChanges(changes, callback);
     };
-    
+
     cardboard.metadata = metadata;
 
     /**
@@ -597,18 +597,17 @@ function Cardboard(config) {
                 if (err) return callback(err);
 
                 var items = data.Items;
+                var lastEvaluatedKey = data.LastEvaluatedKey;
                 utils.resolveFeatures(items, function(err, data) {
                     if (err) return callback(err);
 
                     combinedFeatures = combinedFeatures.concat(data.features);
-                    if (combinedFeatures.length >= options.maxFeatures || page >= maxPages || !items.length) {
+                    if (combinedFeatures.length >= options.maxFeatures || page >= maxPages || !lastEvaluatedKey) {
                         data.features = combinedFeatures.slice(0, options.maxFeatures);
                         return callback(err, data);
                     }
                     page += 1;
-                    params.ExclusiveStartKey = {
-                        dataset: dataset, id: items.slice(-1)[0].id
-                    };
+                    params.ExclusiveStartKey = lastEvaluatedKey;
                     getPageOfBbox();
                 });
             });
