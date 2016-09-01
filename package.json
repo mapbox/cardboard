@@ -31,7 +31,7 @@
   "dependencies": {
     "aws-sdk": "^2.5.3",
     "cuid": "1.2.4",
-    "dyno": "^1.0.1",
+    "dyno": "https://github.com/mapbox/dyno/tarball/99795ede1dfd2a604bb0657bdd1de8616d9ba209",
     "geobuf": "0.2.5",
     "geojson-extent": "^0.1.0",
     "geojson-normalize": "0.0.0",

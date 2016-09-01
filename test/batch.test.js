@@ -14,6 +14,26 @@ var cardboard = require('..')({
     s3: require('mock-aws-s3').S3()
 });
 
+var unprocessableCardboard = require('..')({
+    bucket: 'test',
+    prefix: 'test',
+    s3: require('mock-aws-s3').S3(),
+    dyno: {
+        config: { params: { TableName: dynamodb.tableName } },
+        batchWriteAll: function(params) {
+            return {
+                sendAll: function(concurrency, callback) {
+                    setTimeout(function() {
+                        callback(null, {
+                            UnprocessedItems: params.RequestItems
+                        });
+                    }, 0);
+                }
+            };
+        }
+    }
+});
+
 dynamodb.start();
 
 test('[batch] put', function(assert) {
@@ -64,26 +84,11 @@ test('[batch] put does not duplicate auto-generated ids', function(assert) {
 dynamodb.empty();
 
 test('[batch] unprocessed put returns feature collection', function(assert) {
-    var cardboard = require('..')({
-        bucket: 'test',
-        prefix: 'test',
-        s3: require('mock-aws-s3').S3(),
-        dyno: {
-            config: { params: { TableName: dynamodb.tableName } },
-            batchWriteItemRequests: function(params) {
-                return {
-                    sendAll: function(concurrency, callback) {
-                        callback(null, null, dynamodb.dyno.batchWriteItemRequests(params));
-                    }
-                };
-            }
-        }
-    });
 
     var data = fixtures.random(1);
     data.features[0].id = 'abc';
 
-    cardboard.batch.put(data, 'default', function(err, collection) {
+    unprocessableCardboard.batch.put(data, 'default', function(err, collection) {
         if (collection) throw new Error('mock dyno failed to error');
         assert.ok(err.unprocessed, 'got unprocessed items');
         assert.equal(err.unprocessed.type, 'FeatureCollection', 'got a feature collection');
@@ -115,21 +120,6 @@ test('[batch] remove', function(assert) {
 });
 
 test('[batch] unprocessed delete returns array of ids', function(assert) {
-    var mockcardboard = require('..')({
-        bucket: 'test',
-        prefix: 'test',
-        s3: require('mock-aws-s3').S3(),
-        dyno: {
-            config: { params: { TableName: dynamodb.tableName } },
-            batchWriteItemRequests: function(params) {
-                return {
-                    sendAll: function(concurrency, callback) {
-                        callback(null, null, dynamodb.dyno.batchWriteItemRequests(params));
-                    }
-                };
-            }
-        }
-    });
 
     var data = fixtures.random(1);
     data.features[0].id = 'abc';
@@ -137,7 +127,7 @@ test('[batch] unprocessed delete returns array of ids', function(assert) {
     cardboard.batch.put(data, 'default', function(err) {
         if (err) throw err;
 
-        mockcardboard.batch.remove(['abc'], 'default', function(err) {
+        unprocessableCardboard.batch.remove(['abc'], 'default', function(err) {
             assert.ok(err.unprocessed, 'got unprocessed items');
             assert.ok(Array.isArray(err.unprocessed), 'got an array');
 
