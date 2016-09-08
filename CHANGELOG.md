@@ -1,3 +1,7 @@
+### v2.1.1
+
+- Bump `aws-sdk` semver.
+
 ### v2.1.0
 
 - Adds `cardboard.metadata.applyChanges` to apply a batch of feature adjustments to the dataset's metadata
