@@ -539,7 +539,7 @@ function Cardboard(config) {
     metadata.applyChanges = function(dataset, changes, callback) {
         Metadata(config.dyno, dataset).applyChanges(changes, callback);
     };
-    
+
     cardboard.metadata = metadata;
 
     /**
