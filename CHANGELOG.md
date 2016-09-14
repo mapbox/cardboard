@@ -1,3 +1,8 @@
+## v2.2.0
+
+- Expose unprocessed items on batch requests.
+- Follow AWS specified exponential back-off for batch requests.
+
 ### v2.1.1
 
 - Bump `aws-sdk` semver.
