@@ -22,14 +22,16 @@ module.exports = Cardboard;
  * @returns {cardboard} a cardboard client
  * @example
  * var cardboard = require('cardboard')({
- *   table: 'my-cardboard-table',
+ *   featureTable: 'my-cardboard-table-features',
+ *   searchTable: 'my-cardboard-table-search',
  *   region: 'us-east-1',
  *   bucket: 'my-cardboard-bucket',
  *   prefix: 'my-cardboard-prefix'
  * });
  * @example
  * var cardboard = require('cardboard')({
- *   dyno: require('dyno')(dynoConfig),
+ *   features: require('dyno')(dynoConfig),
+ *   search: require('dyno')(dynoConfig),
  *   bucket: 'my-cardboard-bucket',
  *   prefix: 'my-cardboard-prefix'
  * });
@@ -40,10 +42,12 @@ function Cardboard(config) {
 
     // Allow caller to pass in aws-sdk clients
     if (!config.s3) config.s3 = new AWS.S3(config);
-    if (!config.dyno) config.dyno = Dyno(config);
+    if (!config.features) config.features = Dyno({table: config.featureTable, region: config.region});
+    if (!config.search) config.search = Dyno({table: config.searchTable, region: config.region});
 
-    if (!config.table && !config.dyno) throw new Error('No table set');
-    if (!config.region && !config.dyno) throw new Error('No region set');
+    if (!config.features && !config.featureTable) throw new Error('No feature table set');
+    if (!config.search && !config.searchTable) throw new Error('No search table set');
+    if (!config.region && (!config.search || !config.features)) throw new Error('No region set');
     if (!config.bucket) throw new Error('No bucket set');
     if (!config.prefix) throw new Error('No s3 prefix set');
 
@@ -119,7 +123,7 @@ function Cardboard(config) {
 
         var q = queue(1);
         if (encoded[1]) q.defer(config.s3.putObject.bind(config.s3), encoded[1]);
-        q.defer(config.dyno.putItem, {Item: encoded[0]});
+        q.defer(config.features.putItem, {Item: encoded[0]});
         q.await(function(err) {
             var result = geobuf.geobufToFeature(encoded[0].val || encoded[1].Body);
             result.id = utils.idFromRecord(encoded[0]);
@@ -162,7 +166,7 @@ function Cardboard(config) {
     cardboard.del = function(primary, dataset, callback) {
         var key = { dataset: dataset, id: 'id!' + primary };
 
-        config.dyno.deleteItem({
+        config.features.deleteItem({
             Key: key,
             ConditionExpression: 'attribute_exists(#id)',
             ExpressionAttributeNames: { '#id': 'id' }
@@ -206,9 +210,9 @@ function Cardboard(config) {
      * });
      */
     cardboard.get = function(primary, dataset, callback) {
-        var key = { dataset: dataset, id: 'id!' + primary };
+        var key = { id: dataset+'!'+primary };
 
-        config.dyno.getItem({Key: key}, function(err, data) {
+        config.features.getItem({Key: key}, function(err, data) {
             if (err) return callback(err);
             if (!data.Item) return callback(new Error('Feature ' + primary + ' does not exist'));
             utils.resolveFeatures([data.Item], function(err, features) {
@@ -220,28 +224,23 @@ function Cardboard(config) {
 
     /**
      * Create a DynamoDB table with Cardboard's schema
-     * @param {string} [tableName] - the name of the table to create, if not provided, defaults to the tablename defined in client configuration.
      * @param {function} callback - the callback function to handle the response
      * @example
      * // Create the cardboard table specified by the client config
      * cardboard.createTable(function(err) {
      *   if (err) throw err;
      * });
-     * @example
-     * // Create the another cardboard table
-     * cardboard.createTable('new-cardboard-table', function(err) {
-     *   if (err) throw err;
-     * });
      */
-    cardboard.createTable = function(tableName, callback) {
-        if (typeof tableName === 'function') {
-            callback = tableName;
-            tableName = null;
-        }
-
-        var table = require('./lib/table.json');
-        table.TableName = tableName || config.table;
-        config.dyno.createTable(table, callback);
+    cardboard.createTable = function(callback) {
+        var featuresTable = require('./lib/features_table.json');
+        console.log('features', config.features);
+        featuresTable.TableName = config.features.TableName;
+        config.features.createTable(featuresTable, function(err) {
+            if (err) return callback(err);
+            var searchTable = require('./lib/search_table.json');
+            searchTable.TableName = config.search.TableName;
+            config.search.createTable(searchTable, callback);
+        });
     };
 
     /**
@@ -252,7 +251,7 @@ function Cardboard(config) {
      */
     function listIds(dataset, callback) {
         var items = [];
-        config.dyno.queryStream({
+        config.features.queryStream({
             ExpressionAttributeNames: { '#id': 'id', '#dataset': 'dataset' },
             ExpressionAttributeValues: { ':id': 'id!', ':dataset': dataset },
             KeyConditionExpression: '#dataset = :dataset AND begins_with(#id, :id)',
@@ -425,6 +424,7 @@ function Cardboard(config) {
 
     /**
      * Get cached metadata about a dataset
+
      * @param {string} dataset - the name of the dataset
      * @param {function} callback - the callback function to handle the response
      * @example
@@ -541,80 +541,6 @@ function Cardboard(config) {
     };
 
     cardboard.metadata = metadata;
-
-    /**
-     * Find GeoJSON features that intersect a bounding box
-     * @param {number[]} bbox - the bounding box as `[west, south, east, north]`
-     * @param {string} dataset - the name of the dataset
-     * @param {Object} [options] - Paginiation options. If omitted, the the bbox will
-     *   return the first page, limited to 100 features
-     * @param {number} [options.maxFeatures] - maximum number of features to return
-     * @param {Object} [options.start] - Exclusive start key to use for loading the next page. This is a feature id.
-     * @param {function} callback - the callback function to handle the response
-     * @example
-     * var bbox = [-120, 30, -115, 32]; // west, south, east, north
-     * carboard.bboxQuery(bbox, 'my-dataset', function(err, collection) {
-     *   if (err) throw err;
-     *   collection.type === 'FeatureCollection'; // true
-     * });
-     */
-    cardboard.bboxQuery = function(bbox, dataset, options, callback) {
-        if (typeof options === 'function') {
-            callback = options;
-            options = {};
-        }
-
-        if (!options.maxFeatures) options.maxFeatures = 100;
-
-        // List all features with a filterquery for the bounds.
-        // This isnt meant to be fast, but it is meant to page by feature id.
-
-        var params = {
-            ExpressionAttributeNames: { '#id': 'id', '#dataset': 'dataset' },
-            ExpressionAttributeValues: {
-                ':id': 'id!',
-                ':dataset': dataset,
-                ':west': bbox[2],
-                ':east': bbox[0],
-                ':north': bbox[1],
-                ':south': bbox[3]
-            },
-            KeyConditionExpression: '#dataset = :dataset and begins_with(#id, :id)',
-            Limit: options.maxFeatures,
-            FilterExpression: 'west <= :west and east >= :east and north >= :north and south <= :south'
-        };
-
-        if (options.start) params.ExclusiveStartKey = {
-            dataset: dataset, id: 'id!' + options.start
-        };
-
-        var maxPages = 10;
-        var page = 0;
-        var combinedFeatures = [];
-
-        function getPageOfBbox() {
-            config.dyno.query(params, function(err, data) {
-                if (err) return callback(err);
-
-                var items = data.Items;
-                utils.resolveFeatures(items, function(err, data) {
-                    if (err) return callback(err);
-
-                    combinedFeatures = combinedFeatures.concat(data.features);
-                    if (combinedFeatures.length >= options.maxFeatures || page >= maxPages || !items.length) {
-                        data.features = combinedFeatures.slice(0, options.maxFeatures);
-                        return callback(err, data);
-                    }
-                    page += 1;
-                    params.ExclusiveStartKey = {
-                        dataset: dataset, id: items.slice(-1)[0].id
-                    };
-                    getPageOfBbox();
-                });
-            });
-        }
-        getPageOfBbox();
-    };
 
     return cardboard;
 }

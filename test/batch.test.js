@@ -1,5 +1,6 @@
 var test = require('tape');
-var dynamodb = require('dynamodb-test')(test, 'cardboard', require('../lib/table.json'));
+var search = require('dynamodb-test')(test, 'cardboard', require('../lib/search_table.json'));
+var features = require('dynamodb-test')(test, 'cardboard', require('../lib/features_table.json'));
 var fs = require('fs');
 var path = require('path');
 var fixtures = require('./fixtures');
@@ -10,7 +11,8 @@ states = JSON.parse(states);
 var cardboard = require('..')({
     bucket: 'test',
     prefix: 'test',
-    dyno: dynamodb.dyno,
+    features: features.dyno,
+    search: search.dyno,
     s3: require('mock-aws-s3').S3()
 });
 
@@ -19,7 +21,7 @@ var unprocessableCardboard = require('..')({
     prefix: 'test',
     s3: require('mock-aws-s3').S3(),
     dyno: {
-        config: { params: { TableName: dynamodb.tableName } },
+        config: { params: { TableName: features.tableName } },
         batchWriteAll: function(params) {
             return {
                 sendAll: function(concurrency, callback) {
@@ -34,7 +36,8 @@ var unprocessableCardboard = require('..')({
     }
 });
 
-dynamodb.start();
+features.start();
+search.start();
 
 test('[batch] put', function(assert) {
     cardboard.batch.put(states, 'states', function(err, collection) {
@@ -47,7 +50,7 @@ test('[batch] put', function(assert) {
         }, true), 'all returned features have ids');
 
         var records = [];
-        dynamodb.dyno.scanStream()
+        features.dyno.scanStream()
             .on('data', function(d) { records.push(d); })
             .on('error', function(err) { throw err; })
             .on('end', function() {
@@ -63,7 +66,8 @@ test('[batch] put', function(assert) {
     });
 });
 
-dynamodb.empty();
+features.empty();
+search.empty();
 
 test('[batch] put does not duplicate auto-generated ids', function(assert) {
     var ids = [];
@@ -81,7 +85,8 @@ test('[batch] put does not duplicate auto-generated ids', function(assert) {
     })(0);
 });
 
-dynamodb.empty();
+features.empty();
+search.empty();
 
 test('[batch] unprocessed put returns feature collection', function(assert) {
 
@@ -97,7 +102,8 @@ test('[batch] unprocessed put returns feature collection', function(assert) {
     });
 });
 
-dynamodb.empty();
+features.empty();
+search.empty();
 
 test('[batch] remove', function(assert) {
     cardboard.batch.put(states, 'states', function(err, collection) {
@@ -110,7 +116,7 @@ test('[batch] remove', function(assert) {
             assert.ifError(err, 'success');
 
             var records = [];
-            dynamodb.dyno.scanStream().on('data', function(d) { records.push(d); }).on('end', function() {
+            features.dyno.scanStream().on('data', function(d) { records.push(d); }).on('end', function() {
                 if (err) throw err;
                 assert.equal(records.length, 0, 'removed all the records');
                 assert.end();
@@ -139,6 +145,7 @@ test('[batch] unprocessed delete returns array of ids', function(assert) {
     });
 });
 
-dynamodb.empty();
-
-dynamodb.close();
+features.empty();
+search.empty();
+features.close();
+search.close();
