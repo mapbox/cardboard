@@ -1,10 +1,10 @@
 {
     "AttributeDefinitions": [
-        {"AttributeName": "collection", "AttributeType": "S"},
+        {"AttributeName": "dataset", "AttributeType": "S"},
         {"AttributeName": "index", "AttributeType": "S"}
     ],
     "KeySchema": [
-        {"AttributeName": "collection", "KeyType": "HASH"},
+        {"AttributeName": "dataset", "KeyType": "HASH"},
         {"AttributeName": "index", "KeyType": "RANGE"}
     ],
     "ProvisionedThroughput": {

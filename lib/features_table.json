@@ -1,9 +1,9 @@
 {
     "AttributeDefinitions": [
-        {"AttributeName": "id", "AttributeType": "S"}
+        {"AttributeName": "index", "AttributeType": "S"}
     ],
     "KeySchema": [
-        {"AttributeName": "id", "KeyType": "HASH"}
+        {"AttributeName": "index", "KeyType": "HASH"}
     ],
     "ProvisionedThroughput": {
         "ReadCapacityUnits": 5,

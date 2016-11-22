@@ -7,7 +7,6 @@ var dynalite;
 var config = module.exports.config = {
     accessKeyId: 'fake',
     secretAccessKey: 'fake',
-    table: 'fake',
     featureTable: 'features',
     searchTable: 'search',
     endpoint: 'http://localhost:4567',
@@ -17,29 +16,29 @@ var config = module.exports.config = {
     s3: fakeAWS.S3() // only for mocking s3
 };
 
-var dyno = module.exports.dyno = require('dyno')(config);
+var dynoConfig = {
+    table: 'fake',
+    region: 'us-east-1',
+    endpoint: 'http://localhost:4567'
+};
 
-module.exports.setup = function(t, multi) {
+var dyno  = require('dyno')(dynoConfig);
+
+module.exports.setup = function(done) {
     dynalite = Dynalite({
         createTableMs: 0,
         updateTableMs: 0,
         deleteTableMs: 0
     });
     dynalite.listen(4567, function() {
-        t.pass('dynalite listening');
         var cardboard = Cardboard(config);
         var q = queue(1);
 
-        q.defer(cardboard.createTable);
-
-        q.awaitAll(function(err) {
-            t.notOk(err);
-            t.end();
-        });
+        cardboard.createTable(done);
     });
 };
 
-module.exports.teardown = function(t) {
+module.exports.teardown = function(done) {
     dyno.listTables(function(err, tables) {
         var q = queue();
         tables.TableNames.forEach(function(table) {
@@ -49,8 +48,7 @@ module.exports.teardown = function(t) {
         q.awaitAll(function(err) {
             if (err) throw err;
             dynalite.close(function(err) {
-                if (err) throw err;
-                t.end();
+                done(err);
             });
         });
     });
