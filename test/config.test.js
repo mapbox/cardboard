@@ -3,13 +3,13 @@ var Cardboard = require('../');
 var _ = require('lodash');
 var Dyno = require('dyno');
 
-var s = require('./setup');
-var config = s.config;
+var setup = require('./setup');
+var config = setup.config;
 
 describe('config tests', function() {
         
-  before(s.setup);
-  after(s.teardown);
+  before(setup.setup);
+  after(setup.teardown);
 
   it('pass preconfigured dyno object', function(done) {
 

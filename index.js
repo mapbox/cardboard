@@ -13,7 +13,8 @@ module.exports = Cardboard;
 /**
  * Cardboard client generator
  * @param {object} config - a configuration object
- * @param {string} config.table - the name of a DynamoDB table to connect to
+ * @param {string} config.searchTable - the name of a DynamoDB table to connect to
+ * @param {string} config.featuresTable - the name of a DynamoDB table to connect to
  * @param {string} config.region - the AWS region containing the DynamoDB table
  * @param {string} config.bucket - the name of an S3 bucket to use
  * @param {string} config.prefix - the name of a folder within the indicated S3 bucket
