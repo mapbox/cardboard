@@ -237,11 +237,11 @@ function Cardboard(config) {
      * @param {function} callback - the callback function to handle the response
      * @example
      * // Create the cardboard table specified by the client config
-     * cardboard.createTable(function(err) {
+     * cardboard.createTables(function(err) {
      *   if (err) throw err;
      * });
      */
-    cardboard.createTable = function(callback) {
+    cardboard.createTables = function(callback) {
         var featuresTable = require('./lib/features_table.json');
         featuresTable.TableName = config.features.TableName;
         config.features.createTable(featuresTable, function(err) {

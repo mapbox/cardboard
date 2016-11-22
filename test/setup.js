@@ -34,7 +34,7 @@ module.exports.setup = function(done) {
         var cardboard = Cardboard(config);
         var q = queue(1);
 
-        cardboard.createTable(done);
+        cardboard.createTables(done);
     });
 };
 
