@@ -42,8 +42,8 @@ function Cardboard(config) {
 
     // Allow caller to pass in aws-sdk clients
     if (!config.s3) config.s3 = new AWS.S3(config);
-    if (!config.features) config.features = Dyno({table: config.featureTable, region: config.region});
-    if (!config.search) config.search = Dyno({table: config.searchTable, region: config.region});
+    if (!config.features) config.features = Dyno({table: config.featureTable, region: config.region, endpoint: config.endpoint});
+    if (!config.search) config.search = Dyno({table: config.searchTable, region: config.region, endpoint: config.endpoint});
 
     if (!config.features && !config.featureTable) throw new Error('No feature table set');
     if (!config.search && !config.searchTable) throw new Error('No search table set');
@@ -122,11 +122,21 @@ function Cardboard(config) {
         catch (err) { return callback(err); }
 
         var q = queue(1);
-        if (encoded[1]) q.defer(config.s3.putObject.bind(config.s3), encoded[1]);
-        q.defer(config.features.putItem, {Item: encoded[0]});
+        if (encoded.s3) q.defer(config.s3.putObject.bind(config.s3), encoded.s3);
+        q.defer(function(done) {
+            var params = {
+                Item: encoded.feature,
+                ReturnValues: 'ALL_OLD'
+            };
+            config.features.putItem(params, function(err, res) {
+                if (err) return done(err);
+                console.log('what was returned', res);
+                config.search.putItem({ Item: encoded.search }, done);
+            });
+        });
         q.await(function(err) {
-            var result = geobuf.geobufToFeature(encoded[0].val || encoded[1].Body);
-            result.id = utils.idFromRecord(encoded[0]);
+            var result = geobuf.geobufToFeature(encoded.feature.val || encoded.s3.Body);
+            result.id = utils.idFromRecord(encoded.feature);
             callback(err, result);
         });
     };
@@ -223,7 +233,7 @@ function Cardboard(config) {
     };
 
     /**
-     * Create a DynamoDB table with Cardboard's schema
+     * Create DynamoDB tables with Cardboard's schema
      * @param {function} callback - the callback function to handle the response
      * @example
      * // Create the cardboard table specified by the client config
@@ -233,7 +243,6 @@ function Cardboard(config) {
      */
     cardboard.createTable = function(callback) {
         var featuresTable = require('./lib/features_table.json');
-        console.log('features', config.features);
         featuresTable.TableName = config.features.TableName;
         config.features.createTable(featuresTable, function(err) {
             if (err) return callback(err);
@@ -344,53 +353,14 @@ function Cardboard(config) {
 
         if (pageOptions.maxFeatures) params.Limit = pageOptions.maxFeatures;
 
-        params.ExpressionAttributeNames = { '#id': 'id', '#dataset': 'dataset' };
-        params.ExpressionAttributeValues = { ':id': 'id!', ':dataset': dataset };
-        params.KeyConditionExpression = '#dataset = :dataset and begins_with(#id, :id)';
+        params.ExpressionAttributeNames = { '#index': 'index', '#dataset': 'dataset' };
+        params.ExpressionAttributeValues = { ':index': 'feature_id!', ':dataset': dataset };
+        params.KeyConditionExpression = '#dataset = :dataset and begins_with(#index, :index)';
 
-        if (!callback) {
-            var resolver = new stream.Transform({ objectMode: true, highWaterMark: 50 });
-
-            resolver.items = [];
-
-            resolver._resolve = function(callback) {
-                utils.resolveFeatures(resolver.items, function(err, collection) {
-                    if (err) return callback(err);
-
-                    resolver.items = [];
-
-                    collection.features.forEach(function(feature) {
-                        resolver.push(feature);
-                    });
-
-                    callback();
-                });
-            };
-
-            resolver._transform = function(item, enc, callback) {
-                resolver.items.push(item);
-                if (resolver.items.length < 25) return callback();
-
-                resolver._resolve(callback);
-            };
-
-            resolver._flush = function(callback) {
-                if (!resolver.items.length) return callback();
-
-                resolver._resolve(callback);
-            };
-
-            return config.dyno.queryStream(params)
-                .on('error', function(err) {
-                    console.log('error in here');
-                    resolver.emit('error', err);
-                })
-              .pipe(resolver);
-        }
-
-        config.dyno.query(params, function(err, data) {
+        config.search.query(params, function(err, data) {
             if (err) return callback(err);
-            utils.resolveFeatures(data.Items, function(err, features) {
+            var ids = data.Items.map(item => item.index.replace(/^feature_id!/, ''));
+            utils.resolveFeaturesByIds(dataset, ids, function(err, features) {
                 if (err) return callback(err);
                 callback(null, features);
             });
