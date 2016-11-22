@@ -1,7 +1,4 @@
 var assert = require('assert');
-assert.notOk = function(item, msg) {
-  if (item !== false) assert.fail(msg);
-};
 var fs = require('fs');
 var path = require('path');
 var _ = require('lodash');
@@ -18,29 +15,14 @@ var config = setup.config;
 var cardboard = require('..')(config);
 var utils = require('../lib/utils')(config);
 
+var notOk = function(item, msg) {
+  if (item === undefined) return;
+  if (item != false && item !== null) throw new Error('failed fasly check' + (msg ? ' | '+msg : ''));
+};
+
 describe('utils', function() {
     before(setup.setup);
     after(setup.teardown);
-
-    it.skip('[utils] resolveFeatures', function(done) {
-        cardboard.batch.put(states, 'test', function(err, putResults) {
-            if (err) throw err;
-            var items = [];
-            utils.resolveFeatures(items, function(err, resolveResults) {
-                assert.ifError(err, 'success');
-
-                putResults = _.indexBy(putResults.features, 'id');
-                resolveResults = _.indexBy(resolveResults.features, 'id');
-
-                _.forOwn(resolveResults, function(found, id) {
-                    var expected = putResults[id];
-                    assert.deepEqual(found, expected, 'expected feature');
-                });
-
-                done();
-            });
-        });
-    });
 
     it('[utils] resolveFeatures - large feature', function(done) {
         var feature = {
@@ -71,6 +53,7 @@ describe('utils', function() {
 
     it('[utils] resolveFeatures - large, corrupt feature', function(done) {
         var feature = {
+            id: 'corrupt',
             type: 'Feature',
             properties: {
                 data: (new Buffer(15 * 1024)).toString('hex')
@@ -86,6 +69,7 @@ describe('utils', function() {
             var key = { index: 'large!' + putResults.id };
             config.features.getItem({Key: key}, function(err, data) {
                 if (err) throw err;
+                notOk(data.Item.val);
                 var uri = url.parse(data.Item.s3url);
                 config.s3.putObject({
                     Bucket: uri.host,
@@ -93,7 +77,8 @@ describe('utils', function() {
                     Body: new Buffer('this is not a valid protobuf')
                 }, function(err) {
                     if (err) throw err;
-                    utils.resolveFeatures([data.Item], function(err) {
+                    utils.resolveFeatures([data.Item], function(err, features) {
+                        notOk(features);
                         assert.ok(err);
                         assert.equal(err.message, 'Illegal group end indicator for Message .featurecollection: 14 (not a group)');
                         done();
@@ -116,23 +101,24 @@ describe('utils', function() {
         };
     
         var encoded = utils.toDatabaseRecord(noId, 'dataset');
-        var item = encoded[0];
-
-        assert.notOk(encoded[1], 'no S3 data stored for a small item');
-        assert.ok(item.id, 'an id was assigned');
+        var feature = encoded.feature;
+        var search = encoded.search;
+        
+        notOk(encoded.s3, 'no S3 data stored for a small item');
+        assert.equal(feature.index, 'dataset!'+utils.idFromRecord(feature), 'an id was assigned');
     
-        assert.ok(item.west === 0 &&
-            item.south === 0 &&
-            item.east === 0 &&
-            item.north === 0, 'correct extent');
-        assert.ok(item.size, 'size was calculated');
+        assert.ok(feature.west === 0 &&
+            feature.south === 0 &&
+            feature.east === 0 &&
+            feature.north === 0, 'correct extent');
+        assert.ok(feature.size, 'size was calculated');
 
-        assert.equal(item.cell, 'cell!3000000000000000000000000000', 'expected cell');
-        assert.notOk(item.s3url, 's3url was not assigned to a small feature');
-        assert.ok(item.val, 'geobuf was stored in the item');
+        notOk(feature.s3url, 's3url was not assigned to a small feature');
+        assert.ok(feature.val, 'geobuf was stored in the item');
 
-        noId.id = utils.idFromRecord(item);
-        assert.deepEqual(geobuf.geobufToFeature(item.val), noId, 'geobuf encoded as expected');
+        noId.id = utils.idFromRecord(feature);
+        assert.deepEqual(geobuf.geobufToFeature(feature.val), noId, 'geobuf encoded as expected');
+        assert.deepEqual(search, { dataset: 'dataset', index: 'feature_id!'+noId.id}, 'search is returned');
 
         done();
     });
@@ -151,12 +137,12 @@ describe('utils', function() {
         };
 
         var encoded = utils.toDatabaseRecord(noId, 'dataset');
-        var item = encoded[0];
-        var s3params = encoded[1];
+        var item = encoded.feature;
+        var s3params = encoded.s3;
 
-        assert.notOk(item.val, 'geobuf was not stored in the item');
+        notOk(item.val, 'geobuf was not stored in the item');
         assert.ok(s3params, 'S3 data stored for a large item');
-        assert.ok(item.id, 'an id was assigned');
+        assert.equal(item.index, 'dataset!'+utils.idFromRecord(item), 'an id was assigned');
 
         assert.ok(item.west === 0 &&
             item.south === 0 &&
@@ -164,7 +150,6 @@ describe('utils', function() {
             item.north === 0, 'correct extent');
         assert.ok(item.size, 'size was calculated');
 
-        assert.equal(item.cell, 'cell!3000000000000000000000000000', 'expected cell');
         assert.ok(item.s3url.indexOf('s3://test/test/dataset/' + utils.idFromRecord(item)) === 0, 's3url was assigned correctly');
 
         noId.id = utils.idFromRecord(item);
@@ -189,9 +174,9 @@ describe('utils', function() {
         };
 
         var encoded = utils.toDatabaseRecord(hasId, 'dataset');
-        var item = encoded[0];
+        var item = encoded.feature;
 
-        assert.notOk(encoded[1], 'no S3 data stored for a small item');
+        notOk(encoded.s3, 'no S3 data stored for a small item');
         assert.equal(utils.idFromRecord(item), hasId.id, 'used user-assigned id');
 
         assert.ok(item.west === 0 &&
@@ -200,8 +185,7 @@ describe('utils', function() {
             item.north === 0, 'correct extent');
         assert.ok(item.size, 'size was calculated');
 
-        assert.equal(item.cell, 'cell!3000000000000000000000000000', 'expected cell');
-        assert.notOk(item.s3url, 's3url was not assigned to a small feature');
+        notOk(item.s3url, 's3url was not assigned to a small feature');
         assert.ok(item.val, 'geobuf was stored in the item');
         assert.deepEqual(geobuf.geobufToFeature(item.val), hasId, 'geobuf encoded as expected');
 
@@ -221,9 +205,9 @@ describe('utils', function() {
             }
         };
         var encoded = utils.toDatabaseRecord(numericId, 'dataset');
-        var item = encoded[0];
+        var item = encoded.feature;
 
-        assert.notOk(encoded[1], 'no S3 data stored for a small item');
+        notOk(encoded.s3, 'no S3 data stored for a small item');
         assert.equal(utils.idFromRecord(item), numericId.id.toString(), 'used numeric user-assigned id as a string');
 
         assert.ok(item.west === 0 &&
@@ -231,8 +215,7 @@ describe('utils', function() {
             item.east === 0 &&
             item.north === 0, 'correct extent');
         assert.ok(item.size, 'size was calculated');
-        assert.equal(item.cell, 'cell!3000000000000000000000000000', 'expected cell');
-        assert.notOk(item.s3url, 's3url was not assigned to a small feature');
+        notOk(item.s3url, 's3url was not assigned to a small feature');
         assert.ok(item.val, 'geobuf was stored in the item');
 
         numericId.id = numericId.id.toString();
@@ -255,9 +238,9 @@ describe('utils', function() {
         };
 
         var encoded = utils.toDatabaseRecord(zeroId, 'dataset');
-        var item = encoded[0];
+        var item = encoded.feature;
 
-        assert.notOk(encoded[1], 'no S3 data stored for a small item');
+        notOk(encoded.s3, 'no S3 data stored for a small item');
         assert.equal(utils.idFromRecord(item), zeroId.id.toString(), 'used zero (as a string) for id');
 
         assert.ok(item.west === 0 &&
@@ -266,8 +249,7 @@ describe('utils', function() {
             item.north === 0, 'correct extent');
         assert.ok(item.size, 'size was calculated');
 
-        assert.equal(item.cell, 'cell!3000000000000000000000000000', 'expected cell');
-        assert.notOk(item.s3url, 's3url was not assigned to a small feature');
+        notOk(item.s3url, 's3url was not assigned to a small feature');
         assert.ok(item.val, 'geobuf was stored in the item');
 
         zeroId.id = utils.idFromRecord(item);
@@ -289,10 +271,10 @@ describe('utils', function() {
             }
         };
         var encoded = utils.toDatabaseRecord(nullId, 'dataset');
-        var item = encoded[0];
-        assert.notOk(encoded[1], 'no S3 data stored for a small item');
-        assert.notEqual(item.id, 'id!null', 'null id was treated as undefined');
-        assert.ok(item.id, 'an id was assigned');
+        var item = encoded.feature;
+        notOk(encoded.s3, 'no S3 data stored for a small item');
+        assert.notEqual(item.index, 'dataset!null', 'null id was treated as undefined');
+        assert.equal(item.index, 'dataset!'+utils.idFromRecord(item), 'an id was assigned');
 
         assert.ok(item.west === 0 &&
             item.south === 0 &&
@@ -300,8 +282,7 @@ describe('utils', function() {
             item.north === 0, 'correct extent');
         assert.ok(item.size, 'size was calculated');
 
-        assert.equal(item.cell, 'cell!3000000000000000000000000000', 'expected cell');
-        assert.notOk(item.s3url, 's3url was not assigned to a small feature');
+        notOk(item.s3url, 's3url was not assigned to a small feature');
         assert.ok(item.val, 'geobuf was stored in the item');
 
         nullId.id = utils.idFromRecord(item);
@@ -333,26 +314,26 @@ describe('utils', function() {
         large.id = 'biggie-fries';
 
         var encoded = utils.toDatabaseRecord(large, 'dataset');
-        var item = encoded[0];
+        var item = encoded.feature;
 
-        assert.notOk(item.val, 'large geobuf not stored in database record');
+        notOk(item.val, 'large geobuf not stored in database record');
         done();
     });
 
     it('[utils] idFromRecord - no ! in the id', function(done) {
-        var record = { id: 'id!123456' };
+        var record = { index: 'id!123456' };
         assert.equal(utils.idFromRecord(record), '123456', 'expected value');
         done();
     });
 
     it('[utils] idFromRecord - has ! in the id', function(done) {
-        var record = { id: 'id!123456!654321' };
+        var record = { index: 'id!123456!654321' };
         assert.equal(utils.idFromRecord(record), '123456!654321', 'expected value');
         done();
     });
 
     it('[utils] idFromRecord - emoji', function(done) {
-        var record = { id: 'id!\u1F471' };
+        var record = { index: 'id!\u1F471' };
         assert.equal(utils.idFromRecord(record), '\u1F471', 'expected value');
         done();
     });
