@@ -36,7 +36,10 @@ describe('table creation', function() {
                 });
             });
 
-            q.awaitAll(done);
+            q.awaitAll(function(err) {
+                if (err) return done(err);
+                dynalite.close(done);
+            });
         });
     });
 

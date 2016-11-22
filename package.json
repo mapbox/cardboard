@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "pretest": "eslint index.js lib test/*.js",
-    "test": "nyc tape test/*.tape.js",
+    "test": "nyc tape test/*.tape.js && mocha test/*.test.js",
     "coverage": "nyc --reporter html tape test/*.test.js && opener ./coverage/index.html",
     "docs": "documentation -f md --github > api.md",
     "posttest": "rm -r ./test/test"
