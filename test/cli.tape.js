@@ -1,7 +1,8 @@
 Error.stackTraceLimit = Infinity;
 
 var test = require('tape');
-var dynamodb = require('dynamodb-test')(test, 'cardboard-cli', require('../lib/table.json'));
+var searchTable = require('dynamodb-test')(test, 'cardboard-cli', require('../lib/search_table.json'));
+var featuresTable = require('dynamodb-test')(test, 'cardboard-cli', require('../lib/features_table.json'));
 var liveDynamo = require('dynamodb-test')(test, 'cardboard-cli', require('../lib/table.json'), 'us-east-1');
 var exec = require('child_process').exec;
 var path = require('path');
@@ -17,13 +18,14 @@ states = JSON.parse(states);
 var config = {
     bucket: 'test',
     prefix: 'test',
-    dyno: dynamodb.dyno,
+    features: featuresTable.dyno,
+    search: searchTable.dyno,
     s3: require('mock-aws-s3').S3()
 };
 
 var cardboard = require('..')(config);
 
-dynamodb.test('[cli] config via env', function(assert) {
+featuresTable.test('[cli] config via env', function(assert) {
     var options = {
         env: _.extend({
             CardboardRegion: 'region',
@@ -41,7 +43,7 @@ dynamodb.test('[cli] config via env', function(assert) {
     });
 });
 
-dynamodb.test('[cli] config via params', function(assert) {
+featuresTable.test('[cli] config via params', function(assert) {
     var params = [
         cmd,
         '--region', 'region',
@@ -59,7 +61,7 @@ dynamodb.test('[cli] config via params', function(assert) {
     });
 });
 
-dynamodb.test('[cli] config fail', function(assert) {
+featuresTable.test('[cli] config fail', function(assert) {
     var params = [
         cmd,
         '--table', 'table',
@@ -75,7 +77,7 @@ dynamodb.test('[cli] config fail', function(assert) {
     });
 });
 
-dynamodb.start();
+featuresTable.start();
 
 test('[cli] get', function(assert) {
     cardboard.batch.put(states, 'test', function(err, putResults) {
@@ -84,7 +86,7 @@ test('[cli] get', function(assert) {
         var params = [
             cmd,
             '--region', 'region',
-            '--table', dynamodb.tableName,
+            '--table', featuresTable.tableName,
             '--bucket', 'test',
             '--prefix', 'test',
             '--endpoint', 'http://localhost:4567',
@@ -100,7 +102,7 @@ test('[cli] get', function(assert) {
     });
 });
 
-dynamodb.empty();
+featuresTable.empty();
 
 test('[cli] list', function(assert) {
     cardboard.batch.put(states, 'test', function(err, putResults) {
@@ -109,7 +111,7 @@ test('[cli] list', function(assert) {
         var params = [
             cmd,
             '--region', 'region',
-            '--table', dynamodb.tableName,
+            '--table', featuresTable.tableName,
             '--bucket', 'test',
             '--prefix', 'test',
             '--endpoint', 'http://localhost:4567',
@@ -125,7 +127,7 @@ test('[cli] list', function(assert) {
     });
 });
 
-dynamodb.empty();
+featuresTable.empty();
 
 test('[cli] bbox', function(assert) {
     cardboard.batch.put(states, 'test', function(err, putResults) {
@@ -134,7 +136,7 @@ test('[cli] bbox', function(assert) {
         var params = [
             cmd,
             '--region', 'region',
-            '--table', dynamodb.tableName,
+            '--table', featuresTable.tableName,
             '--bucket', 'test',
             '--prefix', 'test',
             '--endpoint', 'http://localhost:4567',
@@ -154,7 +156,7 @@ test('[cli] bbox', function(assert) {
     });
 });
 
-dynamodb.close();
+featuresTable.close();
 
 liveDynamo.start();
 

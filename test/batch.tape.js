@@ -20,7 +20,21 @@ var unprocessableCardboard = require('..')({
     bucket: 'test',
     prefix: 'test',
     s3: require('mock-aws-s3').S3(),
-    dyno: {
+    search: {
+        config: { params: { TableName: search.tableName } },
+        batchWriteAll: function(params) {
+            return {
+                sendAll: function(concurrency, callback) {
+                    setTimeout(function() {
+                        callback(null, {
+                            UnprocessedItems: params.RequestItems
+                        });
+                    }, 0);
+                }
+            };
+        }
+    },
+    features: {
         config: { params: { TableName: features.tableName } },
         batchWriteAll: function(params) {
             return {
@@ -42,6 +56,7 @@ search.start();
 test('[batch] put', function(assert) {
     cardboard.batch.put(states, 'states', function(err, collection) {
         assert.ifError(err, 'success');
+        if(err) return assert.end(err);
         assert.equal(collection.features.length, states.features.length, 'reflects the inserted features');
 
         assert.ok(collection.features.reduce(function(hasId, feature) {
@@ -74,6 +89,7 @@ test('[batch] put does not duplicate auto-generated ids', function(assert) {
     (function push(attempts) {
         attempts++;
         cardboard.batch.put(fixtures.random(100), 'default', function(err, collection) {
+            if (err) return assert.end(err, 'found error');
             collection.features.forEach(function(f) {
                 if (ids.indexOf(f.id) > -1) assert.fail('id was duplicated');
                 else ids.push(f.id);
@@ -96,6 +112,7 @@ test('[batch] unprocessed put returns feature collection', function(assert) {
     unprocessableCardboard.batch.put(data, 'default', function(err, collection) {
         if (collection) throw new Error('mock dyno failed to error');
         assert.ok(err.unprocessed, 'got unprocessed items');
+        if (err.unprocessed === undefined) return assert.end(err);
         assert.equal(err.unprocessed.type, 'FeatureCollection', 'got a feature collection');
         assert.equal(err.unprocessed.features.length, data.features.length, 'expected number unprocessed items');
         assert.end();
@@ -107,7 +124,7 @@ search.empty();
 
 test('[batch] remove', function(assert) {
     cardboard.batch.put(states, 'states', function(err, collection) {
-        if (err) throw err;
+        if (err) return assert.end(err);
         var ids = collection.features.map(function(feature) {
             return feature.id;
         });
@@ -131,7 +148,7 @@ test('[batch] unprocessed delete returns array of ids', function(assert) {
     data.features[0].id = 'abc';
 
     cardboard.batch.put(data, 'default', function(err) {
-        if (err) throw err;
+        if (err) return assert.end(err);
 
         unprocessableCardboard.batch.remove(['abc'], 'default', function(err) {
             assert.ok(err.unprocessed, 'got unprocessed items');

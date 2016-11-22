@@ -7,7 +7,9 @@ var dynalite;
 var config = module.exports.config = {
     accessKeyId: 'fake',
     secretAccessKey: 'fake',
-    table: 'geo',
+    table: 'fake',
+    featureTable: 'features',
+    searchTable: 'search',
     endpoint: 'http://localhost:4567',
     bucket: 'test',
     prefix: 'test',
@@ -28,11 +30,7 @@ module.exports.setup = function(t, multi) {
         var cardboard = Cardboard(config);
         var q = queue(1);
 
-        q.defer(cardboard.createTable, config.table);
-        if (multi) {
-            q.defer(cardboard.createTable, 'test-cardboard-read');
-            q.defer(cardboard.createTable, 'test-cardboard-write');
-        }
+        q.defer(cardboard.createTable);
 
         q.awaitAll(function(err) {
             t.notOk(err);
