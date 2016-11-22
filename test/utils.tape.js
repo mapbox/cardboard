@@ -1,5 +1,6 @@
 var test = require('tape');
-var dynamodb = require('dynamodb-test')(test, 'cardboard', require('../lib/table.json'));
+var searchTable = require('dynamodb-test')(test, 'cardboard', require('../lib/search_table.json'));
+var featuresTable = require('dynamodb-test')(test, 'cardboard', require('../lib/features_table.json'));
 var fs = require('fs');
 var path = require('path');
 var _ = require('lodash');
@@ -13,20 +14,21 @@ states = JSON.parse(states);
 var config = {
     bucket: 'test',
     prefix: 'test',
-    dyno: dynamodb.dyno,
+    features: featuresTable.dyno,
+    search: searchTable.dyno,
     s3: require('mock-aws-s3').S3()
 };
 
 var cardboard = require('..')(config);
 var utils = require('../lib/utils')(config);
 
-dynamodb.start();
+featuresTable.start();
 
 test('[utils] resolveFeatures', function(assert) {
     cardboard.batch.put(states, 'test', function(err, putResults) {
         if (err) throw err;
         var items = [];
-        dynamodb.dyno.scanStream().on('data', function(d) { items.push(d); }).on('end', function() {
+        featuresTable.dyno.scanStream().on('data', function(d) { items.push(d); }).on('end', function() {
             utils.resolveFeatures(items, function(err, resolveResults) {
                 assert.ifError(err, 'success');
 
@@ -60,7 +62,7 @@ test('[utils] resolveFeatures - large feature', function(assert) {
     cardboard.put(feature, 'large', function(err, putResults) {
         if (err) throw err;
         var key = { dataset: 'large', id: 'id!' + putResults.id };
-        dynamodb.dyno.getItem({Key: key}, function(err, data) {
+        featuresTable.dyno.getItem({Key: key}, function(err, data) {
             if (err) throw err;
             utils.resolveFeatures([data.Item], function(err, resolveResults) {
                 assert.ifError(err, 'success');
@@ -88,7 +90,7 @@ test('[utils] resolveFeatures - large, corrupt feature', function(assert) {
     cardboard.put(feature, 'large', function(err, putResults) {
         if (err) throw err;
         var key = { dataset: 'large', id: 'id!' + putResults.id };
-        dynamodb.dyno.getItem({Key: key}, function(err, data) {
+        featuresTable.dyno.getItem({Key: key}, function(err, data) {
             if (err) throw err;
             var uri = url.parse(data.Item.s3url);
             config.s3.putObject({
@@ -364,4 +366,4 @@ test('[utils] idFromRecord - emoji', function(assert) {
     assert.end();
 });
 
-dynamodb.close();
+featuresTable.close();
