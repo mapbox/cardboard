@@ -58,7 +58,6 @@ function Cardboard(config) {
      * A client configured to interact with a backend cardboard database
      */
     var cardboard = {};
-    cardboard.batch = require('./lib/batch')(config);
 
     /**
      * Insert or update a single GeoJSON feature
@@ -131,7 +130,6 @@ function Cardboard(config) {
             };
             config.features.putItem(params, function(err, res) {
                 if (err) return done(err);
-                console.log('what was returned', res);
                 config.search.putItem({ Item: encoded.search }, done);
             });
         });
