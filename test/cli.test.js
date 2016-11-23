@@ -1,5 +1,6 @@
 Error.stackTraceLimit = Infinity;
 
+var queue = require('queue-async');
 var assert = require('assert');
 var exec = require('child_process').exec;
 var path = require('path');
@@ -18,14 +19,32 @@ var config = setup.config;
 var cardboard = require('..')(config);
 
 describe('cli', function() {
+    var nhFeature = null;
+    var features = [];
     before(setup.setup);
     after(setup.teardown);
+    before(function(done) {
+        var q = queue();
+        states.features.map(f => {
+            f.id = f.properties.name.replace(/ /g, '-').toLowerCase();
+            return f;
+        }).forEach(state => q.defer(function(done) {
+            cardboard.put(state, 'test', function(err, result) {
+                if (err) return done(err);
+                if (result.id === 'new-hampshire') nhFeature = result;
+                features.push(result);
+                done();
+            });
+        }));
+        q.awaitAll(done);
+    });
  
     it('[cli] config via env', function(done) {
         var options = {
             env: _.extend({
                 CardboardRegion: 'region',
-                CardboardTable: 'table',
+                CardboardSearchTable: 'search',
+                CardboardFeaturesTable: 'features',
                 CardboardBucket: 'bucket',
                 CardboardPrefix: 'prefix',
                 CardboardEndpoint: 'http://localhost:4567'
@@ -43,7 +62,7 @@ describe('cli', function() {
         var params = [
             cmd,
             '--region', 'region',
-            '--featuresTable', config.featuresTable,
+            '--featureTable', config.featureTable,
             '--searchTable', config.searchTable,
             '--bucket', 'bucket',
             '--prefix', 'prefix',
@@ -60,7 +79,7 @@ describe('cli', function() {
     it('[cli] config fail', function(done) {
         var params = [
             cmd,
-            '--featuresTable', config.featuresTable,
+            '--featureTable', config.featureTable,
             '--searchTable', config.searchTable,
             '--bucket', 'bucket',
             '--prefix', 'prefix',
@@ -74,73 +93,48 @@ describe('cli', function() {
     });
 
     it('[cli] get', function(done) {
-        cardboard.batch.put(states, 'test', function(err, putResults) {
-            if (err) throw err;
-                var params = [
-                cmd,
-                '--region', 'region',
-                '--featuresTable', config.featuresTable,
-                '--searchTable', config.searchTable,
-                '--bucket', 'test',
-                '--prefix', 'test',
-                '--endpoint', 'http://localhost:4567',
-                'get', 'test', '\'' + putResults.features[0].id + '\''
-            ];
-            exec(params.join(' '), function(err, stdout) {
-                assert.ifError(err, 'success');
-                var found = JSON.parse(stdout.trim());
-                assert.deepEqual(found, putResults.features[0], 'got expected feature');
-                done();
-            });
+        var params = [
+            cmd,
+            '--region', 'region',
+            '--featureTable', config.featureTable,
+            '--searchTable', config.searchTable,
+            '--bucket', 'test',
+            '--prefix', 'test',
+            '--endpoint', 'http://localhost:4567',
+            'get', 'test', '\'new-hampshire\''
+        ];
+        exec(params.join(' '), function(err, stdout) {
+            assert.ifError(err, 'success');
+            var found = JSON.parse(stdout.trim());
+            assert.deepEqual(found, nhFeature, 'got expected feature');
+            done();
         });
     });
 
     it('[cli] list', function(done) {
-        cardboard.batch.put(states, 'test', function(err, putResults) {
-            if (err) throw err;
-            var params = [
-                cmd,
-                '--region', 'region',
-                '--featuresTable', config.featuresTable,
-                '--searchTable', config.searchTable,
-                '--bucket', 'test',
-                '--prefix', 'test',
-                '--endpoint', 'http://localhost:4567',
-                'list', 'test'
-            ];
-            exec(params.join(' '), function(err, stdout) {
-                assert.ifError(err, 'success');
-                var found = JSON.parse(stdout.trim());
-                assert.deepEqual(found, putResults, 'got expected FeatureCollection');
-                done();
+        var params = [
+            cmd,
+            '--region', 'region',
+            '--featureTable', config.featureTable,
+            '--searchTable', config.searchTable,
+            '--bucket', 'test',
+            '--prefix', 'test',
+            '--endpoint', 'http://localhost:4567',
+            'list', 'test'
+        ];
+        exec(params.join(' '), function(err, stdout) {
+            assert.ifError(err, 'success');
+            var found = JSON.parse(stdout.trim());
+            assert.equal(found.features.length, features.length);
+            assert.equal(found.type, 'FeatureCollection');
+            found.features.sort(function(a, b) {
+                return a.id.localeCompare(b.id);
             });
-        });
-    });
-
-    it('[cli] bbox', function(done) {
-        cardboard.batch.put(states, 'test', function(err, putResults) {
-            if (err) throw err;
-
-            var params = [
-                cmd,
-                '--region', 'region',
-                '--featuresTable', config.featuresTable,
-                '--searchTable', config.searchTable,
-                '--bucket', 'test',
-                '--prefix', 'test',
-                '--endpoint', 'http://localhost:4567',
-                'bbox', 'test', '\'-120,30,-115,35\''
-            ];
-
-            var cali = putResults.features.filter(function(state) {
-                return state.properties.name === 'California';
-            })[0];
-            exec(params.join(' '), function(err, stdout) {
-                assert.ifError(err, 'success');
-                var found = JSON.parse(stdout.trim());
-                assert.deepEqual(found, {type: 'FeatureCollection', features: [cali]}, 'found California');
-                done();
-            });
+            features.sort(function(a, b) {
+                return a.id.localeCompare(b.id);
+            })
+            assert.deepEqual(found.features, features, 'got expected FeatureCollection');
+            done();
         });
     });
 });
