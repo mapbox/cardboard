@@ -1,3 +1,4 @@
+var Pbf = require('pbf');
 var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
@@ -117,7 +118,7 @@ describe('utils', function() {
         assert.ok(feature.val, 'geobuf was stored in the item');
 
         noId.id = utils.idFromRecord(feature);
-        assert.deepEqual(geobuf.geobufToFeature(feature.val), noId, 'geobuf encoded as expected');
+        assert.deepEqual(geobuf.decode(new Pbf(feature.val)), noId, 'geobuf encoded as expected');
         assert.deepEqual(search, { dataset: 'dataset', index: 'feature_id!'+noId.id}, 'search is returned');
 
         done();
@@ -153,7 +154,7 @@ describe('utils', function() {
         assert.ok(item.s3url.indexOf('s3://test/test/dataset/' + utils.idFromRecord(item)) === 0, 's3url was assigned correctly');
 
         noId.id = utils.idFromRecord(item);
-        assert.deepEqual(geobuf.geobufToFeature(s3params.Body), noId, 'geobuf encoded as expected');
+        assert.deepEqual(geobuf.decode(new Pbf(s3params.Body)), noId, 'geobuf encoded as expected');
         assert.equal(s3params.Bucket, config.bucket, 'S3 params include proper bucket');
         assert.equal(s3params.Key, item.s3url.split('s3://test/')[1], 'S3 params include proper key');
 
@@ -187,7 +188,7 @@ describe('utils', function() {
 
         notOk(item.s3url, 's3url was not assigned to a small feature');
         assert.ok(item.val, 'geobuf was stored in the item');
-        assert.deepEqual(geobuf.geobufToFeature(item.val), hasId, 'geobuf encoded as expected');
+        assert.deepEqual(geobuf.decode(new Pbf(item.val)), hasId, 'geobuf encoded as expected');
 
         done();
     });
@@ -219,7 +220,7 @@ describe('utils', function() {
         assert.ok(item.val, 'geobuf was stored in the item');
 
         numericId.id = numericId.id.toString();
-        assert.deepEqual(geobuf.geobufToFeature(item.val), numericId, 'geobuf encoded as expected');
+        assert.deepEqual(geobuf.decode(new Pbf(item.val)), numericId, 'geobuf encoded as expected');
 
         done();
     });
@@ -253,7 +254,7 @@ describe('utils', function() {
         assert.ok(item.val, 'geobuf was stored in the item');
 
         zeroId.id = utils.idFromRecord(item);
-        assert.deepEqual(geobuf.geobufToFeature(item.val), zeroId, 'geobuf encoded as expected');
+        assert.deepEqual(geobuf.decode(new Pbf(item.val)), zeroId, 'geobuf encoded as expected');
 
         done();
     });
@@ -286,7 +287,7 @@ describe('utils', function() {
         assert.ok(item.val, 'geobuf was stored in the item');
 
         nullId.id = utils.idFromRecord(item);
-        assert.deepEqual(geobuf.geobufToFeature(item.val), nullId, 'geobuf encoded as expected');
+        assert.deepEqual(geobuf.decode(new Pbf(item.val)), nullId, 'geobuf encoded as expected');
 
         done();
     });

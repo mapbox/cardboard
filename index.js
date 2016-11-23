@@ -3,6 +3,7 @@ var Metadata = require('./lib/metadata');
 var queue = require('queue-async');
 var Dyno = require('dyno');
 var AWS = require('aws-sdk');
+var Pbf = require('pbf');
 var geobuf = require('geobuf');
 var stream = require('stream');
 
@@ -134,7 +135,7 @@ function Cardboard(config) {
             });
         });
         q.await(function(err) {
-            var result = geobuf.geobufToFeature(encoded.feature.val || encoded.s3.Body);
+            var result = geobuf.decode(new Pbf(encoded.feature.val || encoded.s3.Body));
             result.id = utils.idFromRecord(encoded.feature);
             callback(err, result);
         });
