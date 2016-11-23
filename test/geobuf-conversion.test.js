@@ -1,12 +1,12 @@
-var test = require('tape');
+var assert = require('assert');
 var path = require('path');
 var fs = require('fs');
 var utils = require('../lib/utils');
 var fixture = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'data', 'numeric-properties.geojson')));
 
-test('[geobuf conversion] cardboard round-trip does not change numeric properties', function(assert) {
+it('[geobuf conversion] cardboard round-trip does not change numeric properties', function(done) {
     var config = { MAX_GEOMETRY_SIZE: 99999999 };
-    var record = utils(config).toDatabaseRecord(fixture, 'dataset')[0];
+    var record = utils(config).toDatabaseRecord(fixture, 'dataset').feature;
     utils(config).resolveFeatures([record], function(err, collection) {
         if (err) return assert.end(err);
         var roundtrip = collection.features[0];
@@ -15,6 +15,6 @@ test('[geobuf conversion] cardboard round-trip does not change numeric propertie
             fixture.properties['@changeset'],
             'large numeric feature properties are not adjusted by cardboard roundtrip'
         );
-        assert.end();
+        done();
     });
 });
