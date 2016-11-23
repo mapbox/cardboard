@@ -14,7 +14,7 @@ module.exports = Cardboard;
  * Cardboard client generator
  * @param {object} config - a configuration object
  * @param {string} config.searchTable - the name of a DynamoDB table to connect to
- * @param {string} config.featuresTable - the name of a DynamoDB table to connect to
+ * @param {string} config.featureTable - the name of a DynamoDB table to connect to
  * @param {string} config.region - the AWS region containing the DynamoDB table
  * @param {string} config.bucket - the name of an S3 bucket to use
  * @param {string} config.prefix - the name of a folder within the indicated S3 bucket
@@ -219,7 +219,7 @@ function Cardboard(config) {
      * });
      */
     cardboard.get = function(primary, dataset, callback) {
-        var key = { id: dataset+'!'+primary };
+        var key = { index: dataset+'!'+primary };
 
         config.features.getItem({Key: key}, function(err, data) {
             if (err) return callback(err);
@@ -293,6 +293,23 @@ function Cardboard(config) {
         });
     };
 
+    function createListParams(dataset, pageOptions) {
+        var params = {};
+
+        pageOptions = pageOptions || {};
+        if (pageOptions.start) params.ExclusiveStartKey = {
+            dataset: dataset,
+            index: 'feature_id!' + pageOptions.start
+        };
+
+        if (pageOptions.maxFeatures) params.Limit = pageOptions.maxFeatures;
+
+        params.ExpressionAttributeNames = { '#index': 'index', '#dataset': 'dataset' };
+        params.ExpressionAttributeValues = { ':index': 'feature_id!', ':dataset': dataset };
+        params.KeyConditionExpression = '#dataset = :dataset and begins_with(#index, :index)';
+        return params;
+    }
+
     /**
      * List the GeoJSON features that belong to a particular dataset
      * @param {string} dataset - the name of the dataset
@@ -307,15 +324,6 @@ function Cardboard(config) {
      *   if (err) throw err;
      *   collection.type === 'FeatureCollection'; // true
      * });
-     * @example
-     * // Stream all the features in a dataset
-     * cardboard.list('my-dataset')
-     *   .on('data', function(feature) {
-     *     console.log('Got feature: %j', feature);
-     *   })
-     *   .on('end', function() {
-     *     console.log('All done!');
-     *   });
      * @example
      * // List one page with a max of 10 features from a dataset
      * cardboard.list('my-dataset', { maxFeatures: 10 }, function(err, collection) {
@@ -337,24 +345,13 @@ function Cardboard(config) {
      * })();
      */
     cardboard.list = function(dataset, pageOptions, callback) {
-        var params = {};
 
         if (typeof pageOptions === 'function') {
             callback = pageOptions;
             pageOptions = {};
         }
 
-        pageOptions = pageOptions || {};
-        if (pageOptions.start) params.ExclusiveStartKey = {
-            dataset: dataset,
-            id: 'id!' + pageOptions.start
-        };
-
-        if (pageOptions.maxFeatures) params.Limit = pageOptions.maxFeatures;
-
-        params.ExpressionAttributeNames = { '#index': 'index', '#dataset': 'dataset' };
-        params.ExpressionAttributeValues = { ':index': 'feature_id!', ':dataset': dataset };
-        params.KeyConditionExpression = '#dataset = :dataset and begins_with(#index, :index)';
+        var params = createListParams(dataset, pageOptions);
 
         config.search.query(params, function(err, data) {
             if (err) return callback(err);
@@ -364,6 +361,58 @@ function Cardboard(config) {
                 callback(null, features);
             });
         });
+    };
+    
+    /**
+     * Lists all the features in a dataset via a stream
+     * @example
+     * // Stream all the features in a dataset
+     * cardboard.list('my-dataset')
+     *   .on('data', function(feature) {
+     *     console.log('Got feature: %j', feature);
+     *   })
+     *   .on('end', function() {
+     *     console.log('All done!');
+     *   });
+     */
+    cardboard.listStream = function(dataset, pageOptions) {
+        var params = createListParams(dataset, pageOptions);
+        var resolver = new stream.Transform({ objectMode: true, highWaterMark: 50 });
+
+        resolver.items = [];
+
+        resolver._resolve = function(callback) {
+            utils.resolveFeaturesByIds(dataset, resolver.items, function(err, collection) {
+                if (err) return callback(err);
+                resolver.items = [];
+
+                collection.features.forEach(function(feature) {
+                    resolver.push(feature);
+                });
+
+                callback();
+            });
+        };
+
+        resolver._transform = function(item, enc, callback) {
+            resolver.items.push(utils.idFromRecord(item));
+            if (resolver.items.length < 25) return callback();
+
+            resolver._resolve(callback);
+        };
+
+        resolver._flush = function(callback) {
+            if (!resolver.items.length) return callback();
+
+            resolver._resolve(callback);
+        };
+
+        return config.search.queryStream(params)
+            .on('error', function(err) {
+                console.log('error in here');
+                resolver.emit('error', err);
+            })
+          .pipe(resolver); 
     };
 
     /**
