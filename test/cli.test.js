@@ -5,7 +5,6 @@ var assert = require('assert');
 var exec = require('child_process').exec;
 var path = require('path');
 var fs = require('fs');
-var crypto = require('crypto');
 var cmd = path.resolve(__dirname, '..', 'bin', 'cardboard.js');
 var _ = require('lodash');
 
@@ -25,17 +24,19 @@ describe('cli', function() {
     after(setup.teardown);
     before(function(done) {
         var q = queue();
-        states.features.map(f => {
+        states.features.map(function(f) {
             f.id = f.properties.name.replace(/ /g, '-').toLowerCase();
             return f;
-        }).forEach(state => q.defer(function(done) {
-            cardboard.put(state, 'test', function(err, result) {
-                if (err) return done(err);
-                if (result.id === 'new-hampshire') nhFeature = result;
-                features.push(result);
-                done();
+        }).forEach(function(state) {
+            q.defer(function(done) {
+                cardboard.put(state, 'test', function(err, result) {
+                    if (err) return done(err);
+                    if (result.id === 'new-hampshire') nhFeature = result;
+                    features.push(result);
+                    done();
+                });
             });
-        }));
+        });
         q.awaitAll(done);
     });
  

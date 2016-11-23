@@ -129,7 +129,7 @@ function Cardboard(config) {
                 Item: encoded.feature,
                 ReturnValues: 'ALL_OLD'
             };
-            config.features.putItem(params, function(err, res) {
+            config.features.putItem(params, function(err) {
                 if (err) return done(err);
                 config.search.putItem({ Item: encoded.search }, done);
             });
@@ -174,7 +174,7 @@ function Cardboard(config) {
      * });
      */
     cardboard.del = function(primary, dataset, callback) {
-        var key = { index: `${dataset}!${primary}` };
+        var key = { index: dataset + '!' + primary };
 
         config.features.deleteItem({
             Key: key,
@@ -361,7 +361,7 @@ function Cardboard(config) {
 
         config.search.query(params, function(err, data) {
             if (err) return callback(err);
-            var ids = data.Items.map(item => item.index.replace(/^feature_id!/, ''));
+            var ids = data.Items.map(function(item) { return item.index.replace(/^feature_id!/, ''); });
             utils.resolveFeaturesByIds(dataset, ids, function(err, features) {
                 if (err) return callback(err);
                 callback(null, features);

@@ -2,7 +2,6 @@ var Pbf = require('pbf');
 var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
-var _ = require('lodash');
 var geobuf = require('geobuf');
 var fixtures = require('./fixtures');
 var url = require('url');

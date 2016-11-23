@@ -3,7 +3,6 @@ var assert = require('assert');
 var queue = require('queue-async');
 var _ = require('lodash');
 var Cardboard = require('../');
-var geojsonFixtures = require('geojson-fixtures');
 var geojsonNormalize = require('geojson-normalize');
 var Pbf = require('pbf');
 var geobuf = require('geobuf');
@@ -353,7 +352,7 @@ describe('[indexing]', function() {
     });
 
     it('list stream', function(done) {
-            this.timeout(2000000);
+        this.timeout(2000000);
         var cardboard = Cardboard(config);
         var collection = fixtures.random(2223);
 
