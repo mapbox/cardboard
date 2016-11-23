@@ -23,7 +23,7 @@ var dyno = require('dyno')({
 
 describe('table creation', function() {
     beforeEach(function(done) {
-      dynalite.listen(4567, done);
+        dynalite.listen(4567, done);
     });
 
     afterEach(function(done) {

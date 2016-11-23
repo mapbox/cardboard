@@ -32,7 +32,6 @@ module.exports.setup = function(done) {
     });
     dynalite.listen(4567, function() {
         var cardboard = Cardboard(config);
-        var q = queue(1);
 
         cardboard.createTables(done);
     });
