@@ -174,12 +174,12 @@ function Cardboard(config) {
      * });
      */
     cardboard.del = function(primary, dataset, callback) {
-        var key = { dataset: dataset, id: 'id!' + primary };
+        var key = { index: `${dataset}!${primary}` };
 
         config.features.deleteItem({
             Key: key,
-            ConditionExpression: 'attribute_exists(#id)',
-            ExpressionAttributeNames: { '#id': 'id' }
+            ConditionExpression: 'attribute_exists(#index)',
+            ExpressionAttributeNames: { '#index': 'index' }
         }, function(err) {
             if (err && err.code === 'ConditionalCheckFailedException') return callback(new Error('Feature does not exist'));
             if (err) return callback(err, true);
@@ -260,11 +260,11 @@ function Cardboard(config) {
      */
     function listIds(dataset, callback) {
         var items = [];
-        config.features.queryStream({
-            ExpressionAttributeNames: { '#id': 'id', '#dataset': 'dataset' },
-            ExpressionAttributeValues: { ':id': 'id!', ':dataset': dataset },
-            KeyConditionExpression: '#dataset = :dataset AND begins_with(#id, :id)',
-            ProjectionExpression: '#id'
+        config.search.queryStream({
+            ExpressionAttributeNames: { '#index': 'index', '#dataset': 'dataset' },
+            ExpressionAttributeValues: { ':index': 'feature_id!', ':dataset': dataset },
+            KeyConditionExpression: '#dataset = :dataset AND begins_with(#index, :index)',
+            ProjectionExpression: '#index'
         }).on('data', function(d) {
             items.push(d);
         }).on('error', function(err) {
@@ -281,16 +281,21 @@ function Cardboard(config) {
      */
     cardboard.delDataset = function(dataset, callback) {
         listIds(dataset, function(err, res) {
+            if (err) return callback(err);
             var params = { RequestItems: {} };
-            params.RequestItems[config.table] = res.map(function(id) {
-                return { DeleteRequest: { Key: { dataset: dataset, id: 'id!' + id } } };
+            params.RequestItems[config.featureTable] = res.map(function(id) {
+                return { DeleteRequest: { Key: { index: dataset + '!' + id } } };
             });
 
-            params.RequestItems[config.table].push({
-                DeleteRequest: { Key: { dataset: dataset, id: 'metadata!' + dataset } }
+            params.RequestItems[config.searchTable] = res.map(function(id) {
+                return { DeleteRequest: { Key: { dataset: dataset, index: 'feature_id!'+id}}};     
             });
 
-            config.dyno.batchWriteItemRequests(params).sendAll(10, callback);
+            params.RequestItems[config.searchTable].push({
+                DeleteRequest: { Key: { dataset: dataset, index: 'metadata!' + dataset } }
+            });
+
+            config.features.batchWriteItemRequests(params).sendAll(10, callback);
         });
     };
 
@@ -410,7 +415,6 @@ function Cardboard(config) {
 
         return config.search.queryStream(params)
             .on('error', function(err) {
-                console.log('error in here');
                 resolver.emit('error', err);
             })
           .pipe(resolver); 
@@ -429,7 +433,7 @@ function Cardboard(config) {
     cardboard.listDatasets = function(callback) {
         var items = [];
 
-        config.dyno.scanStream({ ProjectionExpression: 'dataset' })
+        config.search.scanStream({ ProjectionExpression: 'dataset' })
             .on('data', function(d) { items.push(d); })
             .on('error', function(err) { callback(err); })
             .on('end', function() {

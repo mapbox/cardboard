@@ -16,10 +16,7 @@ var config = setup.config;
 var cardboard = require('..')(config);
 var utils = require('../lib/utils')(config);
 
-var notOk = function(item, msg) {
-  if (item === undefined) return;
-  if (item != false && item !== null) throw new Error('failed fasly check' + (msg ? ' | '+msg : ''));
-};
+var notOk = require('./not-ok.js');
 
 describe('utils', function() {
     before(setup.setup);
