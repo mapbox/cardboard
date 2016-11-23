@@ -43,7 +43,7 @@ describe('table creation', function() {
         });
     });
 
-    it('[table] createTables - match config name', function(done) {
+    it('createTables - match config name', function(done) {
         var cardboard = require('..')(_.extend({ featureTable: 'features', searchTable: 'search' }, config));
         cardboard.createTables(function(err) {
             assert.ifError(err, 'success');
@@ -56,7 +56,7 @@ describe('table creation', function() {
         });
     });
 
-    it('[table] createTables - match config name, with difference names', function(done) {
+    it('createTables - match config name, with difference names', function(done) {
         var cardboard = require('..')(_.extend({ featureTable: 'first', searchTable: 'second' }, config));
         cardboard.createTables(function(err) {
             assert.ifError(err, 'success');

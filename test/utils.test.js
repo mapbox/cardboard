@@ -25,7 +25,7 @@ describe('utils', function() {
     before(setup.setup);
     after(setup.teardown);
 
-    it('[utils] resolveFeatures - large feature', function(done) {
+    it('resolveFeatures - large feature', function(done) {
         var feature = {
             type: 'Feature',
             properties: {
@@ -52,7 +52,7 @@ describe('utils', function() {
         });
     });
 
-    it('[utils] resolveFeatures - large, corrupt feature', function(done) {
+    it('resolveFeatures - large, corrupt feature', function(done) {
         var feature = {
             id: 'corrupt',
             type: 'Feature',
@@ -89,7 +89,7 @@ describe('utils', function() {
         });
     });
 
-    it('[utils] toDatabaseRecord - no ID', function(done) {
+    it('toDatabaseRecord - no ID', function(done) {
         var noId = {
             type: 'Feature',
             properties: {
@@ -124,7 +124,7 @@ describe('utils', function() {
         done();
     });
 
-    it('[utils] toDatabaseRecord - large feature', function(done) {
+    it('toDatabaseRecord - large feature', function(done) {
         var noId = {
             type: 'Feature',
             properties: {
@@ -161,7 +161,7 @@ describe('utils', function() {
         done();
     });
 
-    it('[utils] toDatabaseRecord - with ID', function(done) {
+    it('toDatabaseRecord - with ID', function(done) {
         var hasId = {
             id: 'bacon-lettuce-tomato',
             type: 'Feature',
@@ -193,7 +193,7 @@ describe('utils', function() {
         done();
     });
 
-    it('[utils] toDatabaseRecord - numeric IDs become strings', function(done) {
+    it('toDatabaseRecord - numeric IDs become strings', function(done) {
         var numericId = {
             id: 12,
             type: 'Feature',
@@ -225,7 +225,7 @@ describe('utils', function() {
         done();
     });
 
-    it('[utils] toDatabaseRecord - zero is an acceptable ID', function(done) {
+    it('toDatabaseRecord - zero is an acceptable ID', function(done) {
         var zeroId = {
             id: 0,
             type: 'Feature',
@@ -259,7 +259,7 @@ describe('utils', function() {
         done();
     });
 
-    it('[utils] toDatabaseRecord - null ID', function(done) {
+    it('toDatabaseRecord - null ID', function(done) {
         var nullId = {
             id: null,
             type: 'Feature',
@@ -292,7 +292,7 @@ describe('utils', function() {
         done();
     });
 
-    it('[utils] toDatabaseRecord - no geometry', function(done) {
+    it('toDatabaseRecord - no geometry', function(done) {
         var noGeom = {
             type: 'Feature',
             properties: {
@@ -310,7 +310,7 @@ describe('utils', function() {
         done();
     });
 
-    it('[utils] toDatabaseRecord - large feature', function(done) {
+    it('toDatabaseRecord - large feature', function(done) {
         var large = fixtures.random(1, 100000).features[0];
         large.id = 'biggie-fries';
 
@@ -321,19 +321,19 @@ describe('utils', function() {
         done();
     });
 
-    it('[utils] idFromRecord - no ! in the id', function(done) {
+    it('idFromRecord - no ! in the id', function(done) {
         var record = { index: 'id!123456' };
         assert.equal(utils.idFromRecord(record), '123456', 'expected value');
         done();
     });
 
-    it('[utils] idFromRecord - has ! in the id', function(done) {
+    it('idFromRecord - has ! in the id', function(done) {
         var record = { index: 'id!123456!654321' };
         assert.equal(utils.idFromRecord(record), '123456!654321', 'expected value');
         done();
     });
 
-    it('[utils] idFromRecord - emoji', function(done) {
+    it('idFromRecord - emoji', function(done) {
         var record = { index: 'id!\u1F471' };
         assert.equal(utils.idFromRecord(record), '\u1F471', 'expected value');
         done();
