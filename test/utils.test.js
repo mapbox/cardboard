@@ -81,7 +81,7 @@ describe('utils', function() {
                     utils.resolveFeatures([data.Item], function(err, features) {
                         notOk(features);
                         assert.ok(err);
-                        assert.equal(err.message, 'Illegal group end indicator for Message .featurecollection: 14 (not a group)');
+                        assert.equal(err.message, 'Unimplemented type: 4');
                         done();
                     });
                 });
