@@ -500,6 +500,8 @@ function Cardboard(config) {
         Metadata(config.features, config.search, dataset).calculateInfo(callback);
     };
 
+    cardboard.batch = require('./lib/batch')(cardboard);
+
     /**
      * A module for incremental metadata adjustments
      * @name cardboard.metadata
