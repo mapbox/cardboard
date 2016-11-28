@@ -41,7 +41,7 @@ describe('metadata', function() {
     beforeEach(function(done) {
         s.setup(function(err) {
           if (err) return done(err);
-          metadata = Metadata(config.search, dataset);
+          metadata = Metadata(config.features, config.search, dataset);
           done();
         });
     });
@@ -476,7 +476,7 @@ describe('metadata', function() {
         var features = geojsonFixtures.featurecollection.idaho.features.slice(0, 50);
         var expectedBounds = geojsonExtent({ type: 'FeatureCollection', features: features });
 
-        cardboard.batch.put(featureCollection(features), dataset, function(err, putFeatures) {
+        fcPut(cardboard, featureCollection(features), dataset, function(err, putFeatures) {
             assert.ifError(err, 'inserted');
 
             features = features.map(function(f, i) {
@@ -498,8 +498,8 @@ describe('metadata', function() {
                 south: expectedBounds[1],
                 east: expectedBounds[2],
                 north: expectedBounds[3],
-                minzoom: 3,
-                maxzoom: 11,
+                minzoom: 0,
+                maxzoom: 10,
                 editcount: 0
             };
 
@@ -547,7 +547,7 @@ describe('metadata', function() {
                 count: 1,
                 size: info.size,
                 minzoom: 0,
-                maxzoom: 12,
+                maxzoom: 11,
                 editcount: 1
             };
             assert.ok(info.updated, 'has updated date');
@@ -591,8 +591,8 @@ describe('metadata', function() {
                 north: expectedBounds[3],
                 count: features.length,
                 size: expectedSize,
-                minzoom: 3,
-                maxzoom: 11,
+                minzoom: 0,
+                maxzoom: 10,
                 editcount: 50
             };
             assert.ok(info.updated, 'has updated date');
@@ -638,8 +638,8 @@ describe('metadata', function() {
                 north: expectedBounds[3],
                 count: features.length - 1,
                 size: expectedSize,
-                minzoom: 3,
-                maxzoom: 11,
+                minzoom: 0,
+                maxzoom: 10,
                 editcount: 51
             };
             assert.ok(info.updated, 'has updated date');
@@ -692,7 +692,7 @@ describe('metadata', function() {
                 count: 1,
                 size: expectedSize,
                 minzoom: 0,
-                maxzoom: 12,
+                maxzoom: 11,
                 editcount: 2
             };
             assert.ok(info.updated, 'has updated date');
@@ -737,7 +737,7 @@ describe('metadata', function() {
         var features = geojsonFixtures.featurecollection.idaho.features.slice(0, 50);
         var expectedBounds = geojsonExtent({ type: 'FeatureCollection', features: features });
 
-        cardboard.batch.put(featureCollection(features), dataset, function(err, putFeatures) {
+        fcPut(cardboard, featureCollection(features), dataset, function(err, putFeatures) {
             assert.ifError(err, 'inserted');
 
             features = features.map(function(f, i) {
@@ -759,8 +759,8 @@ describe('metadata', function() {
                 south: expectedBounds[1],
                 east: expectedBounds[2],
                 north: expectedBounds[3],
-                minzoom: 3,
-                maxzoom: 11,
+                minzoom: 0,
+                maxzoom: 10,
                 editcount: 0
             };
 
@@ -874,3 +874,19 @@ describe('metadata', function() {
         });
     });
 });
+
+function fcPut(cardboard, fc, dataset, cb) {
+    var q = queue();
+    fc.features.forEach(function(f) { 
+        q.defer(function(done) {
+            cardboard.put(f, dataset, done);
+        });
+    });
+
+    q.awaitAll(function(err, results) {
+        if (err) return cb(err);
+        var fc = featureCollection(results);
+        cb(null, fc);
+    });
+}
+
