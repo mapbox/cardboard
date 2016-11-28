@@ -7,11 +7,11 @@ var Metadata = require('../lib/metadata');
 var Utils = require('../lib/utils');
 var geojsonExtent = require('geojson-extent');
 var geojsonFixtures = require('geojson-fixtures');
+var Pbf = require('pbf');
 var geobuf = require('geobuf');
 
 var s = require('./setup');
 var config = s.config;
-var dyno = s.dyno;
 
 function featureCollection(features) {
     return {
@@ -20,22 +20,37 @@ function featureCollection(features) {
     };
 }
 
-var dataset = 'metadatatest';
-var metadata = Metadata(dyno, dataset);
-var initial = {
-    id: metadata.recordId,
-    dataset: dataset,
-    count: 12,
-    size: 1024,
-    west: -10,
-    south: -10,
-    east: 10,
-    north: 10
-};
+function featureToGeobuf(feature) {
+    return Buffer.from(geobuf.encode(feature, new Pbf()));
+}
 
 describe('metadata', function() {
-    beforeEach(s.setup);
-    afterEach(s.teardown);
+    var dataset = 'metadatatest';
+    var initial = {
+        index: 'metadata!'+dataset, 
+        dataset: dataset,
+        count: 12,
+        size: 1024,
+        west: -10,
+        south: -10,
+        east: 10,
+        north: 10
+    };
+    var metadata = null;
+
+    beforeEach(function(done) {
+        s.setup(function(err) {
+          if (err) return done(err);
+          metadata = Metadata(config.search, dataset);
+          done();
+        });
+    });
+    afterEach(function(done) {
+        s.teardown(function(err) {
+            metadata = null;
+            done(err);
+        });
+    });
 
     it('metadata: get', function(done) {
 
@@ -44,7 +59,7 @@ describe('metadata', function() {
         function noMetadataYet(err, info) {
             assert.ifError(err, 'get non-extistent metadata');
             assert.deepEqual({}, info, 'returned blank obj when no info exists');
-            dyno.putItem({Item: initial}, withMetadata);
+            config.search.putItem({Item: initial}, withMetadata);
         }
 
         function withMetadata(err) {
@@ -62,7 +77,7 @@ describe('metadata', function() {
         metadata.defaultInfo(function(err, res) {
             assert.ifError(err, 'no error when creating record');
             assert.ok(res, 'response indicates record was created');
-            dyno.putItem({Item: initial}, overwrite);
+            config.search.putItem({Item: initial}, overwrite);
         });
 
         function overwrite(err) {
@@ -93,7 +108,7 @@ describe('metadata', function() {
         function checkRecord(attr, expected, callback) {
             metadata.getInfo(function(err, info) {
                 assert.ifError(err, 'get metadata');
-                assert.equal(info[attr], expected, 'expected value');
+                assert.equal(info[attr], expected, 'expected '+attr);
                 callback();
             });
         }
@@ -101,7 +116,7 @@ describe('metadata', function() {
         function checkEmpty(err, info) {
             assert.ifError(err, 'gets empty record');
             assert.deepEqual(info, {}, 'no record created by adjustProperties routine');
-            dyno.putItem({ Item: initial }, addCount);
+            config.search.putItem({ Item: initial }, addCount);
         }
 
         function addCount(err) {
@@ -158,7 +173,7 @@ describe('metadata', function() {
         function checkEmpty(err, info) {
             assert.ifError(err, 'gets empty record');
             assert.deepEqual(info, {}, 'no record created by adjustBounds routine');
-            dyno.putItem({Item: initial}, adjust);
+            config.search.putItem({Item: initial}, adjust);
         }
 
         function adjust(err) {
@@ -174,7 +189,7 @@ describe('metadata', function() {
         function checkNewInfo(err, info) {
             assert.ifError(err, 'get new metadata');
             var expected = {
-                id: 'metadata!' + dataset,
+                index: 'metadata!' + dataset,
                 dataset: dataset,
                 west: initial.west < bbox[0] ? initial.west : bbox[0],
                 south: initial.south < bbox[1] ? initial.south : bbox[1],
@@ -192,7 +207,7 @@ describe('metadata', function() {
 
     it('metadata: add a feature', function(done) {
         var feature = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
-        var expectedSize = geobuf.featureToGeobuf(feature).toBuffer().length;
+        var expectedSize = featureToGeobuf(feature).length;
         var expectedBounds = geojsonExtent(feature);
         var cardboard = Cardboard(config);
 
@@ -209,7 +224,7 @@ describe('metadata', function() {
                 assert.equal(info.east, expectedBounds[2], 'correct east');
                 assert.equal(info.north, expectedBounds[3], 'correct north');
 
-                dyno.putItem({Item: initial}, replacedMetadata);
+                config.search.putItem({Item: initial}, replacedMetadata);
             });
         }
 
@@ -246,11 +261,11 @@ describe('metadata', function() {
 
     it('metadata: add a feature via database record', function(done) {
         var feature = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
-        var expectedSize = geobuf.featureToGeobuf(feature).toBuffer().length;
+        var expectedSize = featureToGeobuf(feature).length;
         var expectedBounds = geojsonExtent(feature);
         var cardboard = Cardboard(config);
         var utils = Utils(config);
-        var encoded = utils.toDatabaseRecord(feature, dataset)[0];
+        var encoded = utils.toDatabaseRecord(feature, dataset).feature;
         cardboard.metadata.addFeature(dataset, encoded, brandNew);
 
         function brandNew(err) {
@@ -264,7 +279,7 @@ describe('metadata', function() {
                 assert.equal(info.east, expectedBounds[2], 'correct east');
                 assert.equal(info.north, expectedBounds[3], 'correct north');
 
-                dyno.putItem({Item: initial}, replacedMetadata);
+                config.search.putItem({Item: initial}, replacedMetadata);
             });
         }
 
@@ -302,7 +317,7 @@ describe('metadata', function() {
     it('metadata: update a feature', function(done) {
         var original = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
         var edited = _.extend({ id: 'test-feature' }, geojsonFixtures.featurecollection.idaho.features[0]);
-        var expectedSize = geobuf.featureToGeobuf(edited).toBuffer().length - geobuf.featureToGeobuf(original).toBuffer().length;
+        var expectedSize = featureToGeobuf(edited).length - featureToGeobuf(original).length;
         var expectedBounds = geojsonExtent(edited);
         var cardboard = Cardboard(config);
 
@@ -341,13 +356,13 @@ describe('metadata', function() {
     it('metadata: update a feature via database record', function(done) {
         var original = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
         var edited = _.extend({ id: 'test-feature' }, geojsonFixtures.featurecollection.idaho.features[0]);
-        var expectedSize = geobuf.featureToGeobuf(edited).toBuffer().length - geobuf.featureToGeobuf(original).toBuffer().length;
+        var expectedSize = featureToGeobuf(edited).length - featureToGeobuf(original).length;
         var expectedBounds = geojsonExtent(edited);
         var cardboard = Cardboard(config);
 
         var utils = Utils(config);
-        var encodedOriginal = utils.toDatabaseRecord(original, dataset)[0];
-        var encodedEdited = utils.toDatabaseRecord(edited, dataset)[0];
+        var encodedOriginal = utils.toDatabaseRecord(original, dataset).feature;
+        var encodedEdited = utils.toDatabaseRecord(edited, dataset).feature;
 
         cardboard.metadata.updateFeature(dataset, encodedOriginal, encodedEdited, function(err) {
             assert.ifError(err, 'graceful exit if no metadata exists');
@@ -383,7 +398,7 @@ describe('metadata', function() {
 
     it('metadata: remove a feature', function(done) {
         var feature = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
-        var expectedSize = geobuf.featureToGeobuf(feature).toBuffer().length;
+        var expectedSize = featureToGeobuf(feature).length;
         var cardboard = Cardboard(config);
 
         cardboard.metadata.deleteFeature(dataset, feature, function(err) {
@@ -394,7 +409,7 @@ describe('metadata', function() {
         function checkEmpty(err, info) {
             assert.ifError(err, 'gets empty record');
             assert.deepEqual(info, {}, 'no record created by adjustBounds routine');
-            dyno.putItem({Item: initial}, del);
+            config.search.putItem({Item: initial}, del);
         }
 
         function del(err) {
@@ -419,11 +434,11 @@ describe('metadata', function() {
 
     it('metadata: remove a feature via database record', function(done) {
         var feature = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
-        var expectedSize = geobuf.featureToGeobuf(feature).toBuffer().length;
+        var expectedSize = featureToGeobuf(feature).length;
         var cardboard = Cardboard(config);
 
         var utils = Utils(config);
-        var encoded = utils.toDatabaseRecord(feature, dataset)[0];
+        var encoded = utils.toDatabaseRecord(feature, dataset).feature;
 
         cardboard.metadata.deleteFeature(dataset, encoded, function(err) {
             assert.ifError(err, 'graceful exit if no metadata exists');
@@ -433,7 +448,7 @@ describe('metadata', function() {
         function checkEmpty(err, info) {
             assert.ifError(err, 'gets empty record');
             assert.deepEqual(info, {}, 'no record created by adjustBounds routine');
-            dyno.putItem({Item: initial}, del);
+            config.search.putItem({Item: initial}, del);
         }
 
         function del(err) {
@@ -470,13 +485,13 @@ describe('metadata', function() {
             });
 
             var expectedSize = features.reduce(function(memo, feature) {
-                memo = memo + geobuf.featureToGeobuf(feature).toBuffer().length;
+                memo = memo + featureToGeobuf(feature).length;
                 return memo;
             }, 0);
 
             var expected = {
                 dataset: dataset,
-                id: metadata.recordId,
+                index: metadata.recordId,
                 size: expectedSize,
                 count: features.length,
                 west: expectedBounds[0],
@@ -523,7 +538,7 @@ describe('metadata', function() {
         function checkInfo(err, info) {
             assert.ifError(err, 'got idaho metadata');
             var expected = {
-                id: 'metadata!' + dataset,
+                index: 'metadata!' + dataset,
                 dataset: dataset,
                 west: info.west,
                 south: info.south,
@@ -546,7 +561,7 @@ describe('metadata', function() {
         var features = geojsonFixtures.featurecollection.idaho.features.slice(0, 50);
         var expectedBounds = geojsonExtent({ type: 'FeatureCollection', features: features });
         var expectedSize = features.reduce(function(memo, feature) {
-            memo = memo + geobuf.featureToGeobuf(feature).toBuffer().length;
+            memo = memo + featureToGeobuf(feature).length;
             return memo;
         }, 0);
 
@@ -568,7 +583,7 @@ describe('metadata', function() {
         function checkInfo(err, info) {
             assert.ifError(err, 'got idaho metadata');
             var expected = {
-                id: 'metadata!' + dataset,
+                index: 'metadata!' + dataset,
                 dataset: dataset,
                 west: expectedBounds[0],
                 south: expectedBounds[1],
@@ -592,9 +607,9 @@ describe('metadata', function() {
         var deleteThis = features[9];
         var expectedBounds = geojsonExtent({ type: 'FeatureCollection', features: features });
         var expectedSize = features.reduce(function(memo, feature) {
-            memo = memo + geobuf.featureToGeobuf(feature).toBuffer().length;
+            memo = memo + featureToGeobuf(feature).length;
             return memo;
-        }, 0) - geobuf.featureToGeobuf(deleteThis).toBuffer().length;
+        }, 0) - featureToGeobuf(deleteThis).length;
 
         var q = queue();
 
@@ -615,7 +630,7 @@ describe('metadata', function() {
         function checkInfo(err, info) {
             assert.ifError(err, 'got idaho metadata');
             var expected = {
-                id: 'metadata!' + dataset,
+                index: 'metadata!' + dataset,
                 dataset: dataset,
                 west: expectedBounds[0],
                 south: expectedBounds[1],
@@ -653,7 +668,7 @@ describe('metadata', function() {
             notOk(err, 'no error returned');
 
             var update = _.extend({ id: res[0] }, edited);
-            expectedSize = geobuf.featureToGeobuf(update).toBuffer().length;
+            expectedSize = featureToGeobuf(update).length;
             queue()
                 .defer(cardboard.put, update, dataset)
                 .defer(metadata.updateFeature, original, update)
@@ -668,7 +683,7 @@ describe('metadata', function() {
         function checkInfo(err, info) {
             assert.ifError(err, 'got idaho metadata');
             var expected = {
-                id: 'metadata!' + dataset,
+                index: 'metadata!' + dataset,
                 dataset: dataset,
                 west: expectedBounds[0],
                 south: expectedBounds[1],
@@ -688,7 +703,7 @@ describe('metadata', function() {
 
     it('delDataset removes metadata', function(done) {
         var cardboard = new Cardboard(config);
-        dyno.putItem({Item: initial}, function(err) {
+        config.search.putItem({Item: initial}, function(err) {
             assert.ifError(err, 'put initial metadata');
             cardboard.delDataset(dataset, removed);
         });
@@ -705,7 +720,7 @@ describe('metadata', function() {
 
     it('getDatasetInfo', function(done) {
         var cardboard = new Cardboard(config);
-        dyno.putItem({Item: initial}, function(err) {
+        config.search.putItem({Item: initial}, function(err) {
             assert.ifError(err, 'put initial metadata');
             cardboard.getDatasetInfo(dataset, checkInfo);
         });
@@ -731,13 +746,13 @@ describe('metadata', function() {
             });
 
             var expectedSize = features.reduce(function(memo, feature) {
-                memo = memo + geobuf.featureToGeobuf(feature).toBuffer().length;
+                memo = memo + featureToGeobuf(feature).length;
                 return memo;
             }, 0);
 
             var expected = {
                 dataset: dataset,
-                id: metadata.recordId,
+                index: metadata.recordId,
                 size: expectedSize,
                 count: features.length,
                 west: expectedBounds[0],
@@ -761,7 +776,7 @@ describe('metadata', function() {
     it('metadata.applyChanges', function(done) {
         var original = {
             dataset: dataset,
-            id: 'metadata!' + dataset,
+            index: 'metadata!' + dataset,
             editcount: 1,
             updated: 1471645277837,
             count: 2,
@@ -777,7 +792,7 @@ describe('metadata', function() {
                 action: 'INSERT',
                 new: {
                     dataset: dataset,
-                    id: '1',
+                    index: '1',
                     cell: '01',
                     size: 150,
                     west: -6,
@@ -790,7 +805,7 @@ describe('metadata', function() {
                 action: 'MODIFY',
                 new: {
                     dataset: dataset,
-                    id: '2',
+                    index: '2',
                     cell: '01',
                     size: 10,
                     west: -4,
@@ -800,7 +815,7 @@ describe('metadata', function() {
                 },
                 old: {
                     dataset: dataset,
-                    id: '2',
+                    index: '2',
                     cell: '01',
                     size: 100,
                     west: -5,
@@ -813,7 +828,7 @@ describe('metadata', function() {
                 action: 'REMOVE',
                 old: {
                     dataset: dataset,
-                    id: '3',
+                    index: '3',
                     cell: '01',
                     size: 100,
                     west: -4,
@@ -826,7 +841,7 @@ describe('metadata', function() {
 
         var expected = {
             dataset: dataset,
-            id: 'metadata!dataset',
+            index: 'metadata!dataset',
             editcount: 4,
             count: 2,
             size: 160,
@@ -836,13 +851,13 @@ describe('metadata', function() {
             north: 6
         };
 
-        dyno.putItem({ Item: original }, function(err) {
+        config.search.putItem({ Item: original }, function(err) {
             if (err) throw err;
 
             metadata.applyChanges(changes, function(err) {
                 if (err) throw err;
 
-                dyno.getItem({ Key: { dataset: dataset, id: 'metadata!' + dataset } }, function(err, data) {
+                config.search.getItem({ Key: { dataset: dataset, index: 'metadata!' + dataset } }, function(err, data) {
                     if (err) throw err;
 
                     var info = data.Item;

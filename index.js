@@ -468,7 +468,7 @@ function Cardboard(config) {
      * });
      */
     cardboard.getDatasetInfo = function(dataset, callback) {
-        Metadata(config.dyno, dataset).getInfo(callback);
+        Metadata(config.search, dataset).getInfo(callback);
     };
 
     /**
@@ -493,7 +493,7 @@ function Cardboard(config) {
      * });
      */
     cardboard.calculateDatasetInfo = function(dataset, callback) {
-        Metadata(config.dyno, dataset).calculateInfo(callback);
+        Metadata(config.search, dataset).calculateInfo(callback);
     };
 
     /**
@@ -510,7 +510,7 @@ function Cardboard(config) {
      * @returns {object} an object describing the feature's size and extent
      */
     metadata.featureInfo = function(dataset, feature) {
-        return Metadata(config.dyno, dataset).getFeatureInfo(feature);
+        return Metadata(config.search, dataset).getFeatureInfo(feature);
     };
 
     /**
@@ -522,7 +522,7 @@ function Cardboard(config) {
      * @param {function} callback - a function to handle the response
      */
     metadata.addFeature = function(dataset, feature, callback) {
-        Metadata(config.dyno, dataset).addFeature(feature, callback);
+        Metadata(config.search, dataset).addFeature(feature, callback);
     };
 
     /**
@@ -536,7 +536,7 @@ function Cardboard(config) {
      * @param {function} callback - a function to handle the response
      */
     metadata.updateFeature = function(dataset, from, to, callback) {
-        Metadata(config.dyno, dataset).updateFeature(from, to, callback);
+        Metadata(config.search, dataset).updateFeature(from, to, callback);
     };
 
     /**
@@ -548,7 +548,7 @@ function Cardboard(config) {
      * @param {function} callback - a function to handle the response
      */
     metadata.deleteFeature = function(dataset, feature, callback) {
-        Metadata(config.dyno, dataset).deleteFeature(feature, callback);
+        Metadata(config.search, dataset).deleteFeature(feature, callback);
     };
 
     /**
@@ -560,7 +560,7 @@ function Cardboard(config) {
      * @param {function} callback - a function fired when all changes have been implemented
      */
     metadata.applyChanges = function(dataset, changes, callback) {
-        Metadata(config.dyno, dataset).applyChanges(changes, callback);
+        Metadata(config.search, dataset).applyChanges(changes, callback);
     };
 
     cardboard.metadata = metadata;
