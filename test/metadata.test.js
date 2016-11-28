@@ -40,9 +40,9 @@ describe('metadata', function() {
 
     beforeEach(function(done) {
         s.setup(function(err) {
-          if (err) return done(err);
-          metadata = Metadata(config.features, config.search, dataset);
-          done();
+            if (err) return done(err);
+            metadata = Metadata(config.features, config.search, dataset);
+            done();
         });
     });
     afterEach(function(done) {
