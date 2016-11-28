@@ -1,39 +1,52 @@
-var test = require('tape');
+var assert = require('assert');
 var Cardboard = require('../');
 var _ = require('lodash');
 var Dyno = require('dyno');
 
-var s = require('./setup');
-var config = s.config;
+var setup = require('./setup');
+var config = setup.config;
 
-test('setup', function(t) { s.setup(t, true); });
+describe('config tests', function() {
 
-test('pass preconfigured dyno object', function(t) {
+    before(setup.setup);
+    after(setup.teardown);
 
-    var omitConfig = _.omit(config, ['accessKeyId', 'secretAccessKey', 'table', 'endpoint', 'region']);
+    it('pass preconfigured dyno object', function(done) {
 
-    var dynoconfig = {
-        accessKeyId: 'fake',
-        secretAccessKey: 'fake',
-        region: 'us-east-1',
-        table: 'test-cardboard-write',
-        endpoint: 'http://localhost:4567'
-    };
+        var omitConfig = _.omit(config, ['accessKeyId', 'secretAccessKey', 'table', 'endpoint', 'region']);
 
-    omitConfig.dyno = Dyno(dynoconfig, dynoconfig);
-    var cardboard = Cardboard(omitConfig);
-    var geojson = {type: 'Feature', properties: {}, geometry: {type: 'Point', coordinates:[1, 2]}};
+        var featuresConfig = {
+            accessKeyId: 'fake',
+            secretAccessKey: 'fake',
+            region: 'us-east-1',
+            table: 'features',
+            endpoint: 'http://localhost:4567'
+        };
 
-    cardboard.put(geojson, 'default', function(err) {
-        t.notOk(err);
+        var searchConfig = {
+            accessKeyId: 'fake',
+            secretAccessKey: 'fake',
+            region: 'us-east-1',
+            table: 'search',
+            endpoint: 'http://localhost:4567'
+        };
 
-        cardboard.list('default', function(err, items) {
-            t.equal(err, null);
-            delete items.features[0].id;
-            t.deepEqual(items, { type: 'FeatureCollection', features: [geojson] }, 'one result');
-            t.end();
+        omitConfig.features = Dyno(featuresConfig, featuresConfig);
+        omitConfig.search = Dyno(searchConfig, searchConfig);
+        var cardboard = Cardboard(omitConfig);
+        var geojson = {type: 'Feature', properties: {}, geometry: {type: 'Point', coordinates:[1, 2]}};
+
+        cardboard.put(geojson, 'default', function(err) {
+            assert.ifError(err);
+
+            cardboard.list('default', function(err, fc) {
+                assert.ifError(err);
+                assert.equal(fc.features.length, 1);
+                delete fc.features[0].id;
+                assert.deepEqual(fc, { type: 'FeatureCollection', features: [geojson] }, 'one result');
+                done();
+            });
         });
     });
-});
 
-test('teardown', s.teardown);
+});

@@ -1,0 +1,14 @@
+{
+    "AttributeDefinitions": [
+        {"AttributeName": "dataset", "AttributeType": "S"},
+        {"AttributeName": "index", "AttributeType": "S"}
+    ],
+    "KeySchema": [
+        {"AttributeName": "dataset", "KeyType": "HASH"},
+        {"AttributeName": "index", "KeyType": "RANGE"}
+    ],
+    "ProvisionedThroughput": {
+        "ReadCapacityUnits": 5,
+        "WriteCapacityUnits": 50
+    }
+}

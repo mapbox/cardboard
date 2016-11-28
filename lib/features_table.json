@@ -1,0 +1,12 @@
+{
+    "AttributeDefinitions": [
+        {"AttributeName": "index", "AttributeType": "S"}
+    ],
+    "KeySchema": [
+        {"AttributeName": "index", "KeyType": "HASH"}
+    ],
+    "ProvisionedThroughput": {
+        "ReadCapacityUnits": 5,
+        "WriteCapacityUnits": 50
+    }
+}

@@ -12,8 +12,11 @@ function configLoader(args, env) {
     config.region = args.region || env.CardboardRegion;
     if (!config.region) throw new Error('You must provide a region');
 
-    config.table = args.table || env.CardboardTable;
-    if (!config.table) throw new Error('You must provide a table name');
+    config.searchTable = args.searchTable || env.CardboardSearchTable;
+    if (!config.searchTable) throw new Error('You must provide a search table name');
+
+    config.featureTable = args.featureTable || env.CardboardFeaturesTable;
+    if (!config.featureTable) throw new Error('You must provide a features table name');
 
     config.bucket = args.bucket || env.CardboardBucket;
     if (!config.bucket) throw new Error('You must provide an S3 bucket');
@@ -36,7 +39,7 @@ catch (err) {
 }
 
 var command = args._[0];
-if (['put', 'get', 'list', 'bbox'].indexOf(command) < 0) {
+if (['put', 'get', 'list'].indexOf(command) < 0) {
     console.error(command + ' is not a valid command');
     process.exit(1);
 }
@@ -53,24 +56,9 @@ if (command === 'get' && !id) {
     process.exit(1);
 }
 
-if (command === 'bbox') {
-    var bbox = process.argv.slice(2).filter(function(arg) {
-        return arg.split(',').length === 4;
-    })[0];
-
-    if (!bbox) {
-        console.error('You must provide a bounding box for your query');
-        process.exit(1);
-    }
-
-    bbox = bbox.split(',').map(function(coord) {
-        return Number(coord);
-    });
-}
-
 var cardboard = Cardboard(config);
 
-cardboard.createTable(function(err){
+cardboard.createTables(function(err){
     if (err) throw err;
 
     if (command === 'get') {
@@ -81,18 +69,11 @@ cardboard.createTable(function(err){
     }
 
     if (command === 'list') {
-        return cardboard.list(dataset)
+        return cardboard.listStream(dataset)
             .on('error', function(err) { throw err; })
           .pipe(collector)
             .on('error', function(err) { throw err; })
           .pipe(process.stdout);
-    }
-
-    if (command === 'bbox') {
-        return cardboard.bboxQuery(bbox, dataset, function(err, collection) {
-            if (err) throw err;
-            console.log(JSON.stringify(collection));
-        });
     }
 
     if (command === 'put') {

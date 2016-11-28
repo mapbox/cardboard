@@ -1,4 +1,5 @@
-var test = require('tape');
+var assert = require('assert');
+var queue = require('queue-async');
 var _ = require('lodash');
 var dynalite = require('dynalite')({
     createTableMs: 0,
@@ -9,52 +10,65 @@ var dynalite = require('dynalite')({
 var config = {
     bucket: 'test',
     prefix: 'test',
-    dyno: require('dyno')({
-        table: 'fake',
-        region: 'fake',
-        accessKeyId: 'fake',
-        secretAccessKey: 'fake',
-        endpoint: 'http://localhost:4567'
-    }),
+    region: 'fake',
+    endpoint: 'http://localhost:4567',
     s3: require('mock-aws-s3').S3()
 };
 
-test('[table] start dynalite', function(assert) {
-    dynalite.listen(4567, function(err) {
-        if (err) throw err;
-        assert.end();
-    });
+var dyno = require('dyno')({
+    table: 'fake',
+    region: 'fake',
+    endpoint: 'http://localhost:4567'
 });
 
-test('[table] createTable - specified name', function(assert) {
-    var cardboard = require('..')(_.extend({ table: 'original' }, config));
-    cardboard.createTable(function(err) {
-        assert.ifError(err, 'success');
+describe('table creation', function() {
+    beforeEach(function(done) {
+        dynalite.listen(4567, done);
+    });
 
-        config.dyno.listTables(function(err, tables) {
-            if (err) throw err;
-            assert.deepEqual(tables.TableNames, ['original'], 'created table');
-            assert.end();
+    afterEach(function(done) {
+        dyno.listTables(function(err, tables) {
+            if (err) return done(err);
+            var q = queue();
+            tables.TableNames.forEach(function(name) {
+                q.defer(function(done) {
+                    dyno.deleteTable({TableName: name}, done);  
+                });
+            });
+
+            q.awaitAll(function(err) {
+                if (err) return done(err);
+                dynalite.close(done);
+            });
+        });
+    });
+
+    it('createTables - match config name', function(done) {
+        var cardboard = require('..')(_.extend({ featureTable: 'features', searchTable: 'search' }, config));
+        cardboard.createTables(function(err) {
+            assert.ifError(err, 'success');
+  
+            dyno.listTables(function(err, tables) {
+                if (err) throw err;
+                assert.deepEqual(tables.TableNames, ['features', 'search'], 'created table');
+                done();
+            });
+        });
+    });
+
+    it('createTables - match config name, with difference names', function(done) {
+        var cardboard = require('..')(_.extend({ featureTable: 'first', searchTable: 'second' }, config));
+        cardboard.createTables(function(err) {
+            assert.ifError(err, 'success');
+  
+            dyno.listTables(function(err, tables) {
+                if (err) throw err;
+                assert.deepEqual(tables.TableNames, ['first', 'second'], 'created table');
+                done();
+            });
         });
     });
 });
 
-test('[table] createTable - another name', function(assert) {
-    var cardboard = require('..')(_.extend({ table: 'original' }, config));
-    cardboard.createTable('second', function(err) {
-        assert.ifError(err, 'success');
 
-        config.dyno.listTables(function(err, tables) {
-            if (err) throw err;
-            assert.deepEqual(tables.TableNames, ['original', 'second'], 'created second table');
-            assert.end();
-        });
-    });
-});
 
-test('[table] stop dynalite', function(assert) {
-    dynalite.close(function(err) {
-        if (err) throw err;
-        assert.end();
-    });
-});
