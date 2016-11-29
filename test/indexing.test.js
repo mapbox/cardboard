@@ -47,7 +47,7 @@ describe('[indexing]', function() {
 
         cardboard.put(feature, 'default', function(err, result) {
             assert.ifError(err, 'put feature');
-            assert.equal(result.id, feature.id, 'reflects correct id');
+            assert.equal(result.features[0].id, feature.id, 'reflects correct id');
             done();
         });
     });
@@ -57,14 +57,14 @@ describe('[indexing]', function() {
 
         cardboard.put(fixtures.haitiLine, 'default', function(err, res) {
             assert.ifError(err, 'inserted');
-            cardboard.get(res.id, 'default', function(err, data) {
+            cardboard.get(res.features[0].id, 'default', function(err, data) {
                 assert.equal(err, null);
                 fixtures.haitiLine.id = res.id;
 
                 // round-trip through geobuf will always truncate coords to 6 decimal places
                 var f = geobuf.decode(new Pbf(geobuf.encode(fixtures.haitiLine, new Pbf())));
-                delete fixtures.haitiLine.id;
-                assert.deepEqual(data, f);
+                f.id = data.features[0].id;
+                assert.deepEqual(data.features[0], f);
 
                 // data should not be on S3
                 s.config.s3.listObjects({
@@ -143,7 +143,7 @@ describe('[indexing]', function() {
 
         cardboard.put(d, 'default', function(err, res) {
             assert.ifError(err, 'inserted without error');
-            var key = utils.createFeatureKey('default', res.id);
+            var key = utils.createFeatureKey('default', res.features[0].id);
             config.mainTable.getItem({ Key: key}, function(err, data) {
                 var item = data.Item;
                 assert.ifError(err, 'got item');
@@ -173,8 +173,8 @@ describe('[indexing]', function() {
 
         cardboard.put(d, 'default', function(err, reflected) {
             assert.ifError(err, 'put success');
-            assert.ok(reflected, 'reflected a feature');
-            cardboard.get(reflected.id, 'default', function(err, got) {
+            assert.ok(reflected.features.length, 'reflected a feature');
+            cardboard.get(reflected.features[0].id, 'default', function(err, got) {
                 assert.ifError(err, 'get success');
                 assert.deepEqual(reflected, got, 'reflected feature identical');
                 done();
@@ -212,10 +212,10 @@ describe('[indexing]', function() {
 
         cardboard.put(d, 'default', function(err, res) {
             assert.ifError(err, 'inserted without error');
-            cardboard.get(res.id, 'default', function(err, data) {
+            cardboard.get(res.features[0].id, 'default', function(err, data) {
                 assert.ifError(err, 'got item');
-                d.id = res.id;
-                assert.deepEqual(data, geobuf.decode(new Pbf(geobuf.encode(d, new Pbf()))));
+                d.id = res.features[0].id;
+                assert.deepEqual(data.features[0], geobuf.decode(new Pbf(geobuf.encode(d, new Pbf()))));
                 done();
             });
         });
@@ -227,18 +227,18 @@ describe('[indexing]', function() {
         cardboard.put(fixtures.haitiLine, 'default', function(err, putResult) {
             assert.equal(err, null);
 
-            assert.ok(putResult.id, 'got id');
-            var update = _.defaults({ id: putResult.id }, fixtures.haitiLine);
+            assert.ok(putResult.features[0].id, 'got id');
+            var update = _.defaults({ id: putResult.features[0].id }, fixtures.haitiLine);
             update.geometry.coordinates[0][0] = -72.588671875;
 
             cardboard.put(update, 'default', function(err, updateResult) {
                 assert.equal(err, null);
-                assert.equal(updateResult.id, putResult.id, 'same id returned');
+                assert.equal(updateResult.features[0].id, putResult.features[0].id, 'same id returned');
 
-                cardboard.get(putResult.id, 'default', function(err, getResult) {
+                cardboard.get(putResult.features[0].id, 'default', function(err, getResult) {
                     assert.ifError(err, 'got record');
                     var f = geobuf.decode(new Pbf(geobuf.encode(update, new Pbf())));
-                    assert.deepEqual(getResult, f, 'expected record');
+                    assert.deepEqual(getResult.features[0], f, 'expected record');
                     done();
                 });
             });
@@ -248,12 +248,11 @@ describe('[indexing]', function() {
     it('delete a non-extistent feature', function(done) {
         var cardboard = Cardboard(config);
         cardboard.get('foobar', 'default', function(err, data) {
-            assert.ok(err);
-            assert.equal(err.message, 'Feature foobar does not exist');
-            notOk(data);
-            cardboard.del('foobar', 'default', function(err) {
-                assert.ok(err, 'should return an error');
-                assert.equal(err.message, 'Feature does not exist');
+            assert.ifError(err);
+            assert.equal(data.features.length, 0);
+            cardboard.del('foobar', 'default', function(err, ids) {
+                assert.ifError(err);
+                assert.equal(ids.length, 0);
                 done();
             });
         });
@@ -265,16 +264,15 @@ describe('[indexing]', function() {
         cardboard.put(nullIsland, 'default', function(err, putResult) {
             assert.equal(err, null);
 
-            cardboard.get(putResult.id, 'default', function(err, data) {
+            cardboard.get(putResult.features[0].id, 'default', function(err, fc) {
                 assert.equal(err, null);
-                nullIsland.id = putResult.id;
-                assert.deepEqual(data, nullIsland);
-                cardboard.del(putResult.id, 'default', function(err) {
+                nullIsland.id = putResult.features[0].id;
+                assert.deepEqual(fc.features[0], nullIsland);
+                cardboard.del(putResult.features[0].id, 'default', function(err) {
                     assert.ifError(err, 'removed');
                     cardboard.get(putResult.id, 'default', function(err, data) {
-                        assert.ok(err);
-                        assert.equal(err.message, 'Feature ' + putResult.id + ' does not exist');
-                        notOk(data);
+                        assert.ifError(err);
+                        assert.equal(data.features.length, 0);
                         done();
                     });
                 });
@@ -289,10 +287,10 @@ describe('[indexing]', function() {
 
         cardboard.put(haiti, 'default', function(err, putResult) {
             assert.ifError(err, 'inserted');
-            assert.deepEqual(putResult.id, haiti.id, 'Uses given id');
-            cardboard.get(haiti.id, 'default', function(err, feature) {
+            assert.deepEqual(putResult.features[0].id, haiti.id, 'Uses given id');
+            cardboard.get(haiti.id, 'default', function(err, fc) {
                 var f = geobuf.decode(new Pbf(geobuf.encode(haiti, new Pbf())));
-                assert.deepEqual(feature, f, 'retrieved record');
+                assert.deepEqual(fc.features[0], f, 'retrieved record');
                 done();
             });
         });
@@ -304,16 +302,16 @@ describe('[indexing]', function() {
         var haiti = _.clone(fixtures.haiti);
         haiti.id = 'doesntexist';
 
-        fcPut(cardboard, featureCollection([haiti, fixtures.haiti]), 'default', function(err, putResults) {
+        cardboard.put(featureCollection([haiti, fixtures.haiti]), 'default', function(err, putResults) {
             assert.ifError(err, 'inserted features');
 
-            cardboard.get(haiti.id, 'default', function(err, feature) {
+            cardboard.get(haiti.id, 'default', function(err, fc) {
                 var f = geobuf.decode(new Pbf(geobuf.encode(haiti, new Pbf())));
-                assert.deepEqual(feature, f, 'retrieved record');
-                cardboard.get(putResults.features[1].id, 'default', function(err, feature) {
+                assert.deepEqual(fc.features[0], f, 'retrieved record');
+                cardboard.get(putResults.features[1].id, 'default', function(err, fc) {
                     var f = _.extend({ id: putResults.features[1].id }, fixtures.haiti);
                     f = geobuf.decode(new Pbf(geobuf.encode(f, new Pbf())));
-                    assert.deepEqual(feature, f, 'retrieved record');
+                    assert.deepEqual(fc.features[0], f, 'retrieved record');
                     done();
                 });
             });
@@ -336,19 +334,4 @@ describe('[indexing]', function() {
     });
 
 });
-
-function fcPut(cardboard, fc, dataset, cb) {
-    var q = queue();
-    fc.features.forEach(function(f) { 
-        q.defer(function(done) {
-            cardboard.put(f, dataset, done);
-        });
-    });
-
-    q.awaitAll(function(err, results) {
-        if (err) return cb(err);
-        var fc = featureCollection(results);
-        cb(null, fc);
-    });
-}
 

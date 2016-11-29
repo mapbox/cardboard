@@ -63,8 +63,8 @@ function Cardboard(config) {
             catch (err) { return callback(err); }
 
             records.push(encoded.feature);
-            geobufs[encoded.feature.index] = encoded.feature.val || encoded.s3Params.Body;
-            if (encoded.s3Params) q.defer(config.s3.putObject.bind(config.s3), encoded.s3Params);
+            geobufs[encoded.feature.index] = encoded.feature.val || encoded.s3.Body;
+            if (encoded.s3) q.defer(config.s3.putObject.bind(config.s3), encoded.s3);
         }
 
         q.awaitAll(function(err) {

@@ -27,9 +27,9 @@ describe('config tests', function() {
         var cardboard = Cardboard(omitConfig);
         var geojson = {type: 'Feature', properties: {}, geometry: {type: 'Point', coordinates:[1, 2]}};
 
-        cardboard.put(geojson, 'default', function(err, feature) {
+        cardboard.put(geojson, 'default', function(err, fc) {
             assert.ifError(err);
-            assert.deepEqual(geojson.geometry, feature.geometry);
+            assert.deepEqual(geojson.geometry, fc.features[0].geometry);
             done();
         });
     });

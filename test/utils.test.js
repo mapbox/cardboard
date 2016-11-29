@@ -35,7 +35,7 @@ describe('utils', function() {
 
         cardboard.put(feature, 'large', function(err, putResults) {
             if (err) throw err;
-            var key = utils.createFeatureKey('large', putResults.id);
+            var key = utils.createFeatureKey('large', putResults.features[0].id);
             config.mainTable.getItem({Key: key}, function(err, data) {
                 if (err) throw err;
                 utils.resolveFeatures([data.Item], function(err, resolveResults) {
@@ -63,7 +63,7 @@ describe('utils', function() {
 
         cardboard.put(feature, 'large', function(err, putResults) {
             if (err) throw err;
-            var key = utils.createFeatureKey('large', putResults.id);
+            var key = utils.createFeatureKey('large', putResults.features[0].id);
             config.mainTable.getItem({Key: key}, function(err, data) {
                 if (err) throw err;
                 notOk(data.Item.val);

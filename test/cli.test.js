@@ -30,8 +30,9 @@ describe('cli', function() {
             return f;
         }).forEach(function(state) {
             q.defer(function(done) {
-                cardboard.put(state, 'test', function(err, result) {
+                cardboard.put(state, 'test', function(err, fc) {
                     if (err) return done(err);
+                    var result = fc.features[0];
                     if (result.id === 'new-hampshire') nhFeature = result;
                     features.push(result);
                     done();
@@ -106,7 +107,7 @@ describe('cli', function() {
         exec(params.join(' '), function(err, stdout) {
             assert.ifError(err, 'success');
             var found = JSON.parse(stdout.trim());
-            assert.deepEqual(found, nhFeature, 'got expected feature');
+            assert.deepEqual(found.features[0], nhFeature);
             done();
         });
     });
