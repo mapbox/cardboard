@@ -40,69 +40,124 @@ function Cardboard(config) {
      * A client configured to interact with a backend cardboard database
      */
     var cardboard = {};
+    var mainTable = config.mainTable.config.params.TableName;
 
     /**
      * Insert or update a single GeoJSON feature
-     * @param {object} feature - a GeoJSON feature
+     * @param {(Feature|FeatureCollection)} input - a GeoJSON feature
      * @param {string} dataset - the name of the dataset that this feature belongs to
      * @param {function} callback - the callback function to handle the response
      */
-    cardboard.put = function(feature, dataset, callback) {
-        var encoded;
-        try { encoded = utils.toDatabaseRecord(feature, dataset); }
-        catch (err) { return callback(err); }
+    cardboard.put = function(input, dataset, callback) {
+        if (input.type === 'Feature') input = utils.featureCollection([input]);
+        if (input.type !== 'FeatureCollection') throw new Error('Must be a Feature or FeatureCollection');
 
-        var q = queue(1);
-        if (encoded.s3) q.defer(config.s3.putObject.bind(config.s3), encoded.s3);
-        q.defer(function(done) {
-            var params = {
-                Item: encoded.feature,
-                ReturnValues: 'ALL_OLD'
-            };
-            config.mainTable.putItem(params, done);
-        });
-        q.await(function(err) {
-            var result = geobuf.decode(new Pbf(encoded.feature.val || encoded.s3.Body));
-            result.id = utils.idFromRecord(encoded.feature);
-            callback(err, result);
+        var records = [];
+        var geobufs = [];
+
+        var encoded;
+        var q = queue(150);
+
+        for (var i = 0; i < input.features.length; i++) {
+            try { encoded = utils.toDatabaseRecord(input.features[i], dataset); }
+            catch (err) { return callback(err); }
+
+            records.push(encoded.feature);
+            geobufs.push(encoded.feature.val || encoded.s3Params.Body);
+            if (encoded[1]) q.defer(config.s3.putObject.bind(config.s3), encoded[1]);
+        }
+
+        q.awaitAll(function(err) {
+            if (err) return callback(err);
+
+            var params = { RequestItems: {} };
+            params.RequestItems[mainTable] = records.map(function(record) {
+                return { PutRequest: { Item: record } };
+            });
+
+            config.mainTable.batchWriteAll(params).sendAll(10, function(err, res) {
+                if (err) return callback(err);
+
+                var unprocessed = res.UnprocessedItems ? res.UnprocessedItems[mainTable] : null;
+
+                if (!unprocessed) {
+                    var features = geobufs.map(function(buf) {
+                        return geobuf.decode(new Pbf(buf));     
+                    });
+                    return callback(null, { type: 'FeatureCollection', features: features });
+                }
+
+                var collection = unprocessed.reduce(function(collection, item) {
+                    var id = utils.idFromRecord(item.PutRequest.Item);
+                    var i = _.findIndex(records, function(record) {
+                        return utils.idFromRecord(record) === id;
+                    });
+
+                    collection.features.push(utils.decodeBuffer(geobufs[i]));
+                    return collection;
+                }, { type: 'FeatureCollection', features: [] });
+
+                callback({ unprocessed: collection });
+            });
         });
     };
 
     /**
      * Remove a single GeoJSON feature
-     * @param {string} primary - the id for a feature
+     * @param {string | [string]} input - the id for a feature
      * @param {string} dataset - the name of the dataset that this feature belongs to
      * @param {function} callback - the callback function to handle the response
      */
-    cardboard.del = function(primary, dataset, callback) {
-        var key = utils.createFeatureKey(dataset, primary);
+    cardboard.del = function(input, dataset, callback) {
+        if (!Array.isArray(input)) input = [input];
+        var params = { RequestItems: {} };
+        params.RequestItems[mainTable] = input.map(function(id) {
+            if (typeof id !== 'string') throw new Error('All ids must be strings');
+            return { DeleteRequest: { Key: utils.createFeatureKey(dataset, id) } };
+        });
 
-        config.mainTable.deleteItem({
-            Key: key,
-            ConditionExpression: 'attribute_exists(#index)',
-            ExpressionAttributeNames: { '#index': 'index' }
-        }, function(err) {
-            if (err && err.code === 'ConditionalCheckFailedException') return callback(new Error('Feature does not exist'));
-            if (err) return callback(err, true);
-            else callback();
+        config.mainTable.batchWriteAll(params).sendAll(10, function(err, res) {
+            if (err) return callback(err);
+
+            var unprocessed = res.UnprocessedItems ? res.UnprocessedItems[mainTable] : null;
+
+            if (!unprocessed) return callback();
+
+
+            var ids = unprocessed.reduce(function(ids, item) {
+                ids.push(utils.idFromRecord(item.DeleteRequest.Key));
+                return ids;
+            }, []);
+
+            callback({ unprocessed: ids });
         });
     };
 
     /**
      * Retrieve a single GeoJSON feature
-     * @param {string} primary - the id for a feature
+     * @param {string|[string]} input - the id for a feature
      * @param {string} dataset - the name of the dataset that this feature belongs to
      * @param {function} callback - the callback function to handle the response
      */
-    cardboard.get = function(primary, dataset, callback) {
-        var key = utils.createFeatureKey(dataset, primary);
+    cardboard.get = function(input, dataset, callback) {
+        if (!Array.isArray(input)) input = [input]; 
 
-        config.mainTable.getItem({Key: key}, function(err, data) {
+        var keys = input.map(function(id) { return utils.createFeatureKey(dataset, id); });
+
+        var params = { RequestItems: {}};
+        params.RequestItems[mainTable] = { Keys: keys };
+
+        config.mainTable.batchGetAll(params).sendAll(10, function(err, res) {
             if (err) return callback(err);
-            if (!data.Item) return callback(new Error('Feature ' + primary + ' does not exist'));
-            utils.resolveFeatures([data.Item], function(err, data) {
+            var features = res.Responses ? res.Responses[mainTable] : [];
+            var pending = res.UnprocessedKeys && res.UnprocessedKeys[mainTable] ? res.UnprocessedKeys[mainTable].Keys : [];
+
+            utils.resolveFeatures(features, function(err, data) {
                 if (err) return callback(err);
-                callback(null, data.features[0]);
+                if (pending.length > 0) {
+                    data.pending = pending.map(function(key) { return utils.idFromRecord(key); });
+                }
+                callback(null, data);
             });
         });
     };
@@ -116,8 +171,6 @@ function Cardboard(config) {
         featuresTable.TableName = config.mainTable.TableName;
         config.mainTable.createTable(featuresTable, callback);
     };
-
-    cardboard.batch = require('./lib/batch')(cardboard);
 
     return cardboard;
 }

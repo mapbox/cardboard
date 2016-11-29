@@ -10,6 +10,17 @@ var config = s.config;
 function unprocessableDyno(table) {
     return {
         config: { params: { TableName: table} },
+        batchGetAll: function(params) {
+            return {
+                sendAll: function(concurrency, callback) {
+                    setTimeout(function() {
+                        callback(null, {
+                            UnprocessedKeys: params.RequestItems
+                        });
+                    }, 0);
+                }
+            };
+        },
         batchWriteAll: function(params) {
             return {
                 sendAll: function(concurrency, callback) {
@@ -47,7 +58,7 @@ describe('[batch]', function() {
             }, true), 'all returned features have ids');
 
             var records = [];
-            config.features.scanStream()
+            config.mainTable.scanStream()
                 .on('data', function(d) { records.push(d); })
                 .on('error', function(err) { throw err; })
                 .on('end', function() {
@@ -80,7 +91,7 @@ describe('[batch]', function() {
         })(0);
     });
 
-    it.skip('unprocessed put returns feature collection', function(done) {
+    it('unprocessed put returns feature collection', function(done) {
 
         var data = fixtures.random(1);
         data.features[0].id = 'abc';
@@ -104,7 +115,7 @@ describe('[batch]', function() {
                 assert.ifError(err, 'success');
 
                 var records = [];
-                config.features.scanStream().on('data', function(d) { records.push(d); }).on('end', function() {
+                config.mainTable.scanStream().on('data', function(d) { records.push(d); }).on('end', function() {
                     if (err) throw err;
                     assert.equal(records.length, 0, 'deleted all the records');
                     done();
@@ -113,7 +124,7 @@ describe('[batch]', function() {
         });
     });
 
-    it.skip('unprocessed delete returns array of ids', function(done) {
+    it('unprocessed delete returns array of ids', function(done) {
 
         var data = fixtures.random(1);
         data.features[0].id = 'abc';
@@ -128,6 +139,41 @@ describe('[batch]', function() {
                 var expected = data.features.map(function(f) { return f.id; });
 
                 assert.deepEqual(err.unprocessed, expected, 'expected unprocessed ids');
+                done();
+            });
+        });
+    });
+
+    it('can get a list of ids', function(done) {
+        var data = fixtures.random(3);
+        data.features = data.features.map(function(f, i) { f.id = 'f-'+i; return f; });
+        var ids = data.features.map(function(f) { return f.id; });
+        cardboard.put(data, 'default', function(err) {
+           if (err) throw err;
+
+           cardboard.get(ids, 'default', function(err, fc) {
+               if (err) throw err;
+               var expected = data.features.map(function(f) { return f.id; });
+               assert.deepEqual(expected, ids);
+               done();
+           });
+        });
+    });
+
+    it('unprocessed get returns pending ids', function(done) {
+        var data = fixtures.random(3);
+        data.features = data.features.map(function(f, i) { f.id = 'f-'+i; return f; });
+        var ids = data.features.map(function(f) { return f.id; });
+        cardboard.put(data, 'default', function(err) {
+            
+            if (err) throw err;
+
+            unprocessableCardboard.get(ids, 'default', function(err, fc) {
+                if (err) throw err;
+                ids.forEach(function(id) {
+                    assert.ok(fc.pending.indexOf(id) > -1);
+                });
+                assert.equal(fc.features.length, 0);
                 done();
             });
         });
