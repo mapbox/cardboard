@@ -22,13 +22,6 @@ function featureCollection(features) {
 describe('[indexing]', function() {
     beforeEach(s.setup);
     afterEach(s.teardown);
-    it('tables', function(done) {
-        config.features.listTables(function(err, res) {
-            assert.equal(err, null);
-            assert.deepEqual(res, { TableNames: ['features', 'search'] });
-            done();
-        });
-    });
 
     it('insert', function(done) {
         var cardboard = Cardboard(config);
@@ -135,6 +128,7 @@ describe('[indexing]', function() {
 
     it('insert wildly precise feature', function(done) {
         var cardboard = Cardboard(config);
+        var utils = require('../lib/utils')(config);
         var d = {
             geometry: {
                 coordinates: [
@@ -149,7 +143,8 @@ describe('[indexing]', function() {
 
         cardboard.put(d, 'default', function(err, res) {
             assert.ifError(err, 'inserted without error');
-            config.features.getItem({ Key: { index: 'default!' + res.id }}, function(err, data) {
+            var key = utils.createFeatureKey('default', res.id);
+            config.mainTable.getItem({ Key: key}, function(err, data) {
                 var item = data.Item;
                 assert.ifError(err, 'got item');
                 if (err) return done();
@@ -287,235 +282,6 @@ describe('[indexing]', function() {
         });
     });
 
-    it('insert & delDataset', function(done) {
-        var cardboard = Cardboard(config);
-
-        cardboard.put(fixtures.nullIsland, 'default', function(err, putResult) {
-            assert.equal(err, null);
-            cardboard.get(putResult.id, 'default', function(err, data) {
-                assert.equal(err, null);
-                var nullIsland = _.clone(fixtures.nullIsland);
-                nullIsland.id = putResult.id;
-                assert.deepEqual(data, nullIsland);
-                cardboard.delDataset('default', function(err) {
-                    assert.equal(err, null);
-                    cardboard.get(putResult.id, 'default', function(err, data) {
-                        assert.ok(err);
-                        assert.equal(err.message, 'Feature ' + putResult.id + ' does not exist');
-                        notOk(data);
-                        done();
-                    });
-                });
-            });
-        });
-    });
-
-    it('delDataset - user-provide ids with !', function(done) {
-        var cardboard = new Cardboard(config);
-        var collection = fixtures.random(10);
-
-        collection.features = collection.features.map(function(f) {
-            f.id = crypto.randomBytes(4).toString('hex') + '!' + crypto.randomBytes(4).toString('hex');
-            return f;
-        });
-
-        fcPut(cardboard, collection, 'default', function(err) {
-            assert.ifError(err, 'put success');
-
-            cardboard.delDataset('default', function(err) {
-                assert.ifError(err, 'delDataset success');
-
-                cardboard.list('default', function(err, collection) {
-                    assert.ifError(err, 'list success');
-                    assert.equal(collection.features.length, 0, 'everything was deleted');
-                    done();
-                });
-            });
-        });
-    });
-
-    it('list', function(done) {
-        var cardboard = Cardboard(config);
-
-        cardboard.put(fixtures.nullIsland, 'default', function(err, primary) {
-            assert.equal(err, null);
-
-            var nullIsland = _.clone(fixtures.nullIsland);
-            nullIsland.id = primary.id;
-
-            cardboard.list('default', function(err, data) {
-                assert.deepEqual(data.features.length, 1);
-                assert.deepEqual(data, geojsonNormalize(nullIsland));
-                done();
-            });
-        });
-    });
-
-    it('list stream', function(done) {
-        this.timeout(2000000);
-        var cardboard = Cardboard(config);
-        var collection = fixtures.random(2223);
-
-        fcPut(cardboard, collection, 'default', function(err, putResults) {
-            assert.ifError(err, 'put success');
-
-            var streamed = [];
-
-            cardboard.listStream('default')
-                .on('data', function(feature) {
-                    streamed.push(feature);
-                })
-                .on('error', function(err) {
-                    assert.ifError(err, 'stream error encountered');
-                })
-                .on('end', function() {
-                    assert.equal(streamed.length, putResults.features.length, 'got all the features');
-                    done();
-                });
-        });
-    });
-
-    it('list stream - query error', function(done) {
-        var cardboard = Cardboard(config);
-        var collection = fixtures.random(20);
-
-        fcPut(cardboard, collection, 'default', function(err) {
-            assert.ifError(err, 'put success');
-
-            // Should fail because empty string passed for dataset
-            cardboard.listStream('')
-                .on('data', function() {
-                    assert.fail('Should not find any data');
-                })
-                .on('error', function(err) {
-                    assert.equal(err.code, 'ValidationException', 'expected error type');
-                    done();
-                });
-        });
-    });
-
-    it('list first page with maxFeatures', function(done) {
-        var cardboard = Cardboard(config);
-        var features = featureCollection([_.clone(fixtures.haiti), _.clone(fixtures.haiti), _.clone(fixtures.haiti)]);
-
-        fcPut(cardboard, features, 'default', function page(err, putResult) {
-            assert.equal(err, null);
-            cardboard.list('default', {maxFeatures: 1}, function(err, data) {
-                assert.equal(err, null, 'no error');
-                assert.deepEqual(data.features.length, 1, 'first page has one feature');
-                assert.deepEqual(data.features[0].id, putResult.features[0].id, 'id as expected');
-                done();
-            });
-        });
-    });
-
-    it('list all pages', function(done) {
-        var cardboard = Cardboard(config);
-
-        fcPut(cardboard, 
-            featureCollection([
-                _.clone(fixtures.haiti),
-                _.clone(fixtures.haiti),
-                _.clone(fixtures.haiti)
-            ]), 'default', page);
-
-        function page(err, putResults) {
-            assert.equal(err, null);
-
-            var pages = [];
-            function testPage(start) {
-                cardboard.list('default', {
-                    maxFeatures: 1,
-                    start: start
-                }, function(err, data) {
-                    assert.ifError(err);
-                    if (!data.features.length) {
-                        var items = pages.reduce(function(memo, page) {
-                            memo = memo.concat(page);
-                            return memo;
-                        }, []);
-                        assert.equal(pages.length, 3);
-                        assert.equal(items.length, 3);
-                        assert.deepEqual(items, putResults.features);
-                        done();
-                        return;
-                    }
-                    pages.push(data.features);
-                    assert.deepEqual(data.features.length, 1, 'page has one feature');
-                    testPage(data.features.slice(-1)[0].id);
-                });
-            }
-
-            testPage();
-        }
-
-    });
-
-    it('page -- without maxFeatures', function(done) {
-        var cardboard = Cardboard(config);
-
-        fcPut(cardboard, 
-            featureCollection([
-                _.clone(fixtures.haiti),
-                _.clone(fixtures.haiti),
-                _.clone(fixtures.haiti)
-            ]), 'default', page);
-
-        function page(err, putResults) {
-            assert.equal(err, null);
-
-            function testPage(next) {
-                if (typeof next !== 'undefined' ) assert.notEqual(next, null, 'next key is not null');
-                var opts = {};
-                if (next) opts.start = next;
-                cardboard.list('default', opts, function(err, data) {
-                    assert.equal(err, null, 'no error');
-
-                    if (data.features.length === 0) return done();
-
-                    assert.deepEqual(data.features.length, 3, 'page has three features');
-                    assert.deepEqual(data.features[0].id, putResults.features[0].id, 'id as expected');
-                    assert.deepEqual(data.features[1].id, putResults.features[1].id, 'id as expected');
-                    assert.deepEqual(data.features[2].id, putResults.features[2].id, 'id as expected');
-                    testPage(data.features.slice(-1)[0].id);
-                });
-            }
-
-            testPage();
-        }
-
-    });
-
-    it('insert datasets and listDatasets', function(done) {
-        var cardboard = Cardboard(config);
-        var q = queue(1);
-
-        q.defer(function(cb) {
-            cardboard.put(fixtures.haiti, 'haiti', function() {
-                cb();
-            });
-        });
-
-        q.defer(function(cb) {
-            cardboard.put(fixtures.dc, 'dc', function() {
-                cb();
-            });
-        });
-
-        q.awaitAll(getDatasets);
-
-        function getDatasets() {
-            cardboard.listDatasets(function(err, res) {
-                notOk(err, 'should not return an error');
-                assert.ok(res, 'should return a array of datasets');
-                assert.equal(res.length, 2);
-                assert.equal(res[0], 'dc');
-                assert.equal(res[1], 'haiti');
-                done();
-            });
-        }
-    });
-
     it('Insert feature with id specified by user', function(done) {
         var cardboard = Cardboard(config);
         var haiti = _.clone(fixtures.haiti);
@@ -554,7 +320,7 @@ describe('[indexing]', function() {
         });
     });
 
-    it('pre-flight feature info', function(done) {
+    it.skip('pre-flight feature info', function(done) {
         var cardboard = Cardboard(config);
         var haiti = _.clone(fixtures.haiti);
         var info = cardboard.metadata.featureInfo('abc', haiti);

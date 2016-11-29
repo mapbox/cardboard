@@ -75,7 +75,7 @@ function Cardboard(config) {
      * @param {function} callback - the callback function to handle the response
      */
     cardboard.del = function(primary, dataset, callback) {
-        var key = { index: dataset + '!' + primary };
+        var key = utils.createFeatureKey(dataset, primary);
 
         config.mainTable.deleteItem({
             Key: key,

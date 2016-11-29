@@ -43,27 +43,27 @@ describe('table creation', function() {
         });
     });
 
-    it('createTables - match config name', function(done) {
-        var cardboard = require('..')(_.extend({ featureTable: 'features', searchTable: 'search' }, config));
-        cardboard.createTables(function(err) {
+    it('createTable - match config name', function(done) {
+        var cardboard = require('..')(_.extend({ mainTable: 'features' }, config));
+        cardboard.createTable(function(err) {
             assert.ifError(err, 'success');
   
             dyno.listTables(function(err, tables) {
                 if (err) throw err;
-                assert.deepEqual(tables.TableNames, ['features', 'search'], 'created table');
+                assert.deepEqual(tables.TableNames, ['features'], 'created table');
                 done();
             });
         });
     });
 
-    it('createTables - match config name, with difference names', function(done) {
-        var cardboard = require('..')(_.extend({ featureTable: 'first', searchTable: 'second' }, config));
-        cardboard.createTables(function(err) {
+    it('createTable - match config name, with difference names', function(done) {
+        var cardboard = require('..')(_.extend({ mainTable: 'first' }, config));
+        cardboard.createTable(function(err) {
             assert.ifError(err, 'success');
   
             dyno.listTables(function(err, tables) {
                 if (err) throw err;
-                assert.deepEqual(tables.TableNames, ['first', 'second'], 'created table');
+                assert.deepEqual(tables.TableNames, ['first'], 'created table');
                 done();
             });
         });
