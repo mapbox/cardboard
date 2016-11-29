@@ -1,13 +1,9 @@
-var notOk = require('./not-ok');
 var assert = require('assert');
-var queue = require('queue-async');
 var _ = require('lodash');
 var Cardboard = require('../');
-var geojsonNormalize = require('geojson-normalize');
 var Pbf = require('pbf');
 var geobuf = require('geobuf');
 var fixtures = require('./fixtures');
-var crypto = require('crypto');
 
 var s = require('./setup');
 var config = s.config;
@@ -317,21 +313,5 @@ describe('[indexing]', function() {
             });
         });
     });
-
-    it.skip('pre-flight feature info', function(done) {
-        var cardboard = Cardboard(config);
-        var haiti = _.clone(fixtures.haiti);
-        var info = cardboard.metadata.featureInfo('abc', haiti);
-        assert.deepEqual(info, {
-            size: 59,
-            bounds: [-73.388671875, 18.771115062337024, -72.1142578125, 19.80805412808859],
-            west: -73.388671875,
-            south: 18.771115062337024,
-            east: -72.1142578125,
-            north: 19.80805412808859
-        }, 'expected info');
-        done();
-    });
-
 });
 

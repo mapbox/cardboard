@@ -33,7 +33,7 @@ function unprocessableDyno(table) {
             };
         }
     } 
-};
+}
 
 describe('[batch]', function() {
     var cardboard = require('../')(config);     
@@ -150,14 +150,14 @@ describe('[batch]', function() {
         data.features = data.features.map(function(f, i) { f.id = 'f-'+i; return f; });
         var ids = data.features.map(function(f) { return f.id; });
         cardboard.put(data, 'default', function(err) {
-           if (err) throw err;
+            if (err) throw err;
 
-           cardboard.get(ids, 'default', function(err, fc) {
-               if (err) throw err;
-               var expected = data.features.map(function(f) { return f.id; });
-               assert.deepEqual(expected, ids);
-               done();
-           });
+            cardboard.get(ids, 'default', function(err, fc) {
+                if (err) throw err;
+                var expected = fc.features.map(function(f) { return f.id; }).sort();
+                assert.deepEqual(expected, ids);
+                done();
+            });
         });
     });
 

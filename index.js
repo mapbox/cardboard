@@ -1,11 +1,6 @@
-var _ = require('lodash');
-var Metadata = require('./lib/metadata');
 var queue = require('queue-async');
 var Dyno = require('dyno');
 var AWS = require('aws-sdk');
-var Pbf = require('pbf');
-var geobuf = require('geobuf');
-var stream = require('stream');
 
 var MAX_GEOMETRY_SIZE = 1024 * 10;  // 10KB
 
@@ -159,9 +154,9 @@ function Cardboard(config) {
      * @param {function} callback - the callback function to handle the response
      */
     cardboard.createTable = function(callback) {
-        var featuresTable = require('./lib/features_table.json');
-        featuresTable.TableName = config.mainTable.TableName;
-        config.mainTable.createTable(featuresTable, callback);
+        var mainTable = require('./lib/main_table.json');
+        mainTable.TableName = config.mainTable.TableName;
+        config.mainTable.createTable(mainTable, callback);
     };
 
     return cardboard;
