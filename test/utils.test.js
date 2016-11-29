@@ -35,8 +35,8 @@ describe('utils', function() {
 
         cardboard.put(feature, 'large', function(err, putResults) {
             if (err) throw err;
-            var key = { index: 'large!' + putResults.id };
-            config.features.getItem({Key: key}, function(err, data) {
+            var key = utils.createFeatureKey('large', putResults.id);
+            config.mainTable.getItem({Key: key}, function(err, data) {
                 if (err) throw err;
                 utils.resolveFeatures([data.Item], function(err, resolveResults) {
                     assert.ifError(err, 'success');
@@ -63,8 +63,8 @@ describe('utils', function() {
 
         cardboard.put(feature, 'large', function(err, putResults) {
             if (err) throw err;
-            var key = { index: 'large!' + putResults.id };
-            config.features.getItem({Key: key}, function(err, data) {
+            var key = utils.createFeatureKey('large', putResults.id);
+            config.mainTable.getItem({Key: key}, function(err, data) {
                 if (err) throw err;
                 notOk(data.Item.val);
                 var uri = url.parse(data.Item.s3url);
@@ -99,10 +99,9 @@ describe('utils', function() {
     
         var encoded = utils.toDatabaseRecord(noId, 'dataset');
         var feature = encoded.feature;
-        var search = encoded.search;
         
         notOk(encoded.s3, 'no S3 data stored for a small item');
-        assert.equal(feature.index, 'dataset!'+utils.idFromRecord(feature), 'an id was assigned');
+        assert.equal(feature.index, 'dataset!feature!'+utils.idFromRecord(feature), 'an id was assigned');
     
         assert.ok(feature.west === 0 &&
             feature.south === 0 &&
@@ -115,7 +114,6 @@ describe('utils', function() {
 
         noId.id = utils.idFromRecord(feature);
         assert.deepEqual(geobuf.decode(new Pbf(feature.val)), noId, 'geobuf encoded as expected');
-        assert.deepEqual(search, { dataset: 'dataset', index: 'feature_id!'+noId.id}, 'search is returned');
 
         done();
     });
@@ -139,7 +137,7 @@ describe('utils', function() {
 
         notOk(item.val, 'geobuf was not stored in the item');
         assert.ok(s3params, 'S3 data stored for a large item');
-        assert.equal(item.index, 'dataset!'+utils.idFromRecord(item), 'an id was assigned');
+        assert.equal(item.index, 'dataset!feature!'+utils.idFromRecord(item), 'an id was assigned');
 
         assert.ok(item.west === 0 &&
             item.south === 0 &&
@@ -270,8 +268,8 @@ describe('utils', function() {
         var encoded = utils.toDatabaseRecord(nullId, 'dataset');
         var item = encoded.feature;
         notOk(encoded.s3, 'no S3 data stored for a small item');
-        assert.notEqual(item.index, 'dataset!null', 'null id was treated as undefined');
-        assert.equal(item.index, 'dataset!'+utils.idFromRecord(item), 'an id was assigned');
+        assert.notEqual(item.index, 'dataset!feature!null', 'null id was treated as undefined');
+        assert.equal(item.index, 'dataset!feature!'+utils.idFromRecord(item), 'an id was assigned');
 
         assert.ok(item.west === 0 &&
             item.south === 0 &&
@@ -318,19 +316,19 @@ describe('utils', function() {
     });
 
     it('idFromRecord - no ! in the id', function(done) {
-        var record = { index: 'id!123456' };
+        var record = { index: 'id!feature!123456' };
         assert.equal(utils.idFromRecord(record), '123456', 'expected value');
         done();
     });
 
     it('idFromRecord - has ! in the id', function(done) {
-        var record = { index: 'id!123456!654321' };
+        var record = { index: 'id!feature!123456!654321' };
         assert.equal(utils.idFromRecord(record), '123456!654321', 'expected value');
         done();
     });
 
     it('idFromRecord - emoji', function(done) {
-        var record = { index: 'id!\u1F471' };
+        var record = { index: 'id!feature!\u1F471' };
         assert.equal(utils.idFromRecord(record), '\u1F471', 'expected value');
         done();
     });
