@@ -23,29 +23,14 @@ describe('config tests', function() {
             endpoint: 'http://localhost:4567'
         };
 
-        var searchConfig = {
-            accessKeyId: 'fake',
-            secretAccessKey: 'fake',
-            region: 'us-east-1',
-            table: 'search',
-            endpoint: 'http://localhost:4567'
-        };
-
-        omitConfig.features = Dyno(featuresConfig, featuresConfig);
-        omitConfig.search = Dyno(searchConfig, searchConfig);
+        omitConfig.mainTable = Dyno(featuresConfig, featuresConfig);
         var cardboard = Cardboard(omitConfig);
         var geojson = {type: 'Feature', properties: {}, geometry: {type: 'Point', coordinates:[1, 2]}};
 
-        cardboard.put(geojson, 'default', function(err) {
+        cardboard.put(geojson, 'default', function(err, feature) {
             assert.ifError(err);
-
-            cardboard.list('default', function(err, fc) {
-                assert.ifError(err);
-                assert.equal(fc.features.length, 1);
-                delete fc.features[0].id;
-                assert.deepEqual(fc, { type: 'FeatureCollection', features: [geojson] }, 'one result');
-                done();
-            });
+            assert.deepEqual(geojson.geometry, feature.geometry);
+            done();
         });
     });
 
