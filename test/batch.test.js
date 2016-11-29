@@ -95,11 +95,11 @@ describe('[batch]', function() {
 
         var data = fixtures.random(1);
         data.features[0].id = 'abc';
-        unprocessableCardboard.put(data, 'default', function(err, collection) {
-            if (collection) throw new Error('mock dyno failed to error');
-            assert.ok(err.unprocessed, 'got unprocessed items');
-            assert.equal(err.unprocessed.type, 'FeatureCollection', 'got a feature collection');
-            assert.equal(err.unprocessed.features.length, data.features.length, 'expected number unprocessed items');
+        unprocessableCardboard.put(data, 'default', function(err, fc) {
+            if (err) return done(err);
+            assert.ok(fc.pending, 'got unprocessed items');
+            assert.equal(fc.type, 'FeatureCollection', 'got a feature collection');
+            assert.equal(fc.pending.length, data.features.length, 'expected number unprocessed items');
             done();
         });
     });
@@ -132,13 +132,14 @@ describe('[batch]', function() {
         cardboard.put(data, 'default', function(err) {
             if (err) throw err;
 
-            unprocessableCardboard.del(['abc'], 'default', function(err) {
-                assert.ok(err.unprocessed, 'got unprocessed items');
-                assert.ok(Array.isArray(err.unprocessed), 'got an array');
+            unprocessableCardboard.del(['abc'], 'default', function(err, pending) {
+                if (err) return done(err);
+                assert.ok(pending, 'got pending items');
+                assert.ok(Array.isArray(pending), 'got an array');
 
                 var expected = data.features.map(function(f) { return f.id; });
 
-                assert.deepEqual(err.unprocessed, expected, 'expected unprocessed ids');
+                assert.deepEqual(pending, expected, 'expected pending ids');
                 done();
             });
         });

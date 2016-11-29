@@ -53,7 +53,7 @@ function Cardboard(config) {
         if (input.type !== 'FeatureCollection') throw new Error('Must be a Feature or FeatureCollection');
 
         var records = [];
-        var geobufs = [];
+        var geobufs = {};
 
         var encoded;
         var q = queue(150);
@@ -63,8 +63,8 @@ function Cardboard(config) {
             catch (err) { return callback(err); }
 
             records.push(encoded.feature);
-            geobufs.push(encoded.feature.val || encoded.s3Params.Body);
-            if (encoded[1]) q.defer(config.s3.putObject.bind(config.s3), encoded[1]);
+            geobufs[encoded.feature.index] = encoded.feature.val || encoded.s3Params.Body;
+            if (encoded.s3Params) q.defer(config.s3.putObject.bind(config.s3), encoded.s3Params);
         }
 
         q.awaitAll(function(err) {
@@ -78,26 +78,22 @@ function Cardboard(config) {
             config.mainTable.batchWriteAll(params).sendAll(10, function(err, res) {
                 if (err) return callback(err);
 
-                var unprocessed = res.UnprocessedItems ? res.UnprocessedItems[mainTable] : null;
+                var unprocessed = res.UnprocessedItems[mainTable] ? res.UnprocessedItems[mainTable] : [];
 
-                if (!unprocessed) {
-                    var features = geobufs.map(function(buf) {
-                        return geobuf.decode(new Pbf(buf));     
-                    });
-                    return callback(null, { type: 'FeatureCollection', features: features });
-                }
+                var pending = unprocessed.map(function(req) {
+                    var item = req.PutRequest.Item;
+                    var buffer = geobufs[item.index];
+                    delete geobufs[item.index];
+                    return utils.decodeBuffer(buffer);
+                });
 
-                var collection = unprocessed.reduce(function(collection, item) {
-                    var id = utils.idFromRecord(item.PutRequest.Item);
-                    var i = _.findIndex(records, function(record) {
-                        return utils.idFromRecord(record) === id;
-                    });
+                var features = Object.keys(geobufs).map(function(index) {
+                    return utils.decodeBuffer(geobufs[index]);
+                });
 
-                    collection.features.push(utils.decodeBuffer(geobufs[i]));
-                    return collection;
-                }, { type: 'FeatureCollection', features: [] });
-
-                callback({ unprocessed: collection });
+                var fc = utils.featureCollection(features);
+                if (pending.length > 0) fc.pending = pending;
+                callback(null, fc);
             });
         });
     };
@@ -119,17 +115,13 @@ function Cardboard(config) {
         config.mainTable.batchWriteAll(params).sendAll(10, function(err, res) {
             if (err) return callback(err);
 
-            var unprocessed = res.UnprocessedItems ? res.UnprocessedItems[mainTable] : null;
+            var unprocessed = res.UnprocessedItems ? res.UnprocessedItems[mainTable] || [] : [];
 
-            if (!unprocessed) return callback();
+            var ids = unprocessed.map(function(item) {
+                return utils.idFromRecord(item.DeleteRequest.Key);
+            });
 
-
-            var ids = unprocessed.reduce(function(ids, item) {
-                ids.push(utils.idFromRecord(item.DeleteRequest.Key));
-                return ids;
-            }, []);
-
-            callback({ unprocessed: ids });
+            callback(null, ids);
         });
     };
 
