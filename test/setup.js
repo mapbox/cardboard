@@ -7,8 +7,7 @@ var dynalite;
 var config = module.exports.config = {
     accessKeyId: 'fake',
     secretAccessKey: 'fake',
-    featureTable: 'features',
-    searchTable: 'search',
+    mainTable: 'features',
     endpoint: 'http://localhost:4567',
     bucket: 'test',
     prefix: 'test',
@@ -33,7 +32,7 @@ module.exports.setup = function(done) {
     dynalite.listen(4567, function() {
         var cardboard = Cardboard(config);
 
-        cardboard.createTables(done);
+        cardboard.createTable(done);
     });
 };
 

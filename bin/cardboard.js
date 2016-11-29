@@ -12,11 +12,8 @@ function configLoader(args, env) {
     config.region = args.region || env.CardboardRegion;
     if (!config.region) throw new Error('You must provide a region');
 
-    config.searchTable = args.searchTable || env.CardboardSearchTable;
-    if (!config.searchTable) throw new Error('You must provide a search table name');
-
-    config.featureTable = args.featureTable || env.CardboardFeaturesTable;
-    if (!config.featureTable) throw new Error('You must provide a features table name');
+    config.mainTable = args.mainTable || env.CardboardMainTable;
+    if (!config.mainTable) throw new Error('You must provide a features table name');
 
     config.bucket = args.bucket || env.CardboardBucket;
     if (!config.bucket) throw new Error('You must provide an S3 bucket');
@@ -39,7 +36,7 @@ catch (err) {
 }
 
 var command = args._[0];
-if (['put', 'get', 'list'].indexOf(command) < 0) {
+if (['put', 'get'].indexOf(command) < 0) {
     console.error(command + ' is not a valid command');
     process.exit(1);
 }
@@ -58,7 +55,7 @@ if (command === 'get' && !id) {
 
 var cardboard = Cardboard(config);
 
-cardboard.createTables(function(err){
+cardboard.createTable(function(err){
     if (err) throw err;
 
     if (command === 'get') {

@@ -16,6 +16,7 @@ var setup = require('./setup');
 var config = setup.config;
 
 var cardboard = require('..')(config);
+var mainTable = config.mainTable.config.params.TableName;
 
 describe('cli', function() {
     var nhFeature = null;
@@ -44,8 +45,7 @@ describe('cli', function() {
         var options = {
             env: _.extend({
                 CardboardRegion: 'region',
-                CardboardSearchTable: 'search',
-                CardboardFeaturesTable: 'features',
+                CardboardMainTable: 'features',
                 CardboardBucket: 'bucket',
                 CardboardPrefix: 'prefix',
                 CardboardEndpoint: 'http://localhost:4567'
@@ -63,8 +63,7 @@ describe('cli', function() {
         var params = [
             cmd,
             '--region', 'region',
-            '--featureTable', config.featureTable,
-            '--searchTable', config.searchTable,
+            '--mainTable', mainTable,
             '--bucket', 'bucket',
             '--prefix', 'prefix',
             '--endpoint', 'http://localhost:4567',
@@ -80,7 +79,7 @@ describe('cli', function() {
     it('[cli] config fail', function(done) {
         var params = [
             cmd,
-            '--featureTable', config.featureTable,
+            '--mainTable', mainTable,
             '--searchTable', config.searchTable,
             '--bucket', 'bucket',
             '--prefix', 'prefix',
@@ -97,7 +96,7 @@ describe('cli', function() {
         var params = [
             cmd,
             '--region', 'region',
-            '--featureTable', config.featureTable,
+            '--mainTable', mainTable,
             '--searchTable', config.searchTable,
             '--bucket', 'test',
             '--prefix', 'test',
@@ -112,31 +111,5 @@ describe('cli', function() {
         });
     });
 
-    it('[cli] list', function(done) {
-        var params = [
-            cmd,
-            '--region', 'region',
-            '--featureTable', config.featureTable,
-            '--searchTable', config.searchTable,
-            '--bucket', 'test',
-            '--prefix', 'test',
-            '--endpoint', 'http://localhost:4567',
-            'list', 'test'
-        ];
-        exec(params.join(' '), function(err, stdout) {
-            assert.ifError(err, 'success');
-            var found = JSON.parse(stdout.trim());
-            assert.equal(found.features.length, features.length);
-            assert.equal(found.type, 'FeatureCollection');
-            found.features.sort(function(a, b) {
-                return a.id.localeCompare(b.id);
-            });
-            features.sort(function(a, b) {
-                return a.id.localeCompare(b.id);
-            })
-            assert.deepEqual(found.features, features, 'got expected FeatureCollection');
-            done();
-        });
-    });
 });
 
