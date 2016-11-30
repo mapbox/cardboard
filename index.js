@@ -35,7 +35,6 @@ function Cardboard(config) {
      * A client configured to interact with a backend cardboard database
      */
     var cardboard = {
-        dyno: config.dyno,
         utils: utils
     };
 
