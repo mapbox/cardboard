@@ -65,14 +65,6 @@ cardboard.createTable(function(err){
         });
     }
 
-    if (command === 'list') {
-        return cardboard.listStream(dataset)
-            .on('error', function(err) { throw err; })
-          .pipe(collector)
-            .on('error', function(err) { throw err; })
-          .pipe(process.stdout);
-    }
-
     if (command === 'put') {
         var aggregator = new stream.Writable({ objectMode: true, highWaterMark: 75 });
 
