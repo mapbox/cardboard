@@ -9,7 +9,7 @@ module.exports = Cardboard;
 /**
  * Cardboard client generator
  * @param {object} config - a configuration object
- * @param {string} config.mainTable - the name of a DynamoDB table to connect to
+ * @param {string} config.dyno - the name of a DynamoDB table to connect to
  * @param {string} config.region - the AWS region containing the DynamoDB table
  * @param {string} config.bucket - the name of an S3 bucket to use
  * @param {string} config.prefix - the name of a folder within the indicated S3 bucket
@@ -23,9 +23,9 @@ function Cardboard(config) {
 
     // Allow caller to pass in aws-sdk clients
     if (!config.s3) config.s3 = new AWS.S3(config);
-    if (!config.mainTable) throw new Error('No main table has been set');
-    if (typeof config.mainTable === 'string' && !config.region) throw new Error('No region set');
-    if (typeof config.mainTable === 'string') config.mainTable = Dyno({table: config.mainTable, region: config.region, endpoint: config.endpoint});
+    if (typeof config.mainTable !== 'string' || config.mainTable.length === 0) throw new Error('"mainTable" must be a string');
+    if (!config.dyno && !config.region) throw new Error('No region set');
+    if (!config.dyno) config.dyno = Dyno({table: config.mainTable, region: config.region, endpoint: config.endpoint});
     if (!config.bucket) throw new Error('No bucket set');
     if (!config.prefix) throw new Error('No s3 prefix set');
 
@@ -34,8 +34,10 @@ function Cardboard(config) {
     /**
      * A client configured to interact with a backend cardboard database
      */
-    var cardboard = {};
-    var mainTable = config.mainTable.config.params.TableName;
+    var cardboard = {
+        dyno: config.dyno,
+        utils: utils
+    };
 
     /**
      * Insert or update a single GeoJSON feature
@@ -66,14 +68,14 @@ function Cardboard(config) {
             if (err) return callback(err);
 
             var params = { RequestItems: {} };
-            params.RequestItems[mainTable] = records.map(function(record) {
+            params.RequestItems[config.mainTable] = records.map(function(record) {
                 return { PutRequest: { Item: record } };
             });
 
-            config.mainTable.batchWriteAll(params).sendAll(10, function(err, res) {
+            config.dyno.batchWriteAll(params).sendAll(10, function(err, res) {
                 if (err) return callback(err);
 
-                var unprocessed = res.UnprocessedItems[mainTable] ? res.UnprocessedItems[mainTable] : [];
+                var unprocessed = res.UnprocessedItems[config.mainTable] ? res.UnprocessedItems[config.mainTable] : [];
 
                 var pending = unprocessed.map(function(req) {
                     var item = req.PutRequest.Item;
@@ -102,15 +104,15 @@ function Cardboard(config) {
     cardboard.del = function(input, dataset, callback) {
         if (!Array.isArray(input)) input = [input];
         var params = { RequestItems: {} };
-        params.RequestItems[mainTable] = input.map(function(id) {
+        params.RequestItems[config.mainTable] = input.map(function(id) {
             if (typeof id !== 'string') throw new Error('All ids must be strings');
             return { DeleteRequest: { Key: utils.createFeatureKey(dataset, id) } };
         });
 
-        config.mainTable.batchWriteAll(params).sendAll(10, function(err, res) {
+        config.dyno.batchWriteAll(params).sendAll(10, function(err, res) {
             if (err) return callback(err);
 
-            var unprocessed = res.UnprocessedItems ? res.UnprocessedItems[mainTable] || [] : [];
+            var unprocessed = res.UnprocessedItems ? res.UnprocessedItems[config.mainTable] || [] : [];
 
             var ids = unprocessed.map(function(item) {
                 return utils.idFromRecord(item.DeleteRequest.Key);
@@ -132,12 +134,12 @@ function Cardboard(config) {
         var keys = input.map(function(id) { return utils.createFeatureKey(dataset, id); });
 
         var params = { RequestItems: {}};
-        params.RequestItems[mainTable] = { Keys: keys };
+        params.RequestItems[config.mainTable] = { Keys: keys };
 
-        config.mainTable.batchGetAll(params).sendAll(10, function(err, res) {
+        config.dyno.batchGetAll(params).sendAll(10, function(err, res) {
             if (err) return callback(err);
-            var features = res.Responses ? res.Responses[mainTable] : [];
-            var pending = res.UnprocessedKeys && res.UnprocessedKeys[mainTable] ? res.UnprocessedKeys[mainTable].Keys : [];
+            var features = res.Responses ? res.Responses[config.mainTable] : [];
+            var pending = res.UnprocessedKeys && res.UnprocessedKeys[config.mainTable] ? res.UnprocessedKeys[config.mainTable].Keys : [];
 
             utils.resolveFeatures(features, function(err, data) {
                 if (err) return callback(err);
@@ -154,9 +156,9 @@ function Cardboard(config) {
      * @param {function} callback - the callback function to handle the response
      */
     cardboard.createTable = function(callback) {
-        var mainTable = require('./lib/main_table.json');
-        mainTable.TableName = config.mainTable.TableName;
-        config.mainTable.createTable(mainTable, callback);
+        var tableSchema = require('./lib/main_table.json');
+        tableSchema.TableName = config.mainTable;
+        config.dyno.createTable(tableSchema, callback);
     };
 
     return cardboard;

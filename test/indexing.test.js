@@ -140,14 +140,10 @@ describe('[indexing]', function() {
         cardboard.put(d, 'default', function(err, res) {
             assert.ifError(err, 'inserted without error');
             var key = utils.createFeatureKey('default', res.features[0].id);
-            config.mainTable.getItem({ Key: key}, function(err, data) {
+            config.dyno.getItem({ Key: key}, function(err, data) {
                 var item = data.Item;
                 assert.ifError(err, 'got item');
                 if (err) return done();
-                assert.equal(item.west, 0.987654, 'correct west attr');
-                assert.equal(item.east, 0.987654, 'correct east attr');
-                assert.equal(item.north, 0.123457, 'correct north attr');
-                assert.equal(item.south, 0.123457, 'correct south attr');
                 done();
             });
         });

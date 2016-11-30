@@ -23,7 +23,7 @@ describe('config tests', function() {
             endpoint: 'http://localhost:4567'
         };
 
-        omitConfig.mainTable = Dyno(featuresConfig, featuresConfig);
+        omitConfig.dyno = Dyno(featuresConfig, featuresConfig);
         var cardboard = Cardboard(omitConfig);
         var geojson = {type: 'Feature', properties: {}, geometry: {type: 'Point', coordinates:[1, 2]}};
 

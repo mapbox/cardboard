@@ -41,7 +41,8 @@ describe('[batch]', function() {
         bucket: 'test',
         prefix: 'test',
         s3: require('mock-aws-s3').S3(),
-        mainTable: unprocessableDyno('features')
+        mainTable: 'features',
+        dyno: unprocessableDyno('features')
     });
 
     beforeEach(s.setup);
@@ -58,7 +59,7 @@ describe('[batch]', function() {
             }, true), 'all returned features have ids');
 
             var records = [];
-            config.mainTable.scanStream()
+            config.dyno.scanStream()
                 .on('data', function(d) { records.push(d); })
                 .on('error', function(err) { throw err; })
                 .on('end', function() {
@@ -115,7 +116,7 @@ describe('[batch]', function() {
                 assert.ifError(err, 'success');
 
                 var records = [];
-                config.mainTable.scanStream().on('data', function(d) { records.push(d); }).on('end', function() {
+                config.dyno.scanStream().on('data', function(d) { records.push(d); }).on('end', function() {
                     if (err) throw err;
                     assert.equal(records.length, 0, 'deleted all the records');
                     done();

@@ -16,7 +16,6 @@ var setup = require('./setup');
 var config = setup.config;
 
 var cardboard = require('..')(config);
-var mainTable = config.mainTable.config.params.TableName;
 
 describe('cli', function() {
     var nhFeature = null;
@@ -64,7 +63,7 @@ describe('cli', function() {
         var params = [
             cmd,
             '--region', 'region',
-            '--mainTable', mainTable,
+            '--mainTable', config.mainTable,
             '--bucket', 'bucket',
             '--prefix', 'prefix',
             '--endpoint', 'http://localhost:4567',
@@ -80,7 +79,7 @@ describe('cli', function() {
     it('[cli] config fail', function(done) {
         var params = [
             cmd,
-            '--mainTable', mainTable,
+            '--mainTable', config.mainTable,
             '--searchTable', config.searchTable,
             '--bucket', 'bucket',
             '--prefix', 'prefix',
@@ -97,7 +96,7 @@ describe('cli', function() {
         var params = [
             cmd,
             '--region', 'region',
-            '--mainTable', mainTable,
+            '--mainTable', config.mainTable,
             '--searchTable', config.searchTable,
             '--bucket', 'test',
             '--prefix', 'test',

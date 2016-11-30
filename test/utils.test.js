@@ -36,7 +36,7 @@ describe('utils', function() {
         cardboard.put(feature, 'large', function(err, putResults) {
             if (err) throw err;
             var key = utils.createFeatureKey('large', putResults.features[0].id);
-            config.mainTable.getItem({Key: key}, function(err, data) {
+            config.dyno.getItem({Key: key}, function(err, data) {
                 if (err) throw err;
                 utils.resolveFeatures([data.Item], function(err, resolveResults) {
                     assert.ifError(err, 'success');
@@ -64,7 +64,7 @@ describe('utils', function() {
         cardboard.put(feature, 'large', function(err, putResults) {
             if (err) throw err;
             var key = utils.createFeatureKey('large', putResults.features[0].id);
-            config.mainTable.getItem({Key: key}, function(err, data) {
+            config.dyno.getItem({Key: key}, function(err, data) {
                 if (err) throw err;
                 notOk(data.Item.val);
                 var uri = url.parse(data.Item.s3url);
@@ -103,10 +103,6 @@ describe('utils', function() {
         notOk(encoded.s3, 'no S3 data stored for a small item');
         assert.equal(feature.index, 'dataset!feature!'+utils.idFromRecord(feature), 'an id was assigned');
     
-        assert.ok(feature.west === 0 &&
-            feature.south === 0 &&
-            feature.east === 0 &&
-            feature.north === 0, 'correct extent');
         assert.ok(feature.size, 'size was calculated');
 
         notOk(feature.s3url, 's3url was not assigned to a small feature');
@@ -139,10 +135,6 @@ describe('utils', function() {
         assert.ok(s3params, 'S3 data stored for a large item');
         assert.equal(item.index, 'dataset!feature!'+utils.idFromRecord(item), 'an id was assigned');
 
-        assert.ok(item.west === 0 &&
-            item.south === 0 &&
-            item.east === 0 &&
-            item.north === 0, 'correct extent');
         assert.ok(item.size, 'size was calculated');
 
         assert.ok(item.s3url.indexOf('s3://test/test/dataset/' + utils.idFromRecord(item)) === 0, 's3url was assigned correctly');
@@ -174,10 +166,6 @@ describe('utils', function() {
         notOk(encoded.s3, 'no S3 data stored for a small item');
         assert.equal(utils.idFromRecord(item), hasId.id, 'used user-assigned id');
 
-        assert.ok(item.west === 0 &&
-            item.south === 0 &&
-            item.east === 0 &&
-            item.north === 0, 'correct extent');
         assert.ok(item.size, 'size was calculated');
 
         notOk(item.s3url, 's3url was not assigned to a small feature');
@@ -205,10 +193,6 @@ describe('utils', function() {
         notOk(encoded.s3, 'no S3 data stored for a small item');
         assert.equal(utils.idFromRecord(item), numericId.id.toString(), 'used numeric user-assigned id as a string');
 
-        assert.ok(item.west === 0 &&
-            item.south === 0 &&
-            item.east === 0 &&
-            item.north === 0, 'correct extent');
         assert.ok(item.size, 'size was calculated');
         notOk(item.s3url, 's3url was not assigned to a small feature');
         assert.ok(item.val, 'geobuf was stored in the item');
@@ -238,10 +222,6 @@ describe('utils', function() {
         notOk(encoded.s3, 'no S3 data stored for a small item');
         assert.equal(utils.idFromRecord(item), zeroId.id.toString(), 'used zero (as a string) for id');
 
-        assert.ok(item.west === 0 &&
-            item.south === 0 &&
-            item.east === 0 &&
-            item.north === 0, 'correct extent');
         assert.ok(item.size, 'size was calculated');
 
         notOk(item.s3url, 's3url was not assigned to a small feature');
@@ -271,10 +251,6 @@ describe('utils', function() {
         assert.notEqual(item.index, 'dataset!feature!null', 'null id was treated as undefined');
         assert.equal(item.index, 'dataset!feature!'+utils.idFromRecord(item), 'an id was assigned');
 
-        assert.ok(item.west === 0 &&
-            item.south === 0 &&
-            item.east === 0 &&
-            item.north === 0, 'correct extent');
         assert.ok(item.size, 'size was calculated');
 
         notOk(item.s3url, 's3url was not assigned to a small feature');
