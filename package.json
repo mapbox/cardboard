@@ -31,7 +31,7 @@
   "dependencies": {
     "aws-sdk": "2.x",
     "cuid": "1.2.4",
-    "dyno": "1.2.0",
+    "dyno": "1.2.1",
     "geobuf": "^3.0.0",
     "geojson-extent": "^0.1.0",
     "geojson-normalize": "0.0.0",

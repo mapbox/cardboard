@@ -1,8 +1,5 @@
 var queue = require('queue-async');
 var Dyno = require('dyno');
-var AWS = require('aws-sdk');
-
-var MAX_GEOMETRY_SIZE = 1024 * 10;  // 10KB
 
 module.exports = Cardboard;
 
@@ -19,24 +16,18 @@ module.exports = Cardboard;
  */
 function Cardboard(config) {
     config = config || {};
-    config.MAX_GEOMETRY_SIZE = config.MAX_GEOMETRY_SIZE || MAX_GEOMETRY_SIZE;
 
     // Allow caller to pass in aws-sdk clients
-    if (!config.s3) config.s3 = new AWS.S3(config);
     if (typeof config.mainTable !== 'string' || config.mainTable.length === 0) throw new Error('"mainTable" must be a string');
     if (!config.dyno && !config.region) throw new Error('No region set');
     if (!config.dyno) config.dyno = Dyno({table: config.mainTable, region: config.region, endpoint: config.endpoint});
-    if (!config.bucket) throw new Error('No bucket set');
-    if (!config.prefix) throw new Error('No s3 prefix set');
 
-    var utils = require('./lib/utils')(config);
+    var utils = require('./lib/utils')();
 
     /**
      * A client configured to interact with a backend cardboard database
      */
-    var cardboard = {
-        utils: utils
-    };
+    var cardboard = {};
 
     /**
      * Insert or update a single GeoJSON feature
@@ -58,9 +49,8 @@ function Cardboard(config) {
             try { encoded = utils.toDatabaseRecord(input.features[i], dataset); }
             catch (err) { return callback(err); }
 
-            records.push(encoded.feature);
-            geobufs[encoded.feature.index] = encoded.feature.val || encoded.s3.Body;
-            if (encoded.s3) q.defer(config.s3.putObject.bind(config.s3), encoded.s3);
+            records.push(encoded);
+            geobufs[encoded.index] = encoded.val;
         }
 
         q.awaitAll(function(err) {
@@ -140,13 +130,16 @@ function Cardboard(config) {
             var features = res.Responses ? res.Responses[config.mainTable] : [];
             var pending = res.UnprocessedKeys && res.UnprocessedKeys[config.mainTable] ? res.UnprocessedKeys[config.mainTable].Keys : [];
 
-            utils.resolveFeatures(features, function(err, data) {
-                if (err) return callback(err);
+            try {
+                var fc = utils.resolveFeatures(features);
                 if (pending.length > 0) {
-                    data.pending = pending.map(function(key) { return utils.idFromRecord(key); });
+                    fc.pending = pending.map(function(key) { return utils.idFromRecord(key); });
                 }
-                callback(null, data);
-            });
+                return callback(null, fc);
+            }
+            catch(err) {
+                return callback(err);
+            }
         });
     };
 

@@ -129,7 +129,7 @@ describe('[indexing]', function() {
             geometry: {
                 coordinates: [
                     0.987654321,
-                    0.123456789
+                    0.123456389
                 ],
                 type: 'Point'
             },
@@ -143,7 +143,20 @@ describe('[indexing]', function() {
             config.dyno.getItem({ Key: key}, function(err, data) {
                 var item = data.Item;
                 assert.ifError(err, 'got item');
-                if (err) return done();
+                var feature = utils.decodeBuffer(item.val);
+                
+                var fLng = feature.geometry.coordinates[0].toString();
+                var fLat = feature.geometry.coordinates[1].toString();
+
+                var dLng = d.geometry.coordinates[0].toString();
+                var dLat = d.geometry.coordinates[1].toString();
+
+                assert.equal(fLng.length, 8);
+                assert.equal(fLat.length, 8);
+
+                assert.equal(fLng, dLng.slice(0, 8));
+                assert.equal(fLat, dLat.slice(0, 8));
+
                 done();
             });
         });
