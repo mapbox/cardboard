@@ -6,9 +6,9 @@ var states = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'data', 'states.
 var mainTable = require('dynamodb-test')(require('tape'), 'cardboard', require('../lib/main_table.json'));
 
 var config = {
-  region: 'test',
-  mainTable: mainTable.tableName,
-  endpoint: 'http://localhost:4567'
+    region: 'test',
+    mainTable: mainTable.tableName,
+    endpoint: 'http://localhost:4567'
 };
 
 function unprocessableDyno(table) {
@@ -105,9 +105,9 @@ mainTable.test('[batch] del', function(assert) {
         var ids = collection.features.map(function(feature) {
             return feature.id;
         });
-            cardboard.del(ids, 'states', function(err) {
+        cardboard.del(ids, 'states', function(err) {
             assert.ifError(err, 'success');
-                var records = [];
+            var records = [];
             config.dyno.scanStream().on('data', function(d) { records.push(d); }).on('end', function() {
                 if (err) throw err;
                 assert.equal(records.length, 0, 'deleted all the records');
@@ -159,7 +159,7 @@ mainTable.test('[batch] unprocessed get returns pending ids', function(assert) {
     cardboard.put(data, 'default', function(err) {
         
         if (err) throw err;
-            unprocessableCardboard.get(ids, 'default', function(err, fc) {
+        unprocessableCardboard.get(ids, 'default', function(err, fc) {
             if (err) throw err;
             ids.forEach(function(id) {
                 assert.ok(fc.pending.indexOf(id) > -1);

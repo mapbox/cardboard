@@ -7,9 +7,9 @@ var fixtures = require('./fixtures');
 var mainTable = require('dynamodb-test')(require('tape'), 'cardboard', require('../lib/main_table.json'));
 
 var config = {
-  region: 'test',
-  mainTable: mainTable.tableName,
-  endpoint: 'http://localhost:4567'
+    region: 'test',
+    mainTable: mainTable.tableName,
+    endpoint: 'http://localhost:4567'
 };
 
 var utils = require('../lib/utils')(config);

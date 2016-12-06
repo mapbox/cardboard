@@ -5,9 +5,9 @@ var Dyno = require('dyno');
 var mainTable = require('dynamodb-test')(require('tape'), 'cardboard', require('../lib/main_table.json'));
 
 var config = {
-  region: 'test',
-  mainTable: mainTable.tableName,
-  endpoint: 'http://localhost:4567'
+    region: 'test',
+    mainTable: mainTable.tableName,
+    endpoint: 'http://localhost:4567'
 };
 
 mainTable.test('pass preconfigured dyno object', function(assert) {

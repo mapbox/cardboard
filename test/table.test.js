@@ -1,5 +1,4 @@
 var test = require('tape');
-var assert = require('assert');
 var queue = require('queue-async');
 var _ = require('lodash');
 var dynalite = require('dynalite')({
@@ -10,7 +9,7 @@ var dynalite = require('dynalite')({
 
 var config = {
     region: 'fake',
-    endpoint: 'http://localhost:4567',
+    endpoint: 'http://localhost:4567'
 };
 
 var dyno = require('dyno')({

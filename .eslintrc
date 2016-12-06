@@ -5,8 +5,7 @@
         "no-console": [0]
     },
     "env": {
-        "node": true,
-        "mocha": true
+        "node": true
     },
     "globals": {
         "process": true,
