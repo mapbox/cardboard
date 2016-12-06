@@ -8,40 +8,31 @@ var fs = require('fs');
 var cmd = path.resolve(__dirname, '..', 'bin', 'cardboard.js');
 var _ = require('lodash');
 
-var statesPath = path.resolve(__dirname, 'data', 'states.geojson');
-var states = fs.readFileSync(statesPath, 'utf8');
-states = JSON.parse(states);
 
-var setup = require('./setup');
-var config = setup.config;
+var mainTable = require('dynamodb-test')(require('tape'), 'cardboard', require('../lib/main_table.json'));
+
+var config = {
+  region: 'test',
+  mainTable: mainTable.tableName,
+  endpoint: 'http://localhost:4567'
+};
 
 var cardboard = require('..')(config);
 
-describe('cli', function() {
-    var nhFeature = null;
-    var features = [];
-    before(setup.setup);
-    after(setup.teardown);
-    before(function(done) {
-        var q = queue();
-        states.features.map(function(f) {
-            f.id = f.properties.name.replace(/ /g, '-').toLowerCase();
-            return f;
-        }).forEach(function(state) {
-            q.defer(function(done) {
-                cardboard.put(state, 'test', function(err, fc) {
-                    if (err) return done(err);
-                    var result = fc.features[0];
-                    if (result.id === 'new-hampshire') nhFeature = result;
-                    features.push(result);
-                    done();
-                });
-            });
-        });
-        q.awaitAll(done);
-    });
- 
-    it('[cli] config via env', function(done) {
+var utils = require('../lib/utils')(config);
+
+var statesPath = path.resolve(__dirname, 'data', 'states.geojson');
+var states = fs.readFileSync(statesPath, 'utf8');
+var nhFeature = null
+var features = JSON.parse(states).features.map(function(f) {
+    f.id = f.properties.name.replace(/ /g, '-').toLowerCase();
+    if (f.id === 'new-hampshire') nhFeature = utils.decodeBuffer(utils.encodeFeature(f));
+    return f;
+}).map(function(f) {
+    return utils.toDatabaseRecord(f, 'test');
+});
+
+    mainTable.test('[cli] config via env', features, function(assert) {
         var options = {
             env: _.extend({
                 CardboardRegion: 'region',
@@ -55,11 +46,11 @@ describe('cli', function() {
         exec(cmd + ' invalid-command', options, function(err, stdout, stderr) {
             // confirms that configuration was not the cause of the error
             assert.equal(stderr, 'invalid-command is not a valid command\n', 'expected error');
-            done();
+            assert.end();
         });
     });
 
-    it('[cli] config via params', function(done) {
+    mainTable.test('[cli] config via params', features, function(assert) {
         var params = [
             cmd,
             '--region', 'region',
@@ -72,11 +63,11 @@ describe('cli', function() {
         exec(params.join(' '), function(err, stdout, stderr) {
             // confirms that configuration was not the cause of the error
             assert.equal(stderr, 'invalid-command is not a valid command\n', 'expected error');
-            done();
+            assert.end();
         });
     });
 
-    it('[cli] config fail', function(done) {
+    mainTable.test('[cli] config fail', features, function(assert) {
         var params = [
             cmd,
             '--mainTable', config.mainTable,
@@ -88,11 +79,11 @@ describe('cli', function() {
         ];
         exec(params.join(' '), function(err, stdout, stderr) {
             assert.equal(stderr, 'You must provide a region\n', 'expected error');
-            done();
+            assert.end();
         });
     });
 
-    it('[cli] get', function(done) {
+    mainTable.test('[cli] get', features, function(assert) {
         var params = [
             cmd,
             '--region', 'region',
@@ -107,9 +98,8 @@ describe('cli', function() {
             assert.ifError(err, 'success');
             var found = JSON.parse(stdout.trim());
             assert.deepEqual(found.features[0], nhFeature);
-            done();
+            assert.end();
         });
     });
 
-});
-
+mainTable.close();
