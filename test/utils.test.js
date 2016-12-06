@@ -31,7 +31,7 @@ mainTable.test('[utils] toDatabaseRecord - no ID', function(assert) {
     
     var feature = utils.toDatabaseRecord(noId, 'dataset');
         
-    assert.equal(feature.index, 'dataset!feature!'+utils.idFromRecord(feature), 'an id was assigned');
+    assert.equal(feature.key, 'dataset!feature!'+utils.idFromRecord(feature), 'an id was assigned');
     assert.ok(feature.size, 'size was calculated');
     assert.ok(feature.val, 'geobuf was stored in the item');
 
@@ -126,8 +126,8 @@ mainTable.test('[utils] toDatabaseRecord - null ID', function(assert) {
     };
     var encoded = utils.toDatabaseRecord(nullId, 'dataset');
     var item = encoded;
-    assert.notEqual(item.index, 'dataset!feature!null', 'null id was treated as undefined');
-    assert.equal(item.index, 'dataset!feature!'+utils.idFromRecord(item), 'an id was assigned');
+    assert.notEqual(item.key, 'dataset!feature!null', 'null id was treated as undefined');
+    assert.equal(item.key, 'dataset!feature!'+utils.idFromRecord(item), 'an id was assigned');
 
     assert.ok(item.size, 'size was calculated');
     assert.ok(item.val, 'geobuf was stored in the item');
@@ -157,19 +157,19 @@ mainTable.test('[utils] toDatabaseRecord - no geometry', function(assert) {
 });
 
 mainTable.test('[utils] idFromRecord - no ! in the id', function(assert) {
-    var record = { index: 'id!feature!123456' };
+    var record = { key: 'id!feature!123456' };
     assert.equal(utils.idFromRecord(record), '123456', 'expected value');
     assert.end();
 });
 
 mainTable.test('[utils] idFromRecord - has ! in the id', function(assert) {
-    var record = { index: 'id!feature!123456!654321' };
+    var record = { key: 'id!feature!123456!654321' };
     assert.equal(utils.idFromRecord(record), '123456!654321', 'expected value');
     assert.end();
 });
 
 mainTable.test('[utils] idFromRecord - emoji', function(assert) {
-    var record = { index: 'id!feature!\u1F471' };
+    var record = { key: 'id!feature!\u1F471' };
     assert.equal(utils.idFromRecord(record), '\u1F471', 'expected value');
     assert.end();
 });

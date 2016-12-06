@@ -50,7 +50,7 @@ function Cardboard(config) {
             catch (err) { return callback(err); }
 
             records.push(encoded);
-            geobufs[encoded.index] = encoded.val;
+            geobufs[encoded.key] = encoded.val;
         }
 
         q.awaitAll(function(err) {
@@ -68,13 +68,13 @@ function Cardboard(config) {
 
                 var pending = unprocessed.map(function(req) {
                     var item = req.PutRequest.Item;
-                    var buffer = geobufs[item.index];
-                    delete geobufs[item.index];
+                    var buffer = geobufs[item.key];
+                    delete geobufs[item.key];
                     return utils.decodeBuffer(buffer);
                 });
 
-                var features = Object.keys(geobufs).map(function(index) {
-                    return utils.decodeBuffer(geobufs[index]);
+                var features = Object.keys(geobufs).map(function(key) {
+                    return utils.decodeBuffer(geobufs[key]);
                 });
 
                 var fc = utils.featureCollection(features);

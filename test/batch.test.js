@@ -62,7 +62,7 @@ mainTable.test('[batch] put', function(assert) {
                 assert.equal(records.length, states.features.length, 'inserted all the features');
 
                 assert.ok(records.reduce(function(inDataset, record) {
-                    if (record.index.indexOf('states!') !== 0) inDataset = false;
+                    if (record.key.indexOf('states!') !== 0) inDataset = false;
                     return inDataset;
                 }, true), 'all records in the right dataset');
 
