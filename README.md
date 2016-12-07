@@ -16,15 +16,12 @@ Generate a client by passing the following configuration options to cardboard:
 
 option | required | description
 --- | --- | ---
-table | X | the name of the DynamoDB table to use
+mainTable | X | the name of the DynamoDB table to use
 region | X | the region containing the given DynamoDB table
-bucket | X | the name of an S3 bucket to use for large-object storage
-prefix | X | a folder prefix to use within the S3 bucket
 accessKeyId | | AWS credentials
 secretAccessKey | | AWS credentials
 sessionToken | | AWS credentials
 dyno | | a pre-configured [dyno client](https://github.com/mapbox/dyno) to use for DynamoDB interactions
-s3 | | a pre-configured [s3 client](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html) to use for S3 interactions
 
 Providing AWS credentials is optional. Cardboard depends on the AWS SDK for JavaScript, and so credentials can be provided in any way supported by that library. See [configuring the SDK in Node.js](http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-configuring.html) for more configuration options.
 
@@ -37,8 +34,6 @@ var Cardboard = require('cardboard');
 var cardboard = Cardboard({
     table: 'my-cardboard-table',
     region: 'us-east-1',
-    bucket: 'my-cardboard-bucket',
-    prefix: 'test'
 });
 ```
 
@@ -69,79 +64,6 @@ Features within a single `dataset` must each have a unique `id`. Cardboard uses 
 ### Collections
 
 Whenever dealing with individual GeoJSON features, cardboard will expect or return a GeoJSON object of type `Feature`. In batch situations, or in any request that returns multiple features, cardboard will expect/return a `FeatureCollection`.
-
-### Pagination
-
-As datasets become large, retrieving all the features they contain can become a prohibitively expensive / slow operation. Functions in cardboard that may return large numbers of features allow you to provide pagination options, allowing you to gather all the features in a single dataset through a series of consecutive requests.
-
-Pagination options are an object with two properties:
-
-option | type | description
---- | --- | ---
-maxFeatures | number | instructs cardboard to provide *no more than* this many features in a single `.list()` request
-start | string | [optional] instructs cardboard to begin providing results *after* the specified key.
-
-Cardboard will attempt to return `maxFeatures` number of results per paginated request. However, if the individual features in the dataset are very large, or you've specifed `maxFeatures` very high, cardboard may return fewer results. It will never return more than this number of features.
-
-Once you've received a set of results, find the id of the last feature in the FeatureCollection, i.e.
-
-```js
-var lastId = featureCollection.features.pop().id;
-```
-
-By using this as the `start` option for the next request, cardboard will provide you with the next set of results.
-
-You have received all the features when the request returns a FeatureCollection with no features in it.
-
-#### Example: paginated cardboard.list()
-
-```js
-var Cardboard = require('cardboard');
-var cardboard = Cardboard({
-    table: 'my-cardboard-table',
-    region: 'us-east-1',
-    bucket: 'my-cardboard-bucket',
-    prefix: 'test'
-});
-
-var features = [];
-getFeatures();
-
-function getFeatures(start) {
-    var options = { maxFeatures: 10 };
-    if (start) options.start = start;
-
-    cardboard.list('my-dataset', options, function(err, featureCollection) {
-        if (err) throw err;
-        if (!featureCollection.features.length) return;
-
-        features = features.concat(featureCollection.features);
-
-        var lastId = featureCollection.features.pop().id;
-        getFeatures(lastId);
-    });
-}
-```
-
-### Metadata
-
-Metadata can be stored pertaining to each dataset in the cardboard table:
-
-property | description
---- | ---
-west | west-bound of dataset's extent
-south | south-bound of dataset's extent
-east | east-bound of dataset's extent
-north | north-bound of dataset's extent
-count | number of features in the dataset
-size | approximate size (in bytes) of the entire dataset
-updated | unix timestamp of the last update to this metadata record,
-minzoom | suggested minimum zoom for this dataset
-maxzoom | suggested maximum zoom for this dataset
-
-Use the `cardboard.getDatasetInfo` function to retrieve a dataset's metadata. By default, dataset metadata *is not* updated incrementally as features are added, updated, or removed. The metadata record can be updated by calling `cardboard.calculateDatasetInfo`. This operation gathers all the features in the dataset and recalculates the metadata cache.
-
-`cardboard.metadata.addFeature`, `cardboard.metadata.updateFeature`, and `cardboard.metadata.removeFeature` provide mechanisms to incrementally adjust metadata information on a per-feature basis. Note that these operations *will only expand* the extent information. If you've performed numerous deletes and need to contract the extent, use `cardboard.calculateDatasetInfo`.
 
 ### Precision
 
