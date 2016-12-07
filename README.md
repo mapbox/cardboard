@@ -32,9 +32,9 @@ If you provide a preconfigured [dyno client](https://github.com/mapbox/dyno), yo
 ```js
 var Cardboard = require('cardboard');
 var cardboard = Cardboard({
-    table: 'my-cardboard-table',
+    mainTable: 'my-cardboard-table',
     region: 'us-east-1',
-});
+});- '6.9'
 ```
 
 ## Creating a Cardboard table

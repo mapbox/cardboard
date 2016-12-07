@@ -7,8 +7,7 @@
     "pretest": "eslint index.js lib test/*.js",
     "test": "nyc tape test/*.test.js",
     "coverage": "nyc --reporter html tape test/*.test.js && opener ./coverage/index.html",
-    "docs": "documentation -f md --github > api.md",
-    "posttest": "rm -r ./test/test"
+    "docs": "documentation -f md --github > api.md"
   },
   "bin": {
     "cardboard": "./bin/cardboard.js"
