@@ -3,7 +3,8 @@
     "AttributeDefinitions": [
         {"AttributeName": "dataset", "AttributeType": "S"},
         {"AttributeName": "id", "AttributeType": "S"},
-        {"AttributeName": "cell", "AttributeType": "S"}
+        {"AttributeName": "cell", "AttributeType": "S"},
+        {"AttributeName": "quadkey", "AttributeType": "S"}
     ],
     "KeySchema": [
         {"AttributeName": "dataset", "KeyType": "HASH"},
@@ -23,6 +24,19 @@
             "ProvisionedThroughput": {
                 "ReadCapacityUnits": 5,
                 "WriteCapacityUnits": 50
+            }
+        }
+    ],
+    "LocalSecondaryIndexes": [
+        {
+            "IndexName": "quadkey",
+            "KeySchema": [
+                {"AttributeName": "dataset", "KeyType": "HASH"},
+                {"AttributeName": "quadkey", "KeyType": "RANGE"}
+            ],
+            "Projection": {
+                "ProjectionType": "INCLUDE",
+                "NonKeyAttributes": [ "val", "s3url", "north", "east", "south", "west" ]
             }
         }
     ],

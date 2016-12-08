@@ -123,6 +123,7 @@ function Cardboard(config) {
         q.await(function(err) {
             var result = geobuf.geobufToFeature(encoded[0].val || encoded[1].Body);
             result.id = utils.idFromRecord(encoded[0]);
+            result.quadkey = encoded[0].quadkey;
             callback(err, result);
         });
     };
@@ -609,6 +610,82 @@ function Cardboard(config) {
                     params.ExclusiveStartKey = {
                         dataset: dataset, id: items.slice(-1)[0].id
                     };
+                    getPageOfBbox();
+                });
+            });
+        }
+        getPageOfBbox();
+    };
+
+    /**
+     * Find GeoJSON features that intersect a bounding box using Quadkey Index
+     * @param {number[]} bbox - the bounding box as `[west, south, east, north]`
+     * @param {string} dataset - the name of the dataset
+     * @param {Object} [options] - Paginiation options. If omitted, the the bbox will
+     *   return the first page, limited to 100 features
+     * @param {number} [options.maxFeatures] - maximum number of features to return
+     * @param {Object} [options.start] - Exclusive start key to use for loading the next page. This is quadkey and feature id.
+     * @param {function} callback - the callback function to handle the response
+     * @example
+     * var bbox = [-120, 30, -115, 32]; // west, south, east, north
+     * carboard.bboxQuadkeyQuery(bbox, 'my-dataset', function(err, collection) {
+     *   if (err) throw err;
+     *   collection.type === 'FeatureCollection'; // true
+     * });
+     */
+    cardboard.bboxQuadkeyQuery = function(bbox, dataset, options, callback) {
+        if (typeof options === 'function') {
+            callback = options;
+            options = {};
+        }
+
+        if (!options.maxFeatures) options.maxFeatures = 100;
+
+        // List all features with a filterquery for the bounds.
+        // This isnt meant to be fast, but it is meant to page by feature id.
+
+        var quadkeyRange = utils.calcQuadkeyRange(bbox);
+
+        var params = {
+            IndexName: 'quadkey',
+            ExpressionAttributeNames: { '#quadkey': 'quadkey', '#dataset': 'dataset' },
+            ExpressionAttributeValues: {
+                ':nw': quadkeyRange.nw,
+                ':se': quadkeyRange.se,
+                ':dataset': dataset,
+                ':west': bbox[2],
+                ':east': bbox[0],
+                ':north': bbox[1],
+                ':south': bbox[3]
+            },
+            KeyConditionExpression: '#dataset = :dataset and #quadkey BETWEEN :nw and :se',
+            Limit: options.maxFeatures,
+            FilterExpression: 'west <= :west and east >= :east and north >= :north and south <= :south'
+        };
+
+        if (options.start) params.ExclusiveStartKey = {
+            dataset: dataset, quadkey: options.start.quadkey, id: options.start.id
+        };
+
+        var maxPages = 10;
+        var page = 0;
+        var combinedFeatures = [];
+
+        function getPageOfBbox() {
+            config.dyno.query(params, function(err, res) {
+                if (err) return callback(err);
+
+                var items = res.Items;
+                utils.resolveFeatures(items, function(err, data) {
+                    if (err) return callback(err);
+
+                    combinedFeatures = combinedFeatures.concat(data.features);
+                    if (res.ScannedCount <= options.maxFeatures || combinedFeatures.length >= options.maxFeatures || page >= maxPages || !items.length) {
+                        data.features = combinedFeatures.slice(0, options.maxFeatures);
+                        return callback(err, data);
+                    }
+                    page += 1;
+                    params.ExclusiveStartKey = res.LastEvaluatedKey;
                     getPageOfBbox();
                 });
             });
