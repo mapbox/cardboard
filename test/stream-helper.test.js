@@ -9,7 +9,7 @@ test('handlers removes', function(assert) {
         assert.equal('REMOVE', records[0].action, 'action type comes throw');
         assert.equal(typeof records[0].before, 'object', 'has before object');
         setTimeout(cb, 0);
-    })(e, function(err) {
+    })(e, function() {
         assert.end();
     });
 });
@@ -21,7 +21,7 @@ test('handlers modifies', function(assert) {
         assert.equal(typeof records[0].after, 'object', 'has after object');
         assert.equal(typeof records[0].before, 'object', 'has before object');
         setTimeout(cb, 0);
-    })(e, function(err) {
+    })(e, function() {
         assert.end();
     });
 });
@@ -32,7 +32,7 @@ test('handlers inserts', function(assert) {
         assert.equal(typeof records[0].after, 'object', 'has after object');
         assert.equal(1, records.length, 'did not filter out records we want');     
         setTimeout(cb, 0);
-    })(e, function(err) {
+    })(e, function() {
         assert.end();
     });
 });
@@ -44,7 +44,7 @@ test('filter out some events', function(assert) {
     streamHelper(['REMOVE'], function(records, cb) {
         assert.equal(1, records.length, 'did not filter out records we want');     
         setTimeout(cb, 0);
-    })(e, function(err) {
+    })(e, function() {
         assert.end();
     });
 });
@@ -55,7 +55,7 @@ test('removes actions we dont want', function(assert) {
     streamHelper(['MODIFY', 'REMOVE'], function(records, cb) {
         assert.fail('this should be skipped');
         setTimeout(cb, 0);
-    })(e, function(err) {
+    })(e, function() {
         assert.pass('dont run if there are no actions we want');
         assert.end();
     });
