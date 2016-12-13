@@ -7,7 +7,7 @@ var cmd = path.resolve(__dirname, '..', 'bin', 'cardboard.js');
 var _ = require('lodash');
 
 
-var mainTable = require('dynamodb-test')(require('tape'), 'cardboard', require('../lib/main_table.json'));
+var mainTable = require('dynamodb-test')(require('tape'), 'cardboard', require('../lib/main-table.json'));
 
 var config = {
     region: 'test',
@@ -15,7 +15,7 @@ var config = {
     endpoint: 'http://localhost:4567'
 };
 
-var utils = require('../lib/utils')(config);
+var utils = require('../lib/utils');
 
 var statesPath = path.resolve(__dirname, 'data', 'states.geojson');
 var states = fs.readFileSync(statesPath, 'utf8');

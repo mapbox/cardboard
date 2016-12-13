@@ -22,7 +22,7 @@ function Cardboard(config) {
     if (!config.dyno && !config.region) throw new Error('No region set');
     if (!config.dyno) config.dyno = Dyno({table: config.mainTable, region: config.region, endpoint: config.endpoint});
 
-    var utils = require('./lib/utils')();
+    var utils = require('./lib/utils');
 
     /**
      * A client configured to interact with a backend cardboard database
@@ -148,10 +148,12 @@ function Cardboard(config) {
      * @param {function} callback - the callback function to handle the response
      */
     cardboard.createTable = function(callback) {
-        var tableSchema = require('./lib/main_table.json');
+        var tableSchema = require('./lib/main-table.json');
         tableSchema.TableName = config.mainTable;
         config.dyno.createTable(tableSchema, callback);
     };
 
     return cardboard;
 }
+
+Cardboard.streamHelper = require('./lib/stream-helper');

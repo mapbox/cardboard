@@ -4,7 +4,7 @@ var Pbf = require('pbf');
 var geobuf = require('geobuf');
 var fixtures = require('./fixtures');
 
-var mainTable = require('dynamodb-test')(require('tape'), 'cardboard', require('../lib/main_table.json'));
+var mainTable = require('dynamodb-test')(require('tape'), 'cardboard', require('../lib/main-table.json'));
 
 var config = {
     region: 'test',
@@ -12,7 +12,7 @@ var config = {
     endpoint: 'http://localhost:4567'
 };
 
-var utils = require('../lib/utils')(config);
+var utils = require('../lib/utils');
 
 mainTable.test('[indexing] insert', function(assert) {
     var cardboard = Cardboard(config);
@@ -112,7 +112,6 @@ mainTable.test('[indexing] insert feature with no coordinates', function(assert)
 
 mainTable.test('[indexing] insert wildly precise feature', function(assert) {
     var cardboard = Cardboard(config);
-    var utils = require('../lib/utils')(config);
     var d = {
         geometry: {
             coordinates: [

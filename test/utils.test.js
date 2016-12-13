@@ -2,22 +2,15 @@ var Pbf = require('pbf');
 var fs = require('fs');
 var path = require('path');
 var geobuf = require('geobuf');
+var test = require('tape');
 
 var states = fs.readFileSync(path.resolve(__dirname, 'data', 'states.geojson'), 'utf8');
 states = JSON.parse(states);
 
-var mainTable = require('dynamodb-test')(require('tape'), 'cardboard', require('../lib/main_table.json'));
+var utils = require('../lib/utils');
 
-var config = {
-    region: 'test',
-    mainTable: mainTable.tableName,
-    endpoint: 'http://localhost:4567'
-};
-var utils = require('../lib/utils')(config);
 
-mainTable.start();
-
-mainTable.test('[utils] toDatabaseRecord - no ID', function(assert) {
+test('[utils] toDatabaseRecord - no ID', function(assert) {
     var noId = {
         type: 'Feature',
         properties: {
@@ -31,7 +24,7 @@ mainTable.test('[utils] toDatabaseRecord - no ID', function(assert) {
     
     var feature = utils.toDatabaseRecord(noId, 'dataset');
         
-    assert.equal(feature.key, 'dataset!feature!'+utils.idFromRecord(feature), 'an id was assigned');
+    assert.equal(feature.key, 'dataset!'+utils.idFromRecord(feature), 'an id was assigned');
     assert.ok(feature.size, 'size was calculated');
     assert.ok(feature.val, 'geobuf was stored in the item');
 
@@ -41,7 +34,7 @@ mainTable.test('[utils] toDatabaseRecord - no ID', function(assert) {
     assert.end(); 
 });
 
-mainTable.test('[utils] toDatabaseRecord - with ID', function(assert) {
+test('[utils] toDatabaseRecord - with ID', function(assert) {
     var hasId = {
         id: 'bacon-lettuce-tomato',
         type: 'Feature',
@@ -62,7 +55,7 @@ mainTable.test('[utils] toDatabaseRecord - with ID', function(assert) {
     assert.end();
 });
 
-mainTable.test('[utils] toDatabaseRecord - numeric IDs become strings', function(assert) {
+test('[utils] toDatabaseRecord - numeric IDs become strings', function(assert) {
     var numericId = {
         id: 12,
         type: 'Feature',
@@ -86,7 +79,7 @@ mainTable.test('[utils] toDatabaseRecord - numeric IDs become strings', function
     assert.end();
 });
 
-mainTable.test('[utils] toDatabaseRecord - zero is an acceptable ID', function(assert) {
+test('[utils] toDatabaseRecord - zero is an acceptable ID', function(assert) {
     var zeroId = {
         id: 0,
         type: 'Feature',
@@ -112,7 +105,7 @@ mainTable.test('[utils] toDatabaseRecord - zero is an acceptable ID', function(a
     assert.end();
 });
 
-mainTable.test('[utils] toDatabaseRecord - null ID', function(assert) {
+test('[utils] toDatabaseRecord - null ID', function(assert) {
     var nullId = {
         id: null,
         type: 'Feature',
@@ -126,8 +119,8 @@ mainTable.test('[utils] toDatabaseRecord - null ID', function(assert) {
     };
     var encoded = utils.toDatabaseRecord(nullId, 'dataset');
     var item = encoded;
-    assert.notEqual(item.key, 'dataset!feature!null', 'null id was treated as undefined');
-    assert.equal(item.key, 'dataset!feature!'+utils.idFromRecord(item), 'an id was assigned');
+    assert.notEqual(item.key, 'dataset!null', 'null id was treated as undefined');
+    assert.equal(item.key, 'dataset!'+utils.idFromRecord(item), 'an id was assigned');
 
     assert.ok(item.size, 'size was calculated');
     assert.ok(item.val, 'geobuf was stored in the item');
@@ -138,7 +131,7 @@ mainTable.test('[utils] toDatabaseRecord - null ID', function(assert) {
     assert.end();
 });
 
-mainTable.test('[utils] toDatabaseRecord - no geometry', function(assert) {
+test('[utils] toDatabaseRecord - no geometry', function(assert) {
     var noGeom = {
         type: 'Feature',
         properties: {
@@ -156,22 +149,21 @@ mainTable.test('[utils] toDatabaseRecord - no geometry', function(assert) {
     assert.end();
 });
 
-mainTable.test('[utils] idFromRecord - no ! in the id', function(assert) {
-    var record = { key: 'id!feature!123456' };
+test('[utils] idFromRecord - no ! in the id', function(assert) {
+    var record = { key: 'id!123456' };
     assert.equal(utils.idFromRecord(record), '123456', 'expected value');
     assert.end();
 });
 
-mainTable.test('[utils] idFromRecord - has ! in the id', function(assert) {
-    var record = { key: 'id!feature!123456!654321' };
+test('[utils] idFromRecord - has ! in the id', function(assert) {
+    var record = { key: 'id!123456!654321' };
     assert.equal(utils.idFromRecord(record), '123456!654321', 'expected value');
     assert.end();
 });
 
-mainTable.test('[utils] idFromRecord - emoji', function(assert) {
-    var record = { key: 'id!feature!\u1F471' };
+test('[utils] idFromRecord - emoji', function(assert) {
+    var record = { key: 'id!\u1F471' };
     assert.equal(utils.idFromRecord(record), '\u1F471', 'expected value');
     assert.end();
 });
 
-mainTable.close();
