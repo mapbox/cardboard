@@ -29,6 +29,7 @@
   "homepage": "https://github.com/mapbox/cardboard",
   "dependencies": {
     "aws-sdk": "2.x",
+    "buffer-from": "^0.1.1",
     "cuid": "1.2.4",
     "dyno": "1.2.1",
     "geobuf": "^3.0.0",
