@@ -56,10 +56,13 @@ function Cardboard(config) {
             return { PutRequest: { Item: record } };
         });
 
-        config.dyno.batchWriteItemRequests(params).sendAll(10, function(err, res, unprocessedResults) {
+        config.dyno.batchWriteItemRequests(params).sendAll(10, function(err, results) {
             if (err) return callback(err);
 
-            var unprocessed = unprocessedResults || []; 
+            var unprocessed = results.reduce(function(memo, result) {
+                var requests = result.UnprocessedItems.RequestItems ? result.UnprocessedItems.RequestItems[config.mainTable] : [];
+                return memo.concat(requests);
+            }, []);
 
             var pending = unprocessed.map(function(req) {
                 var item = req.PutRequest.Item;
@@ -92,10 +95,13 @@ function Cardboard(config) {
             return { DeleteRequest: { Key: utils.createFeatureKey(dataset, id) } };
         });
 
-        config.dyno.batchWriteItemRequests(params).sendAll(10, function(err, res) {
+        config.dyno.batchWriteItemRequests(params).sendAll(10, function(err, results) {
             if (err) return callback(err);
 
-            var unprocessed = res.UnprocessedItems ? res.UnprocessedItems[config.mainTable] || [] : [];
+            var unprocessed = results.reduce(function(memo, result) {
+                var requests = result.UnprocessedItems.RequestItems ? result.UnprocessedItems.RequestItems[config.mainTable] : [];
+                return memo.concat(requests);
+            }, []);
 
             var ids = unprocessed.map(function(item) {
                 return utils.idFromRecord(item.DeleteRequest.Key);
@@ -119,21 +125,29 @@ function Cardboard(config) {
         var params = { RequestItems: {}};
         params.RequestItems[config.mainTable] = { Keys: keys };
 
-        config.dyno.batchGetItemRequests(params).sendAll(10, function(err, res) {
+        config.dyno.batchGetItemRequests(params).sendAll(10, function(err, results) {
             if (err) return callback(err);
-            var features = res.Responses ? res.Responses[config.mainTable] : [];
-            var pending = res.UnprocessedKeys && res.UnprocessedKeys[config.mainTable] ? res.UnprocessedKeys[config.mainTable].Keys : [];
+            console.log(results);
+            var features = results.reduce(function(memo, result) {
+                var res = result.Responses ? result.Responses[config.mainTable] : [];
+                return memo.concat(res);
+            }, []);
+            var pending = results.reduce(function(memo, result) {
+                var res = result.UnprocessedKeys && result.UnprocessedKeys[config.mainTable] ? result.UnprocessedKeys[config.mainTable].Keys : []; 
+                return memo.concat(res);
+            }, []);
 
+            var fc = null
             try {
-                var fc = utils.resolveFeatures(features);
+                fc = utils.resolveFeatures(features);
                 if (pending.length > 0) {
                     fc.pending = pending.map(function(key) { return utils.idFromRecord(key); });
                 }
-                return callback(null, fc);
             }
             catch(err) {
                 return callback(err);
             }
+            return callback(null, fc);
         });
     };
 

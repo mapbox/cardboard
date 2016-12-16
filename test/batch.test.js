@@ -16,17 +16,25 @@ function unprocessableDyno(table) {
         config: { params: { TableName: table} },
         batchGetItemRequests: function(params) {
             return {
-                sendAll: function(concurrency, callback) {
-                  callback(new Error('make this right'));
+                sendAll: function(rate, callback) {
+                    setTimeout(function() {
+                        callback(null, [{
+                            UnprocessedKeys: params.RequestItems
+                        }]);
+                    }, 0);
                 }
-            };
+            }
         },
         batchWriteItemRequests: function(params) {
             return {
-                sendAll: function(concurrency, callback) {
-                  callback(new Error('make this good'));
+                sendAll: function(rate, callback) {
+                    setTimeout(function() {
+                        callback(null, [{
+                            UnprocessedItems: params
+                        }]);
+                    }, 0);
                 }
-            };
+            }
         }
     } 
 }
@@ -40,6 +48,7 @@ var unprocessableCardboard = require('..')({
 mainTable.test('[batch] put', function(assert) {
     cardboard.put(states, 'states', function(err, collection) {
         assert.ifError(err, 'success');
+        if (err) return assert.end();
         assert.equal(collection.features.length, states.features.length, 'reflects the inserted features');
         assert.ok(collection.features.reduce(function(hasId, feature) {
             if (!feature.id) hasId = false;
@@ -68,6 +77,7 @@ mainTable.test('[batch] put does not duplicate auto-generated ids', function(ass
     (function push(attempts) {
         attempts++;
         cardboard.put(fixtures.random(100), 'default', function(err, collection) {
+            if (err) return assert.end(err);
             collection.features.forEach(function(f) {
                 if (ids.indexOf(f.id) > -1) assert.fail('id was duplicated');
                 else ids.push(f.id);
@@ -93,7 +103,7 @@ mainTable.test('[batch] unprocessed put returns feature collection', function(as
 
 mainTable.test('[batch] del', function(assert) {
     cardboard.put(states, 'states', function(err, collection) {
-        if (err) throw err;
+        if (err) return assert.end(err); 
         var ids = collection.features.map(function(feature) {
             return feature.id;
         });
@@ -153,6 +163,7 @@ mainTable.test('[batch] unprocessed get returns pending ids', function(assert) {
         if (err) return assert.end(err);
         unprocessableCardboard.get(ids, 'default', function(err, fc) {
             if (err) return assert.end(err);
+            if (fc.pending === undefined) return assert.end(new Error('no pending features'));
             ids.forEach(function(id) {
                 assert.ok(fc.pending.indexOf(id) > -1);
             });
