@@ -14,25 +14,17 @@ var config = {
 function unprocessableDyno(table) {
     return {
         config: { params: { TableName: table} },
-        batchGetAll: function(params) {
+        batchGetItemRequests: function(params) {
             return {
                 sendAll: function(concurrency, callback) {
-                    setTimeout(function() {
-                        callback(null, {
-                            UnprocessedKeys: params.RequestItems
-                        });
-                    }, 0);
+                  callback(new Error('make this right'));
                 }
             };
         },
-        batchWriteAll: function(params) {
+        batchWriteItemRequests: function(params) {
             return {
                 sendAll: function(concurrency, callback) {
-                    setTimeout(function() {
-                        callback(null, {
-                            UnprocessedItems: params.RequestItems
-                        });
-                    }, 0);
+                  callback(new Error('make this good'));
                 }
             };
         }
@@ -158,9 +150,9 @@ mainTable.test('[batch] unprocessed get returns pending ids', function(assert) {
     var ids = data.features.map(function(f) { return f.id; });
     cardboard.put(data, 'default', function(err) {
         
-        if (err) throw err;
+        if (err) return assert.end(err);
         unprocessableCardboard.get(ids, 'default', function(err, fc) {
-            if (err) throw err;
+            if (err) return assert.end(err);
             ids.forEach(function(id) {
                 assert.ok(fc.pending.indexOf(id) > -1);
             });

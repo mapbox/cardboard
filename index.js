@@ -1,4 +1,3 @@
-var queue = require('queue-async');
 var Dyno = require('dyno');
 
 module.exports = Cardboard;
@@ -43,7 +42,6 @@ function Cardboard(config) {
         var geobufs = {};
 
         var encoded;
-        var q = queue(150);
 
         for (var i = 0; i < input.features.length; i++) {
             try { encoded = utils.toDatabaseRecord(input.features[i], dataset); }
@@ -53,34 +51,30 @@ function Cardboard(config) {
             geobufs[encoded.key] = encoded.val;
         }
 
-        q.awaitAll(function(err) {
+        var params = { RequestItems: {} };
+        params.RequestItems[config.mainTable] = records.map(function(record) {
+            return { PutRequest: { Item: record } };
+        });
+
+        config.dyno.batchWriteItemRequests(params).sendAll(10, function(err, res, unprocessedResults) {
             if (err) return callback(err);
 
-            var params = { RequestItems: {} };
-            params.RequestItems[config.mainTable] = records.map(function(record) {
-                return { PutRequest: { Item: record } };
+            var unprocessed = unprocessedResults || []; 
+
+            var pending = unprocessed.map(function(req) {
+                var item = req.PutRequest.Item;
+                var buffer = geobufs[item.key];
+                delete geobufs[item.key];
+                return utils.decodeBuffer(buffer);
             });
 
-            config.dyno.batchWriteAll(params).sendAll(10, function(err, res) {
-                if (err) return callback(err);
-
-                var unprocessed = res.UnprocessedItems[config.mainTable] ? res.UnprocessedItems[config.mainTable] : [];
-
-                var pending = unprocessed.map(function(req) {
-                    var item = req.PutRequest.Item;
-                    var buffer = geobufs[item.key];
-                    delete geobufs[item.key];
-                    return utils.decodeBuffer(buffer);
-                });
-
-                var features = Object.keys(geobufs).map(function(key) {
-                    return utils.decodeBuffer(geobufs[key]);
-                });
-
-                var fc = utils.featureCollection(features);
-                if (pending.length > 0) fc.pending = pending;
-                callback(null, fc);
+            var features = Object.keys(geobufs).map(function(key) {
+                return utils.decodeBuffer(geobufs[key]);
             });
+
+            var fc = utils.featureCollection(features);
+            if (pending.length > 0) fc.pending = pending;
+            callback(null, fc);
         });
     };
 
@@ -98,7 +92,7 @@ function Cardboard(config) {
             return { DeleteRequest: { Key: utils.createFeatureKey(dataset, id) } };
         });
 
-        config.dyno.batchWriteAll(params).sendAll(10, function(err, res) {
+        config.dyno.batchWriteItemRequests(params).sendAll(10, function(err, res) {
             if (err) return callback(err);
 
             var unprocessed = res.UnprocessedItems ? res.UnprocessedItems[config.mainTable] || [] : [];
@@ -125,7 +119,7 @@ function Cardboard(config) {
         var params = { RequestItems: {}};
         params.RequestItems[config.mainTable] = { Keys: keys };
 
-        config.dyno.batchGetAll(params).sendAll(10, function(err, res) {
+        config.dyno.batchGetItemRequests(params).sendAll(10, function(err, res) {
             if (err) return callback(err);
             var features = res.Responses ? res.Responses[config.mainTable] : [];
             var pending = res.UnprocessedKeys && res.UnprocessedKeys[config.mainTable] ? res.UnprocessedKeys[config.mainTable].Keys : [];
