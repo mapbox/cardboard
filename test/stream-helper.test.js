@@ -39,8 +39,8 @@ test('handlers inserts', function(assert) {
 
 test('filter out some events', function(assert) {
     var e = toEvent('INSERT', [{id:'insert'}]);
-    e.records = e.records.concat(toEvent('MODIFY', [{id:'modify'}]).records);
-    e.records = e.records.concat(toEvent('REMOVE', [{id:'remove'}]).records);
+    e.Records = e.Records.concat(toEvent('MODIFY', [{id:'modify'}]).Records);
+    e.Records = e.Records.concat(toEvent('REMOVE', [{id:'remove'}]).Records);
     streamHelper(['REMOVE'], function(records, cb) {
         assert.equal(1, records.length, 'did not filter out records we want');     
         setTimeout(cb, 0);
@@ -73,6 +73,6 @@ function toEvent(action, records) {
     });
 
     return {
-        records: out
+        Records: out
     };
 }
