@@ -1,3 +1,9 @@
+# v3.0.0
+
+Breaks cardboard up into a collection of repos where each repo represents one type of index.
+The main repo, represented a dataset-feature index. All other indexes should be derived by
+following a stream off of this DynamoDB table.
+
 ## v2.2.0
 
 - Expose unprocessed items on batch requests.
