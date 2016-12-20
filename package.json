@@ -7,8 +7,7 @@
     "pretest": "eslint index.js lib test/*.js",
     "test": "nyc tape test/*.test.js",
     "coverage": "nyc --reporter html tape test/*.test.js && opener ./coverage/index.html",
-    "docs": "documentation -f md --github > api.md",
-    "posttest": "rm -r ./test/test"
+    "docs": "documentation -f md --github > api.md"
   },
   "bin": {
     "cardboard": "./bin/cardboard.js"
@@ -30,13 +29,15 @@
   "homepage": "https://github.com/mapbox/cardboard",
   "dependencies": {
     "aws-sdk": "2.x",
+    "buffer-from": "^0.1.1",
     "cuid": "1.2.4",
-    "dyno": "1.2.0",
-    "geobuf": "0.2.5",
+    "dyno": "^1.4.0",
+    "geobuf": "^3.0.0",
     "geojson-extent": "^0.1.0",
     "geojson-normalize": "0.0.0",
     "lodash": "~2.4.1",
     "minimist": "0.0.9",
+    "pbf": "^3.0.4",
     "queue-async": "~1.0.7",
     "sphericalmercator": "^1.0.3",
     "through2": "^2.0.0",
@@ -53,6 +54,6 @@
     "geojson-stream": "0.0.0",
     "mock-aws-s3": "^0.2.1",
     "nyc": "^6.4.4",
-    "tape": "^4.0.0"
+    "tape": "^4.6.3"
   }
 }

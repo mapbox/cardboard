@@ -1,33 +1,38 @@
 Error.stackTraceLimit = Infinity;
 
-var test = require('tape');
-var dynamodb = require('dynamodb-test')(test, 'cardboard-cli', require('../lib/table.json'));
-var liveDynamo = require('dynamodb-test')(test, 'cardboard-cli', require('../lib/table.json'), 'us-east-1');
 var exec = require('child_process').exec;
 var path = require('path');
 var fs = require('fs');
-var crypto = require('crypto');
 var cmd = path.resolve(__dirname, '..', 'bin', 'cardboard.js');
 var _ = require('lodash');
 
-var statesPath = path.resolve(__dirname, 'data', 'states.geojson');
-var states = fs.readFileSync(statesPath, 'utf8');
-states = JSON.parse(states);
+
+var mainTable = require('dynamodb-test')(require('tape'), 'cardboard', require('../lib/main-table.json'));
 
 var config = {
-    bucket: 'test',
-    prefix: 'test',
-    dyno: dynamodb.dyno,
-    s3: require('mock-aws-s3').S3()
+    region: 'test',
+    mainTable: mainTable.tableName,
+    endpoint: 'http://localhost:4567'
 };
 
-var cardboard = require('..')(config);
+var utils = require('../lib/utils');
 
-dynamodb.test('[cli] config via env', function(assert) {
+var statesPath = path.resolve(__dirname, 'data', 'states.geojson');
+var states = fs.readFileSync(statesPath, 'utf8');
+var nhFeature = null
+var features = JSON.parse(states).features.map(function(f) {
+    f.id = f.properties.name.replace(/ /g, '-').toLowerCase();
+    if (f.id === 'new-hampshire') nhFeature = utils.decodeBuffer(utils.encodeFeature(f));
+    return f;
+}).map(function(f) {
+    return utils.toDatabaseRecord(f, 'test');
+});
+
+mainTable.test('[cli] config via env', features, function(assert) {
     var options = {
         env: _.extend({
             CardboardRegion: 'region',
-            CardboardTable: 'table',
+            CardboardMainTable: 'features',
             CardboardBucket: 'bucket',
             CardboardPrefix: 'prefix',
             CardboardEndpoint: 'http://localhost:4567'
@@ -41,17 +46,16 @@ dynamodb.test('[cli] config via env', function(assert) {
     });
 });
 
-dynamodb.test('[cli] config via params', function(assert) {
+mainTable.test('[cli] config via params', features, function(assert) {
     var params = [
         cmd,
         '--region', 'region',
-        '--table', 'table',
+        '--mainTable', config.mainTable,
         '--bucket', 'bucket',
         '--prefix', 'prefix',
         '--endpoint', 'http://localhost:4567',
         'invalid-command'
     ];
-
     exec(params.join(' '), function(err, stdout, stderr) {
         // confirms that configuration was not the cause of the error
         assert.equal(stderr, 'invalid-command is not a valid command\n', 'expected error');
@@ -59,138 +63,39 @@ dynamodb.test('[cli] config via params', function(assert) {
     });
 });
 
-dynamodb.test('[cli] config fail', function(assert) {
+mainTable.test('[cli] config fail', features, function(assert) {
     var params = [
         cmd,
-        '--table', 'table',
+        '--mainTable', config.mainTable,
+        '--searchTable', config.searchTable,
         '--bucket', 'bucket',
         '--prefix', 'prefix',
         '--endpoint', 'http://localhost:4567',
         'invalid-command'
     ];
-
     exec(params.join(' '), function(err, stdout, stderr) {
         assert.equal(stderr, 'You must provide a region\n', 'expected error');
         assert.end();
     });
 });
 
-dynamodb.start();
-
-test('[cli] get', function(assert) {
-    cardboard.batch.put(states, 'test', function(err, putResults) {
-        if (err) throw err;
-
-        var params = [
-            cmd,
-            '--region', 'region',
-            '--table', dynamodb.tableName,
-            '--bucket', 'test',
-            '--prefix', 'test',
-            '--endpoint', 'http://localhost:4567',
-            'get', 'test', '\'' + putResults.features[0].id + '\''
-        ];
-
-        exec(params.join(' '), function(err, stdout) {
-            assert.ifError(err, 'success');
-            var found = JSON.parse(stdout.trim());
-            assert.deepEqual(found, putResults.features[0], 'got expected feature');
-            assert.end();
-        });
-    });
-});
-
-dynamodb.empty();
-
-test('[cli] list', function(assert) {
-    cardboard.batch.put(states, 'test', function(err, putResults) {
-        if (err) throw err;
-
-        var params = [
-            cmd,
-            '--region', 'region',
-            '--table', dynamodb.tableName,
-            '--bucket', 'test',
-            '--prefix', 'test',
-            '--endpoint', 'http://localhost:4567',
-            'list', 'test'
-        ];
-
-        exec(params.join(' '), function(err, stdout) {
-            assert.ifError(err, 'success');
-            var found = JSON.parse(stdout.trim());
-            assert.deepEqual(found, putResults, 'got expected FeatureCollection');
-            assert.end();
-        });
-    });
-});
-
-dynamodb.empty();
-
-test('[cli] bbox', function(assert) {
-    cardboard.batch.put(states, 'test', function(err, putResults) {
-        if (err) throw err;
-
-        var params = [
-            cmd,
-            '--region', 'region',
-            '--table', dynamodb.tableName,
-            '--bucket', 'test',
-            '--prefix', 'test',
-            '--endpoint', 'http://localhost:4567',
-            'bbox', 'test', '\'-120,30,-115,35\''
-        ];
-
-        var cali = putResults.features.filter(function(state) {
-            return state.properties.name === 'California';
-        })[0];
-
-        exec(params.join(' '), function(err, stdout) {
-            assert.ifError(err, 'success');
-            var found = JSON.parse(stdout.trim());
-            assert.deepEqual(found, {type: 'FeatureCollection', features: [cali]}, 'found California');
-            assert.end();
-        });
-    });
-});
-
-dynamodb.close();
-
-liveDynamo.start();
-
-test('[cli] put', function(assert) {
-    var liveConfig = {
-        bucket: 'mapbox-sandbox',
-        prefix: 'cardboard-test/' + crypto.randomBytes(4).toString('hex'),
-        dyno: liveDynamo.dyno
-    };
-
-    var live = require('..')(liveConfig);
-
+mainTable.test('[cli] get', features, function(assert) {
     var params = [
         cmd,
-        '--region', 'us-east-1',
-        '--table', liveDynamo.tableName,
-        '--bucket', liveConfig.bucket,
-        '--prefix', liveConfig.prefix,
-        'put', 'test'
+        '--region', 'region',
+        '--mainTable', config.mainTable,
+        '--searchTable', config.searchTable,
+        '--bucket', 'test',
+        '--prefix', 'test',
+        '--endpoint', 'http://localhost:4567',
+        'get', 'test', '\'new-hampshire\''
     ];
-
-    var proc = exec(params.join(' '), function(err) {
+    exec(params.join(' '), function(err, stdout) {
         assert.ifError(err, 'success');
-
-        var found = {type: 'FeatureCollection', features: []};
-        live.list('test')
-            .on('data', function(feature) {
-                found.features.push(feature);
-            })
-            .on('end', function() {
-                assert.equal(found.features.length, states.features.length, 'inserted all the features');
-                assert.end();
-            });
+        var found = JSON.parse(stdout.trim());
+        assert.deepEqual(found.features[0], nhFeature);
+        assert.end();
     });
-
-    fs.createReadStream(statesPath).pipe(proc.stdin);
 });
 
-liveDynamo.delete();
+mainTable.close();
