@@ -127,7 +127,6 @@ function Cardboard(config) {
 
         config.dyno.batchGetItemRequests(params).sendAll(10, function(err, results) {
             if (err) return callback(err);
-            console.log(results);
             var features = results.reduce(function(memo, result) {
                 var res = result.Responses ? result.Responses[config.mainTable] : [];
                 return memo.concat(res);
