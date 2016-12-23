@@ -17,7 +17,7 @@ function Cardboard(config) {
     config = config || {};
 
     // Allow caller to pass in aws-sdk clients
-    if (typeof config.mainTable !== 'string' || config.mainTable.length === 0) throw new Error('"mainTable" must be a string');
+    if (!config.dyno && (typeof config.mainTable !== 'string' || config.mainTable.length === 0)) throw new Error('"mainTable" must be a string');
     if (!config.dyno && !config.region) throw new Error('No region set');
     if (!config.dyno) config.dyno = Dyno({table: config.mainTable, region: config.region, endpoint: config.endpoint});
 
