@@ -175,3 +175,10 @@ mainTable.test('[batch] unprocessed get returns pending ids', function(assert) {
 
 mainTable.close();
 
+require('tape')('test database not found error', function(assert) {
+    cardboard.get('-', '-', function(err) {
+        assert.ok(err instanceof Error, 'should return an error');
+        assert.end();
+    });
+});
+
