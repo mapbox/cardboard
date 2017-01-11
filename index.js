@@ -36,7 +36,7 @@ function Cardboard(config) {
      */
     cardboard.put = function(input, dataset, callback) {
         if (input.type === 'Feature') input = utils.featureCollection([input]);
-        if (input.type !== 'FeatureCollection') throw new Error('Must be a Feature or FeatureCollection');
+        if (input.type !== 'FeatureCollection') return callback(new Error('Must be a Feature or FeatureCollection'));
 
         var records = [];
         var geobufs = {};
@@ -91,7 +91,7 @@ function Cardboard(config) {
         if (!Array.isArray(input)) input = [input];
         var params = { RequestItems: {} };
         params.RequestItems[config.mainTable] = input.map(function(id) {
-            if (typeof id !== 'string') throw new Error('All ids must be strings');
+            if (typeof id !== 'string') return callback(new Error('All ids must be strings'));
             return { DeleteRequest: { Key: utils.createFeatureKey(dataset, id) } };
         });
 
