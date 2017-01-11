@@ -101,6 +101,19 @@ mainTable.test('[batch] unprocessed put returns feature collection', function(as
     });
 });
 
+mainTable.test('[batch] del with invalid content', function(assert) {
+    cardboard.put(states, 'states', function(err, collection) {
+        if (err) return assert.end(err); 
+        var ids = collection.features.map(function(feature) {
+            return feature;
+        });
+        cardboard.del(ids, 'states', function(err) {
+            assert.equal(err.message, 'All ids must be strings');
+            assert.end();
+        });
+    });
+});
+
 mainTable.test('[batch] del', function(assert) {
     cardboard.put(states, 'states', function(err, collection) {
         if (err) return assert.end(err); 

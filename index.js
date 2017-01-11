@@ -90,10 +90,15 @@ function Cardboard(config) {
     cardboard.del = function(input, dataset, callback) {
         if (!Array.isArray(input)) input = [input];
         var params = { RequestItems: {} };
+
+        var err = null;
+
         params.RequestItems[config.mainTable] = input.map(function(id) {
-            if (typeof id !== 'string') return callback(new Error('All ids must be strings'));
+            if (typeof id !== 'string') return err = new Error('All ids must be strings');
             return { DeleteRequest: { Key: utils.createFeatureKey(dataset, id) } };
         });
+
+        if(err) return callback(err);
 
         config.dyno.batchWriteItemRequests(params).sendAll(10, function(err, results) {
             if (err) return callback(err);
