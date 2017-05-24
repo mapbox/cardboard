@@ -1,7 +1,7 @@
 var test = require('tape');
 var Cardboard = require('../');
 var _ = require('lodash');
-var Dyno = require('dyno');
+var Dyno = require('@mapbox/dyno');
 
 var s = require('./setup');
 var config = s.config;

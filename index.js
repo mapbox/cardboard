@@ -1,7 +1,7 @@
 var _ = require('lodash');
 var Metadata = require('./lib/metadata');
 var queue = require('queue-async');
-var Dyno = require('dyno');
+var Dyno = require('@mapobx/dyno');
 var AWS = require('aws-sdk');
 var geobuf = require('geobuf');
 var stream = require('stream');
@@ -29,7 +29,7 @@ module.exports = Cardboard;
  * });
  * @example
  * var cardboard = require('cardboard')({
- *   dyno: require('dyno')(dynoConfig),
+ *   dyno: require('@mapbox/dyno')(dynoConfig),
  *   bucket: 'my-cardboard-bucket',
  *   prefix: 'my-cardboard-prefix'
  * });
