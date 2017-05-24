@@ -15,7 +15,7 @@ var config = module.exports.config = {
     s3: fakeAWS.S3() // only for mocking s3
 };
 
-var dyno = module.exports.dyno = require('dyno')(config);
+var dyno = module.exports.dyno = require('@mapbox/dyno')(config);
 
 module.exports.setup = function(t, multi) {
     dynalite = Dynalite({

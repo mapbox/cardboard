@@ -9,7 +9,7 @@ var dynalite = require('dynalite')({
 var config = {
     bucket: 'test',
     prefix: 'test',
-    dyno: require('dyno')({
+    dyno: require('@mapbox/dyno')({
         table: 'fake',
         region: 'fake',
         accessKeyId: 'fake',
