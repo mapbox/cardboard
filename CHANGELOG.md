@@ -1,3 +1,10 @@
+## v2.3.0
+
+- Update dependabot security advisories
+  - lodash
+  - minimist
+  - eslint
+
 ## v2.2.0
 
 - Expose unprocessed items on batch requests.

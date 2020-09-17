@@ -1,3 +1,4 @@
 test/test
 coverage/
 .nyc_output/
+node_modules
