@@ -6,7 +6,8 @@
 - update test/cli.test.js to use dynalite and mock s3 instead of remote services
 - update documentationjs and api.md format
 - update nyc dependency
-- remove coveralls, add codecov for coverage dependencies
+- remove coveralls, just use nyc for `npm run coverage` command
+- publish under @mapbox npm namespace (same as 3.x)
 
 ## v2.2.0
 

@@ -1,2 +1,3 @@
 bench/
 test/test/
+.nyc_output

@@ -6,7 +6,7 @@
   "scripts": {
     "pretest": "eslint index.js lib test/*.js",
     "test": "nyc tape test/*.test.js",
-    "coverage": "nyc --reporter html tape test/*.test.js && opener ./coverage/index.html",
+    "coverage": "nyc report --reporter html && opener coverage/index.html",
     "docs": "documentation build index.js -f md --github > api.md",
     "posttest": "rm -r ./test/test"
   },
@@ -52,6 +52,7 @@
     "geojson-stream": "0.0.0",
     "mock-aws-s3": "^0.2.1",
     "nyc": "^15.1.0",
+    "opener": "^1.5.2",
     "tape": "^4.0.0"
   }
 }
