@@ -1,8 +1,8 @@
 Error.stackTraceLimit = Infinity;
 
 var test = require('tape');
-var dynamodb = require('dynamodb-test')(test, 'cardboard-cli', require('../lib/table.json'));
-var liveDynamo = require('dynamodb-test')(test, 'cardboard-cli', require('../lib/table.json'), 'us-east-1');
+var dynamodb = require('@mapbox/dynamodb-test')(test, 'cardboard-cli', require('../lib/table.json'));
+var liveDynamo = require('@mapbox/dynamodb-test')(test, 'cardboard-cli', require('../lib/table.json'), 'us-east-1');
 var exec = require('child_process').exec;
 var path = require('path');
 var fs = require('fs');
