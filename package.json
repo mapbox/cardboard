@@ -32,13 +32,16 @@
     "@mapbox/dyno": "1.4.1",
     "aws-sdk": "^2.5.3",
     "cuid": "1.2.4",
-    "geobuf": "0.2.5",
+    "geobuf": "^3.0.2",
     "geojson-extent": "^0.1.0",
     "geojson-normalize": "0.0.0",
     "lodash": "^4.17.20",
     "minimist": "0.0.9",
+    "pbf": "^3.2.1",
     "queue-async": "~1.0.7",
     "sphericalmercator": "^1.0.3",
+    "tap-diff": "^0.1.1",
+    "tap-spec": "^5.0.0",
     "through2": "^2.0.0",
     "tilebelt": "^0.5.2"
   },
@@ -51,8 +54,8 @@
     "geojson-fixtures": "0.1.0",
     "geojson-random": "^0.2.2",
     "geojson-stream": "0.0.0",
-    "mock-aws-s3": "^0.2.1",
+    "mock-aws-s3": "^4.0.1",
     "nyc": "^6.4.4",
-    "tape": "^4.0.0"
+    "tape": "^5.0.1"
   }
 }
