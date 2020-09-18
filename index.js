@@ -386,7 +386,7 @@ function Cardboard(config) {
                     console.log('error in here');
                     resolver.emit('error', err);
                 })
-              .pipe(resolver);
+                .pipe(resolver);
         }
 
         config.dyno.query(params, function(err, data) {

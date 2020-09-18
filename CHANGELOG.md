@@ -1,3 +1,13 @@
+## v2.2.3
+
+- test on node 10/12
+- update lodash dependency to 4.x to resolve security audit
+- update lodash byIndex to byKey method
+- update test/cli.test.js to use dynalite and mock s3 instead of remote services
+- update documentationjs and api.md format
+- update nyc dependency
+- remove coveralls, add codecov for coverage dependencies
+
 ## v2.2.0
 
 - Expose unprocessed items on batch requests.

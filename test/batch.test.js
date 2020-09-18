@@ -1,5 +1,5 @@
 var test = require('tape');
-var dynamodb = require('dynamodb-test')(test, 'cardboard', require('../lib/table.json'));
+var dynamodb = require('@mapbox/dynamodb-test')(test, 'cardboard', require('../lib/table.json'));
 var fs = require('fs');
 var path = require('path');
 var fixtures = require('./fixtures');

@@ -224,9 +224,8 @@ test('query for line near -90 lon n of eq', function(t) {
 
     // all queries should return a single result
     var queries = [
-        [-93, 0, -90, 2],           // [0, 0, 0] -- right answer only because
-                                    // of query filters.
-        [-92.5, 0.5, -90.5, 1.5]    // [ 31, 63, 7 ]
+        [-93, 0, -90, 2],        // [0, 0, 0] -- right answer only because of query filters.
+        [-92.5, 0.5, -90.5, 1.5] // [ 31, 63, 7 ]
     ];
 
     var q = queue();
