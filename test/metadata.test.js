@@ -4,7 +4,7 @@ var _ = require('lodash');
 var Cardboard = require('../');
 var Metadata = require('../lib/metadata');
 var Utils = require('../lib/utils');
-var geojsonExtent = require('geojson-extent');
+var geojsonExtent = require('@mapbox/geojson-extent');
 var geojsonFixtures = require('geojson-fixtures');
 var geobuf = require('geobuf');
 

@@ -641,8 +641,7 @@ test('insert & query', function(t) {
     var cardboard = Cardboard(config);
     var insertQueue = queue(1);
 
-    [fixtures.nullIsland,
-    fixtures.dc].forEach(function(fix) {
+    [fixtures.nullIsland, fixtures.dc].forEach(function(fix) {
         insertQueue.defer(cardboard.put, fix, 'default');
     });
 

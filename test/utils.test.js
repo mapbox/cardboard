@@ -1,5 +1,5 @@
 var test = require('tape');
-var dynamodb = require('dynamodb-test')(test, 'cardboard', require('../lib/table.json'));
+var dynamodb = require('@mapbox/dynamodb-test')(test, 'cardboard', require('../lib/table.json'));
 var fs = require('fs');
 var path = require('path');
 var _ = require('lodash');
@@ -30,8 +30,8 @@ test('[utils] resolveFeatures', function(assert) {
             utils.resolveFeatures(items, function(err, resolveResults) {
                 assert.ifError(err, 'success');
 
-                putResults = _.indexBy(putResults.features, 'id');
-                resolveResults = _.indexBy(resolveResults.features, 'id');
+                putResults = _.keyBy(putResults.features, 'id');
+                resolveResults = _.keyBy(resolveResults.features, 'id');
 
                 _.forOwn(resolveResults, function(found, id) {
                     var expected = putResults[id];
