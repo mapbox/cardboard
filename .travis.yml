@@ -5,7 +5,3 @@ node_js:
 sudo: false
 script:
 - npm test
-env:
-  global:
-  - secure: iEgUpSVRZuvHapWT8fdVDyvRnxKkWXFpXRbWrP3z1qzW81fjlzkV48iYW7vRvS93P2hwjS8Bf5JY7deqgEy/FICEjLO46ztBcwD8aMAc3rmwgoMbdXZr1Rd1ftXWlKe8nex6uwV80nVwIFIqwXRofBM0AKY1WpBXEagm20RF59o=
-  - secure: HUWHLKJNDx/zMDPsEQNg32/VJmzbV3Fv2dFnjLefEbThUJ7jdV50wiozV2p4Fgzm56wDwJHdDP8HaDzu6PEBL1Apszn4KjFyVnR475K0JRPArnJCVNEPawsj1tAXnC4FTB+nyn1uf45DHDBij1kwRyYfUstKEKasFg/6jL8qcv4=
