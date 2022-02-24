@@ -1,3 +1,6 @@
+## v2.2.4
+- update cuid dependency
+
 ## v2.2.3
 
 - test on node 10/12
