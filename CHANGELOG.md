@@ -1,3 +1,6 @@
+## v2.2.5
+- update dyno and minimist versions to resolve critical dependencies 
+
 ## v2.2.4
 - update cuid dependency
 
