@@ -12,7 +12,7 @@ var config = {
     endpoint: 'http://localhost:4567'
 };
 
-var dyno = require('dyno')({
+var dyno = require('@mapbox/dyno')({
     table: 'fake',
     region: 'fake',
     endpoint: 'http://localhost:4567'

@@ -1,4 +1,4 @@
-var Dyno = require('dyno');
+var Dyno = require('@mapbox/dyno');
 
 module.exports = Cardboard;
 
