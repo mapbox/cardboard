@@ -5,6 +5,7 @@ var Cardboard = require('../');
 var geojsonFixtures = require('geojson-fixtures');
 var geojsonNormalize = require('geojson-normalize');
 var geobuf = require('geobuf');
+var Pbf = require('pbf');
 var fixtures = require('./fixtures');
 var crypto = require('crypto');
 
@@ -17,6 +18,11 @@ function featureCollection(features) {
         type: 'FeatureCollection',
         features: features || []
     };
+}
+
+// round-trip through geobuf will always truncate coords to 6 decimal places
+function roundTrip(feature) {
+    return geobuf.decode(new Pbf(Buffer.from(geobuf.encode(feature, new Pbf()))));
 }
 
 test('setup', s.setup);
@@ -80,8 +86,7 @@ test('insert, get by primary index (small feature)', function(t) {
             t.equal(err, null);
             fixtures.haitiLine.id = res.id;
 
-            // round-trip through geobuf will always truncate coords to 6 decimal places
-            var f = geobuf.geobufToFeature(geobuf.featureToGeobuf(fixtures.haitiLine).toBuffer());
+            var f = roundTrip(fixtures.haitiLine);
             delete fixtures.haitiLine.id;
             t.deepEqual(data, f);
 
@@ -122,7 +127,7 @@ test('insert, get by primary index (large feature)', function(t) {
             feature.id = res.id;
 
             // round-trip through geobuf will always truncate coords to 6 decimal places
-            var f = geobuf.geobufToFeature(geobuf.featureToGeobuf(feature).toBuffer());
+            var f = roundTrip(feature);
             t.deepEqual(data, f);
 
             // data should be on S3
@@ -294,7 +299,7 @@ test('insert feature with object property', function(t) {
         cardboard.get(res.id, 'default', function(err, data) {
             t.ifError(err, 'got item');
             d.id = res.id;
-            t.deepEqual(data, geobuf.geobufToFeature(geobuf.featureToGeobuf(d).toBuffer()));
+            t.deepEqual(data, roundTrip(d));
             t.end();
         });
     });
@@ -321,7 +326,7 @@ test('insert & update', function(t) {
 
             cardboard.get(putResult.id, 'default', function(err, getResult) {
                 t.ifError(err, 'got record');
-                var f = geobuf.geobufToFeature(geobuf.featureToGeobuf(update).toBuffer());
+                var f = roundTrip(update);
                 t.deepEqual(getResult, f, 'expected record');
                 t.end();
             });
@@ -830,7 +835,7 @@ test('Insert feature with id specified by user', function(t) {
         t.ifError(err, 'inserted');
         t.deepEqual(putResult.id, haiti.id, 'Uses given id');
         cardboard.get(haiti.id, 'default', function(err, feature) {
-            var f = geobuf.geobufToFeature(geobuf.featureToGeobuf(haiti).toBuffer());
+            var f = roundTrip(haiti);
             t.deepEqual(feature, f, 'retrieved record');
             t.end();
         });
@@ -850,11 +855,11 @@ test('Insert with and without ids specified', function(t) {
         t.ifError(err, 'inserted features');
 
         cardboard.get(haiti.id, 'default', function(err, feature) {
-            var f = geobuf.geobufToFeature(geobuf.featureToGeobuf(haiti).toBuffer());
+            var f = roundTrip(haiti);
             t.deepEqual(feature, f, 'retrieved record');
             cardboard.get(putResults.features[1].id, 'default', function(err, feature) {
                 var f = _.extend({ id: putResults.features[1].id }, fixtures.haiti);
-                f = geobuf.geobufToFeature(geobuf.featureToGeobuf(f).toBuffer());
+                f = roundTrip(f);
                 t.deepEqual(feature, f, 'retrieved record');
                 t.end();
             });

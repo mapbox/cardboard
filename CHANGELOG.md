@@ -1,3 +1,14 @@
+## v2.3.0
+- Update dependabot security advisories
+  - lodash
+  - minimist
+  - eslint
+- Update geobuf dependency to latest 3.x version
+  - stringify any numeric feature IDs to be consistent with v2.x even though the geobuf specification allows integer IDs
+  - update all `featureToGeobuf` methods to `encode`
+  - update all `geobufToFeature` methods to `decode`
+  - install `pbf` dependency
+
 ## v2.2.5
 - update dyno and minimist versions to resolve critical dependencies 
 
