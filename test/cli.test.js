@@ -1,5 +1,8 @@
 Error.stackTraceLimit = Infinity;
 
+process.env.AWS_ACCESS_KEY_ID = '-';
+process.env.AWS_SECRET_ACCESS_KEY = '-';
+
 var test = require('tape');
 var dynamodb = require('@mapbox/dynamodb-test')(test, 'cardboard-cli', require('../lib/table.json'));
 var exec = require('child_process').exec;
