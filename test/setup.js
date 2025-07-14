@@ -21,7 +21,7 @@ var dynoConfig = {
     endpoint: 'http://localhost:4567'
 };
 
-var dyno  = require('dyno')(dynoConfig);
+var dyno  = require('@mapbox/dyno')(dynoConfig);
 
 module.exports.setup = function(done) {
     dynalite = Dynalite({

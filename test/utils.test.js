@@ -5,7 +5,7 @@ var geobuf = require('geobuf');
 var test = require('tape');
 
 var states = fs.readFileSync(path.resolve(__dirname, 'data', 'states.geojson'), 'utf8');
-states = JSON.parse(states);
+states = JSON.parse(states);  // eslint-disable-line no-unused-vars
 
 var utils = require('../lib/utils');
 

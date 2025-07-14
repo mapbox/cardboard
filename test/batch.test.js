@@ -3,7 +3,7 @@ var path = require('path');
 var fixtures = require('./fixtures');
 var states = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'data', 'states.geojson'), 'utf8'));
 
-var mainTable = require('dynamodb-test')(require('tape'), 'cardboard', require('../lib/main-table.json'));
+var mainTable = require('@mapbox/dynamodb-test')(require('tape'), 'cardboard', require('../lib/main-table.json'));
 
 var config = {
     region: 'test',

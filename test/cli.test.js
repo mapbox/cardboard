@@ -7,7 +7,7 @@ var cmd = path.resolve(__dirname, '..', 'bin', 'cardboard.js');
 var _ = require('lodash');
 
 
-var mainTable = require('dynamodb-test')(require('tape'), 'cardboard', require('../lib/main-table.json'));
+var mainTable = require('@mapbox/dynamodb-test')(require('tape'), 'cardboard', require('../lib/main-table.json'));
 
 var config = {
     region: 'test',

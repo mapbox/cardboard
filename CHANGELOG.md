@@ -1,3 +1,10 @@
+# v3.1.0
+
+- Fixes several security issues
+  - Replaces `dyno` with `@mapbox/dyno` package
+  - Replaces `dynamodb-test` with `@mapbox/dynamodb-test`
+  - Removes some unused dependencies
+
 # v3.0.0
 
 Breaks cardboard up into a collection of repos where each repo represents one type of index.

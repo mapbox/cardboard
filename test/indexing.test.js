@@ -4,7 +4,7 @@ var Pbf = require('pbf');
 var geobuf = require('geobuf');
 var fixtures = require('./fixtures');
 
-var mainTable = require('dynamodb-test')(require('tape'), 'cardboard', require('../lib/main-table.json'));
+var mainTable = require('@mapbox/dynamodb-test')(require('tape'), 'cardboard', require('../lib/main-table.json'));
 
 var config = {
     region: 'test',

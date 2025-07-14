@@ -1,5 +1,5 @@
 var test = require('tape');
-var Dyno = require('dyno');
+var Dyno = require('@mapbox/dyno');
 var streamHelper = require('../lib/stream-helper');
 
 test('handlers removes', function(assert) {

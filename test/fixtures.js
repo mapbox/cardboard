@@ -6,7 +6,6 @@ module.exports.random = function() {
 
 module.exports.USA = {
     type: 'Feature',
-    properties: {},
     geometry: {
         type: 'Polygon',
         coordinates: [
@@ -41,8 +40,7 @@ module.exports.nullIsland = {
     geometry: {
         type: 'Point',
         coordinates: [0, 0]
-    },
-    properties: {}
+    }
 };
 
 module.exports.dc = {
@@ -53,8 +51,7 @@ module.exports.dc = {
             -77.02875137329102,
             38.93337493490118
         ]
-    },
-    properties: {}
+    }
 };
 
 module.exports.haiti = {
@@ -93,7 +90,6 @@ module.exports.haiti = {
 
 module.exports.haitiLine = {
     type: 'Feature',
-    properties: {},
     geometry: {
         type: 'LineString',
         coordinates: [
