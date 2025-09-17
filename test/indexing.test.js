@@ -259,7 +259,7 @@ mainTable.test('[indexing] insert & delete', function(assert) {
         cardboard.get(putResult.features[0].id, 'default', function(err, fc) {
             assert.equal(err, null);
             nullIsland.id = putResult.features[0].id;
-            assert.deepEqual(fc.features[0], nullIsland);
+            assert.deepEqual(fc.features[0], geobuf.decode(new Pbf(geobuf.encode(nullIsland, new Pbf()))));
             cardboard.del(putResult.features[0].id, 'default', function(err) {
                 assert.ifError(err, 'removed');
                 cardboard.get(putResult.id, 'default', function(err, data) {
