@@ -28,12 +28,12 @@
   },
   "homepage": "https://github.com/mapbox/cardboard",
   "dependencies": {
+    "@mapbox/dyno": "^1.6.2",
+    "@mapbox/geojson-extent": "^1.0.1",
     "aws-sdk": "2.x",
     "buffer-from": "^0.1.1",
     "cuid": "1.2.4",
-    "dyno": "^1.4.0",
     "geobuf": "^3.0.0",
-    "geojson-extent": "^0.1.0",
     "geojson-normalize": "0.0.0",
     "lodash": "^4.17.21",
     "minimist": "^1.2.8",
@@ -44,16 +44,15 @@
     "tilebelt": "^0.5.2"
   },
   "devDependencies": {
-    "coveralls": "^2.11.2",
-    "documentation": "^3.0.0",
-    "dynalite": "^1.0.2",
-    "dynamodb-test": "^0.2.1",
-    "eslint": "^1.4.3",
+    "@eslint/js": "^9.23.0",
+    "@mapbox/dynamodb-test": "^0.6.2",
+    "dynalite": "^3.2.2",
+    "eslint": "^9.23.0",
     "geojson-fixtures": "0.1.0",
     "geojson-random": "^0.2.2",
     "geojson-stream": "0.0.0",
-    "mock-aws-s3": "^0.2.1",
-    "nyc": "^6.4.4",
+    "mock-aws-s3": "^4.0.2",
+    "nyc": "^17.1.0",
     "tape": "^4.6.3"
   }
 }
