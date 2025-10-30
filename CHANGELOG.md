@@ -1,3 +1,7 @@
+# v3.0.5
+
+- Switch from using `geojson-extent` to using `@mapbox/geojson-extent`
+
 # v3.0.0
 
 Breaks cardboard up into a collection of repos where each repo represents one type of index.
