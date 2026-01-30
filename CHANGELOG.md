@@ -1,3 +1,9 @@
+# v3.0.6
+
+- Replace dyno with @mapbox/dyno and upgrade to v1.6.3 to fix dependency vulns
+- Upgrade lodash to v4.17.23
+- Update .gitignore
+
 # v3.0.5
 
 - Switch from using `geojson-extent` to using `@mapbox/geojson-extent`
