@@ -1,6 +1,6 @@
 var Cardboard = require('../');
 var _ = require('lodash');
-var Dyno = require('dyno');
+var Dyno = require('@mapbox/dyno');
 
 var mainTable = require('dynamodb-test')(require('tape'), 'cardboard', require('../lib/main-table.json'));
 

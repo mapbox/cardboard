@@ -22,7 +22,7 @@ var cardboard = require('cardboard')({
 
 ```js
 var cardboard = require('cardboard')({
-  dyno: require('dyno')(dynoConfig),
+  dyno: require('@mapbox/dyno')(dynoConfig),
 });
 ```
 
