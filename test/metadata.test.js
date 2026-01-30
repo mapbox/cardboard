@@ -7,6 +7,12 @@ var Utils = require('../lib/utils');
 var geojsonExtent = require('@mapbox/geojson-extent');
 var geojsonFixtures = require('geojson-fixtures');
 var geobuf = require('geobuf');
+var Pbf = require('pbf');
+
+// Helper function for geobuf 3.x API
+function encodeGeobuf(feature) {
+    return Buffer.from(geobuf.encode(feature, new Pbf()));
+}
 
 var s = require('./setup');
 var config = s.config;
@@ -204,7 +210,7 @@ test('setup', s.setup);
 
 test('metadata: add a feature', function(t) {
     var feature = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
-    var expectedSize = geobuf.featureToGeobuf(feature).toBuffer().length;
+    var expectedSize = encodeGeobuf(feature).length;
     var expectedBounds = geojsonExtent(feature);
     var cardboard = Cardboard(config);
 
@@ -262,7 +268,7 @@ test('setup', s.setup);
 
 test('metadata: add a feature via database record', function(t) {
     var feature = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
-    var expectedSize = geobuf.featureToGeobuf(feature).toBuffer().length;
+    var expectedSize = encodeGeobuf(feature).length;
     var expectedBounds = geojsonExtent(feature);
     var cardboard = Cardboard(config);
     var utils = Utils(config);
@@ -322,7 +328,7 @@ test('setup', s.setup);
 test('metadata: update a feature', function(t) {
     var original = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
     var edited = _.extend({ id: 'test-feature' }, geojsonFixtures.featurecollection.idaho.features[0]);
-    var expectedSize = geobuf.featureToGeobuf(edited).toBuffer().length - geobuf.featureToGeobuf(original).toBuffer().length;
+    var expectedSize = encodeGeobuf(edited).length - encodeGeobuf(original).length;
     var expectedBounds = geojsonExtent(edited);
     var cardboard = Cardboard(config);
 
@@ -365,7 +371,7 @@ test('setup', s.setup);
 test('metadata: update a feature via database record', function(t) {
     var original = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
     var edited = _.extend({ id: 'test-feature' }, geojsonFixtures.featurecollection.idaho.features[0]);
-    var expectedSize = geobuf.featureToGeobuf(edited).toBuffer().length - geobuf.featureToGeobuf(original).toBuffer().length;
+    var expectedSize = encodeGeobuf(edited).length - encodeGeobuf(original).length;
     var expectedBounds = geojsonExtent(edited);
     var cardboard = Cardboard(config);
 
@@ -411,7 +417,7 @@ test('setup', s.setup);
 
 test('metadata: remove a feature', function(t) {
     var feature = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
-    var expectedSize = geobuf.featureToGeobuf(feature).toBuffer().length;
+    var expectedSize = encodeGeobuf(feature).length;
     var cardboard = Cardboard(config);
 
     cardboard.metadata.deleteFeature(dataset, feature, function(err) {
@@ -451,7 +457,7 @@ test('setup', s.setup);
 
 test('metadata: remove a feature via database record', function(t) {
     var feature = _.extend({ id: 'test-feature' }, geojsonFixtures.feature.one);
-    var expectedSize = geobuf.featureToGeobuf(feature).toBuffer().length;
+    var expectedSize = encodeGeobuf(feature).length;
     var cardboard = Cardboard(config);
 
     var utils = Utils(config);
@@ -506,7 +512,7 @@ test('metadata: calculate dataset info', function(t) {
         });
 
         var expectedSize = features.reduce(function(memo, feature) {
-            memo = memo + geobuf.featureToGeobuf(feature).toBuffer().length;
+            memo = memo + encodeGeobuf(feature).length;
             return memo;
         }, 0);
 
@@ -592,7 +598,7 @@ test('insert many idaho features & check metadata', function(t) {
     var features = geojsonFixtures.featurecollection.idaho.features.slice(0, 50);
     var expectedBounds = geojsonExtent({ type: 'FeatureCollection', features: features });
     var expectedSize = features.reduce(function(memo, feature) {
-        memo = memo + geobuf.featureToGeobuf(feature).toBuffer().length;
+        memo = memo + encodeGeobuf(feature).length;
         return memo;
     }, 0);
 
@@ -643,9 +649,9 @@ test('insert many idaho features, delete one & check metadata', function(t) {
     var deleteThis = features[9];
     var expectedBounds = geojsonExtent({ type: 'FeatureCollection', features: features });
     var expectedSize = features.reduce(function(memo, feature) {
-        memo = memo + geobuf.featureToGeobuf(feature).toBuffer().length;
+        memo = memo + encodeGeobuf(feature).length;
         return memo;
-    }, 0) - geobuf.featureToGeobuf(deleteThis).toBuffer().length;
+    }, 0) - encodeGeobuf(deleteThis).length;
 
     var q = queue();
 
@@ -710,7 +716,7 @@ test('insert idaho feature, update & check metadata', function(t) {
         t.pass('inserted idaho feature');
 
         var update = _.extend({ id: res[0] }, edited);
-        expectedSize = geobuf.featureToGeobuf(update).toBuffer().length;
+        expectedSize = encodeGeobuf(update).length;
         queue()
             .defer(cardboard.put, update, dataset)
             .defer(metadata.updateFeature, original, update)
@@ -800,7 +806,7 @@ test('calculateDatasetInfo', function(t) {
         });
 
         var expectedSize = features.reduce(function(memo, feature) {
-            memo = memo + geobuf.featureToGeobuf(feature).toBuffer().length;
+            memo = memo + encodeGeobuf(feature).length;
             return memo;
         }, 0);
 

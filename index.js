@@ -4,6 +4,7 @@ var queue = require('queue-async');
 var Dyno = require('@mapbox/dyno');
 var AWS = require('aws-sdk');
 var geobuf = require('geobuf');
+var Pbf = require('pbf');
 var stream = require('stream');
 
 var MAX_GEOMETRY_SIZE = 1024 * 10;  // 10KB
@@ -121,7 +122,7 @@ function Cardboard(config) {
         if (encoded[1]) q.defer(config.s3.putObject.bind(config.s3), encoded[1]);
         q.defer(config.dyno.putItem, {Item: encoded[0]});
         q.await(function(err) {
-            var result = geobuf.geobufToFeature(encoded[0].val || encoded[1].Body);
+            var result = geobuf.decode(new Pbf(encoded[0].val || encoded[1].Body));
             result.id = utils.idFromRecord(encoded[0]);
             callback(err, result);
         });
