@@ -47,7 +47,7 @@
     "coveralls": "^2.11.2",
     "documentation": "^3.0.0",
     "dynalite": "^1.0.2",
-    "dynamodb-test": "^0.2.1",
+    "@mapbox/dynamodb-test": "^0.7.1",
     "eslint": "^1.4.3",
     "geojson-fixtures": "0.1.0",
     "geojson-random": "^0.2.2",
