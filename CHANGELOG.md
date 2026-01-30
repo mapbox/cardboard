@@ -1,6 +1,7 @@
 # v3.0.6
 
-- Replace dyno with @mapbox/dyno and upgrade to v1.6.3 to fix dependency vulns
+- Replace dyno with @mapbox/dyno and upgrade to v1.6.3
+- Replace dynamodb-test with @mapbox/dynamodb-test and upgrade to v0.7.1
 - Upgrade lodash to v4.17.23
 - Update .gitignore
 
