@@ -1,6 +1,6 @@
 {
   "name": "@mapbox/cardboard",
-  "version": "3.0.6-dev2",
+  "version": "3.0.6-dev3",
   "description": "A library for storing and searching geographic features",
   "main": "index.js",
   "scripts": {
