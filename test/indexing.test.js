@@ -4,20 +4,14 @@ var _ = require('lodash');
 var Cardboard = require('../');
 var geojsonFixtures = require('geojson-fixtures');
 var geojsonNormalize = require('geojson-normalize');
-var geobuf = require('geobuf');
-var Pbf = require('pbf');
 var fixtures = require('./fixtures');
 var crypto = require('crypto');
 
-// Helper functions for geobuf 3.x API
-function encodeGeobuf(feature) {
-    return Buffer.from(geobuf.encode(feature, new Pbf()));
-}
-function decodeGeobuf(buffer) {
-    return geobuf.decode(new Pbf(buffer));
-}
+// Import geobuf helpers from lib for consistent encoding/decoding
+var encodeFeature = require('../lib/geobuf-helpers').encodeFeature;
+var decodeFeature = require('../lib/geobuf-helpers').decodeFeature;
 function roundtripGeobuf(feature) {
-    return decodeGeobuf(encodeGeobuf(feature));
+    return decodeFeature(encodeFeature(feature));
 }
 
 var s = require('./setup');
@@ -881,7 +875,7 @@ test('pre-flight feature info', function(t) {
     var haiti = _.clone(fixtures.haiti);
     var info = cardboard.metadata.featureInfo('abc', haiti);
     t.deepEqual(info, {
-        size: 106,
+        size: 55, // geobuf 3.x produces more compact encoding
         bounds: [-73.388671875, 18.771115062337024, -72.1142578125, 19.80805412808859],
         west: -73.388671875,
         south: 18.771115062337024,
