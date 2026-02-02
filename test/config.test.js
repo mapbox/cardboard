@@ -30,6 +30,8 @@ test('pass preconfigured dyno object', function(t) {
         cardboard.list('default', function(err, items) {
             t.equal(err, null);
             delete items.features[0].id;
+            // geobuf 3.x omits empty properties, so normalize for comparison
+            if (!items.features[0].properties) items.features[0].properties = {};
             t.deepEqual(items, { type: 'FeatureCollection', features: [geojson] }, 'one result');
             t.end();
         });
