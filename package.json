@@ -1,6 +1,6 @@
 {
   "name": "@mapbox/cardboard",
-  "version": "3.0.6",
+  "version": "3.0.7",
   "description": "A library for storing and searching geographic features",
   "main": "index.js",
   "scripts": {
@@ -55,5 +55,8 @@
     "mock-aws-s3": "^0.2.1",
     "nyc": "^6.4.4",
     "tape": "^4.6.3"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
