@@ -1,25 +1,40 @@
-var Dyno = require('@mapbox/dyno');
+var DynamoDBClient = require('@aws-sdk/client-dynamodb').DynamoDBClient;
+var CreateTableCommand = require('@aws-sdk/client-dynamodb').CreateTableCommand;
+var ResourceInUseException = require('@aws-sdk/client-dynamodb').ResourceInUseException;
+var DynamoDBDocumentClient = require('@aws-sdk/lib-dynamodb').DynamoDBDocumentClient;
+var dynamoBatch = require('./lib/dynamo-batch');
 
 module.exports = Cardboard;
 
 /**
  * Cardboard client generator
  * @param {object} config - a configuration object
- * @param {string} config.dyno - the name of a DynamoDB table to connect to
+ * @param {string} config.mainTable - the name of a DynamoDB table to connect to
  * @param {string} config.region - the AWS region containing the DynamoDB table
- * @param {string} config.bucket - the name of an S3 bucket to use
- * @param {string} config.prefix - the name of a folder within the indicated S3 bucket
- * @param {dyno} [config.dyno] - a pre-configured [dyno client](https://github.com/mapbox/dyno) for connecting to DynamoDB
- * @param {s3} [config.s3] - a pre-configured [S3 client](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html)
+ * @param {string} [config.endpoint] - an alternate DynamoDB endpoint to connect to
+ * @param {string} [config.accessKeyId] - AWS credentials
+ * @param {string} [config.secretAccessKey] - AWS credentials
+ * @param {string} [config.sessionToken] - AWS credentials
+ * @param {DynamoDBDocumentClient} [config.dynamodb] - a pre-configured [DynamoDBDocumentClient](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/lib-dynamodb/) for connecting to DynamoDB
  * @returns {cardboard} a cardboard client
  */
 function Cardboard(config) {
     config = config || {};
 
-    // Allow caller to pass in aws-sdk clients
-    if (!config.dyno && (typeof config.mainTable !== 'string' || config.mainTable.length === 0)) throw new Error('"mainTable" must be a string');
-    if (!config.dyno && !config.region) throw new Error('No region set');
-    if (!config.dyno) config.dyno = Dyno({table: config.mainTable, region: config.region, endpoint: config.endpoint});
+    // Allow caller to pass in an aws-sdk client
+    if (!config.dynamodb && (typeof config.mainTable !== 'string' || config.mainTable.length === 0)) throw new Error('"mainTable" must be a string');
+    if (!config.dynamodb && !config.region) throw new Error('No region set');
+    if (!config.dynamodb) {
+        var clientConfig = { region: config.region, endpoint: config.endpoint };
+        if (config.accessKeyId && config.secretAccessKey) {
+            clientConfig.credentials = {
+                accessKeyId: config.accessKeyId,
+                secretAccessKey: config.secretAccessKey,
+                sessionToken: config.sessionToken
+            };
+        }
+        config.dynamodb = DynamoDBDocumentClient.from(new DynamoDBClient(clientConfig));
+    }
 
     var utils = require('./lib/utils');
 
@@ -56,7 +71,7 @@ function Cardboard(config) {
             return { PutRequest: { Item: record } };
         });
 
-        config.dyno.batchWriteItemRequests(params).sendAll(10, function(err, results) {
+        dynamoBatch.batchWrite(config.dynamodb, config.mainTable, params.RequestItems[config.mainTable], function(err, results) {
             if (err) return callback(err);
 
             var unprocessed = results.reduce(function(memo, result) {
@@ -100,7 +115,7 @@ function Cardboard(config) {
 
         if(err) return callback(err);
 
-        config.dyno.batchWriteItemRequests(params).sendAll(10, function(err, results) {
+        dynamoBatch.batchWrite(config.dynamodb, config.mainTable, params.RequestItems[config.mainTable], function(err, results) {
             if (err) return callback(err);
 
             var unprocessed = results.reduce(function(memo, result) {
@@ -127,11 +142,8 @@ function Cardboard(config) {
 
         var keys = input.map(function(id) { return utils.createFeatureKey(dataset, id); });
 
-        var params = { RequestItems: {}};
-        params.RequestItems[config.mainTable] = { Keys: keys };
-
-        config.dyno.batchGetItemRequests(params).sendAll(10, function(err, results) {
-            if (err) return callback(err[0]);
+        dynamoBatch.batchGet(config.dynamodb, config.mainTable, keys, function(err, results) {
+            if (err) return callback(err);
             var features = results.reduce(function(memo, result) {
                 var res = result.Responses ? result.Responses[config.mainTable] : [];
                 return memo.concat(res);
@@ -162,7 +174,14 @@ function Cardboard(config) {
     cardboard.createTable = function(callback) {
         var tableSchema = require('./lib/main-table.json');
         tableSchema.TableName = config.mainTable;
-        config.dyno.createTable(tableSchema, callback);
+        config.dynamodb.send(new CreateTableCommand(tableSchema)).then(function(data) {
+            callback(null, data);
+        }, function(err) {
+            // A table with this name already existing is not an error: callers
+            // are free to point cardboard at a pre-existing table.
+            if (err instanceof ResourceInUseException) return callback(null);
+            callback(err);
+        });
     };
 
     return cardboard;

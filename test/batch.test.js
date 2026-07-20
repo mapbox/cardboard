@@ -2,6 +2,7 @@ var fs = require('fs');
 var path = require('path');
 var fixtures = require('./fixtures');
 var states = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'data', 'states.geojson'), 'utf8'));
+var paginateScan = require('@aws-sdk/lib-dynamodb').paginateScan;
 
 var mainTable = require('@mapbox/dynamodb-test')(require('tape'), 'cardboard', require('../lib/main-table.json'));
 
@@ -11,38 +12,39 @@ var config = {
     endpoint: 'http://localhost:4567'
 };
 
-function unprocessableDyno(table) {
+// A fake DynamoDBDocumentClient whose batch operations always report every
+// requested item/key as unprocessed, to exercise cardboard's `pending` handling.
+function unprocessableDynamoDb(table) {
     return {
-        config: { params: { TableName: table} },
-        batchGetItemRequests: function(params) {
-            return {
-                sendAll: function(rate, callback) {
-                    setTimeout(function() {
-                        callback(null, [{
-                            UnprocessedKeys: params.RequestItems
-                        }]);
-                    }, 0);
-                }
+        send: function(command) {
+            var requestItems = command.input.RequestItems[table];
+            if (requestItems && requestItems.Keys) {
+                return Promise.resolve({ UnprocessedKeys: command.input.RequestItems });
             }
-        },
-        batchWriteItemRequests: function(params) {
-            return {
-                sendAll: function(rate, callback) {
-                    setTimeout(function() {
-                        callback(null, [{
-                            UnprocessedItems: params
-                        }]);
-                    }, 0);
-                }
-            }
+            return Promise.resolve({ UnprocessedItems: command.input.RequestItems });
         }
-    } 
+    };
 }
 
-var cardboard = require('../')(config);     
+function scanAll(callback) {
+    var paginator = paginateScan({ client: config.dynamodb }, { TableName: config.mainTable });
+    var records = [];
+
+    function step() {
+        paginator.next().then(function(result) {
+            if (result.done) return callback(null, records);
+            records = records.concat(result.value.Items || []);
+            step();
+        }, callback);
+    }
+
+    step();
+}
+
+var cardboard = require('../')(config);
 var unprocessableCardboard = require('..')({
     mainTable: 'features',
-    dyno: unprocessableDyno('features')
+    dynamodb: unprocessableDynamoDb('features')
 });
 
 mainTable.test('[batch] put', function(assert) {
@@ -55,20 +57,17 @@ mainTable.test('[batch] put', function(assert) {
             return hasId;
         }, true), 'all returned features have ids');
 
-        var records = [];
-        config.dyno.scanStream()
-            .on('data', function(d) { records.push(d); })
-            .on('error', function(err) { throw err; })
-            .on('end', function() {
-                assert.equal(records.length, states.features.length, 'inserted all the features');
+        scanAll(function(err, records) {
+            if (err) throw err;
+            assert.equal(records.length, states.features.length, 'inserted all the features');
 
-                assert.ok(records.reduce(function(inDataset, record) {
-                    if (record.key.indexOf('states!') !== 0) inDataset = false;
-                    return inDataset;
-                }, true), 'all records in the right dataset');
+            assert.ok(records.reduce(function(inDataset, record) {
+                if (record.key.indexOf('states!') !== 0) inDataset = false;
+                return inDataset;
+            }, true), 'all records in the right dataset');
 
-                assert.end();
-            });
+            assert.end();
+        });
     });
 });
 
@@ -122,8 +121,7 @@ mainTable.test('[batch] del', function(assert) {
         });
         cardboard.del(ids, 'states', function(err) {
             assert.ifError(err, 'success');
-            var records = [];
-            config.dyno.scanStream().on('data', function(d) { records.push(d); }).on('end', function() {
+            scanAll(function(err, records) {
                 if (err) throw err;
                 assert.equal(records.length, 0, 'deleted all the records');
                 assert.end();

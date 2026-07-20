@@ -3,6 +3,7 @@ var Cardboard = require('../');
 var Pbf = require('pbf');
 var geobuf = require('geobuf');
 var fixtures = require('./fixtures');
+var GetCommand = require('@aws-sdk/lib-dynamodb').GetCommand;
 
 var mainTable = require('@mapbox/dynamodb-test')(require('tape'), 'cardboard', require('../lib/main-table.json'));
 
@@ -127,9 +128,8 @@ mainTable.test('[indexing] insert wildly precise feature', function(assert) {
     cardboard.put(d, 'default', function(err, res) {
         assert.ifError(err, 'inserted without error');
         var key = utils.createFeatureKey('default', res.features[0].id);
-        config.dyno.getItem({ Key: key}, function(err, data) {
+        config.dynamodb.send(new GetCommand({ TableName: config.mainTable, Key: key })).then(function(data) {
             var item = data.Item;
-            assert.ifError(err, 'got item');
             var feature = utils.decodeBuffer(item.val);
 
             var fLng = feature.geometry.coordinates[0].toString();
@@ -144,6 +144,9 @@ mainTable.test('[indexing] insert wildly precise feature', function(assert) {
             assert.equal(fLng, dLng.slice(0, 8));
             assert.equal(fLat, dLat.slice(0, 8));
 
+            assert.end();
+        }, function(err) {
+            assert.ifError(err, 'got item');
             assert.end();
         });
     });

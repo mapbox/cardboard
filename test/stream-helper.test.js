@@ -1,5 +1,5 @@
 var test = require('tape');
-var Dyno = require('@mapbox/dyno');
+var marshall = require('@aws-sdk/util-dynamodb').marshall;
 var streamHelper = require('../lib/stream-helper');
 
 test('handlers removes', function(assert) {
@@ -64,7 +64,7 @@ test('removes actions we dont want', function(assert) {
 
 function toEvent(action, records) {
     var out = records.map(function(mainRecord) {
-        var serialized = JSON.parse(Dyno.serialize(mainRecord));
+        var serialized = marshall(mainRecord);
         var record = { eventName: action };
         record.dynamodb = {};
         record.dynamodb.OldImage = action !== 'INSERT' ? serialized : undefined;

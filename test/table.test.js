@@ -6,16 +6,19 @@ var dynalite = require('dynalite')({
     updateTableMs: 0,
     deleteTableMs: 0
 });
+var DynamoDBClient = require('@aws-sdk/client-dynamodb').DynamoDBClient;
+var ListTablesCommand = require('@aws-sdk/client-dynamodb').ListTablesCommand;
+var DeleteTableCommand = require('@aws-sdk/client-dynamodb').DeleteTableCommand;
 
 var config = {
     region: 'fake',
     endpoint: 'http://localhost:4567'
 };
 
-var dyno = require('@mapbox/dyno')({
-    table: 'fake',
+var client = new DynamoDBClient({
     region: 'fake',
-    endpoint: 'http://localhost:4567'
+    endpoint: 'http://localhost:4567',
+    credentials: { accessKeyId: 'fake', secretAccessKey: 'fake' }
 });
 
 function before() {
@@ -29,13 +32,11 @@ function before() {
 
 function after() {
     test('tearing down tables', function(assert) {
-        dyno.listTables(function(err, tables) {
-            assert.ifError(err, 'found tables');
-            if (err) return assert.end(err);
+        client.send(new ListTablesCommand({})).then(function(tables) {
             var q = queue();
             tables.TableNames.forEach(function(name) {
                 q.defer(function(done) {
-                    dyno.deleteTable({TableName: name}, done);  
+                    client.send(new DeleteTableCommand({ TableName: name })).then(function() { done(); }, done);
                 });
             });
 
@@ -43,6 +44,9 @@ function after() {
                 if (err) return assert.end(err);
                 dynalite.close(function(err) { assert.end(err); });
             });
+        }, function(err) {
+            assert.ifError(err, 'found tables');
+            assert.end(err);
         });
     });
 }
@@ -53,12 +57,11 @@ test('[tables] createTable - match config name', function(assert) {
     var cardboard = require('..')(_.extend({ mainTable: 'features' }, config));
     cardboard.createTable(function(err) {
         assert.ifError(err, 'success');
-  
-        dyno.listTables(function(err, tables) {
-            if (err) throw err;
+
+        client.send(new ListTablesCommand({})).then(function(tables) {
             assert.deepEqual(tables.TableNames, ['features'], 'created table');
             assert.end();
-        });
+        }, function(err) { throw err; });
     });
 });
 
@@ -69,12 +72,11 @@ test('[tables] createTable - match config name, with difference names', function
     var cardboard = require('..')(_.extend({ mainTable: 'first' }, config));
     cardboard.createTable(function(err) {
         assert.ifError(err, 'success');
-  
-        dyno.listTables(function(err, tables) {
-            if (err) throw err;
+
+        client.send(new ListTablesCommand({})).then(function(tables) {
             assert.deepEqual(tables.TableNames, ['first'], 'created table');
             assert.end();
-        });
+        }, function(err) { throw err; });
     });
 });
 
