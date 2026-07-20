@@ -32,6 +32,12 @@ function Cardboard(config) {
                 secretAccessKey: config.secretAccessKey,
                 sessionToken: config.sessionToken
             };
+        } else if (config.endpoint) {
+            // Local/custom endpoints (dynalite, DynamoDB Local, etc.) don't
+            // validate credentials, but the SDK still requires some to be
+            // resolvable rather than falling through to the (possibly empty)
+            // default provider chain.
+            clientConfig.credentials = { accessKeyId: 'local', secretAccessKey: 'local' };
         }
         config.dynamodb = DynamoDBDocumentClient.from(new DynamoDBClient(clientConfig));
     }
