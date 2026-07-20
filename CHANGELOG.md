@@ -1,3 +1,10 @@
+# v4.0.0
+
+- Migrate from AWS SDK for JavaScript v2 to v3. Removes the `aws-sdk` and `@mapbox/dyno` dependencies in favor of `@aws-sdk/client-dynamodb`, `@aws-sdk/lib-dynamodb`, and `@aws-sdk/util-dynamodb`.
+- **Breaking:** the `dyno` configuration option (a preconfigured `@mapbox/dyno` client) has been replaced by `dynamodb`, a preconfigured `DynamoDBDocumentClient`.
+- **Breaking:** removed the unused `bucket`, `prefix`, and `s3` configuration options and the corresponding CLI flags/env vars, which had been dead since the v3.0.0 architecture split.
+- **Breaking:** requires Node.js >= 18.
+
 # v3.0.6
 
 - Replace dyno with @mapbox/dyno and upgrade to v1.6.3

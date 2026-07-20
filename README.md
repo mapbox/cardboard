@@ -4,6 +4,8 @@
 > **`cardboard` is under minimal security maintenance and not being actively developed.**
 >
 > While the default branch contains the latest 3.x release, many projects were never upgraded to the new v3 API and remain on 2.x. There is a [v2x branch](https://github.com/mapbox/cardboard/tree/v2x) that will receive similar security updates and new NPM package versions as v3.x for the near future, but will likely be deprecated in 2026 or 2027. If you rely on `cardboard`, please plan accordingly and use at your own risk.
+>
+> As of `4.0.0`, cardboard uses AWS SDK for JavaScript v3 and requires Node.js >= 18. The `dyno` configuration option (a preconfigured [dyno](https://github.com/mapbox/dyno) client) has been replaced by `dynamodb`, a preconfigured [`DynamoDBDocumentClient`](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/lib-dynamodb/).
 
 [![Build Status](https://travis-ci.org/mapbox/cardboard.svg?branch=master)](https://travis-ci.org/mapbox/cardboard) [![Coverage Status](https://coveralls.io/repos/mapbox/cardboard/badge.svg?branch=master)](https://coveralls.io/r/mapbox/cardboard?branch=master)
 
@@ -26,11 +28,11 @@ region | X | the region containing the given DynamoDB table
 accessKeyId | | AWS credentials
 secretAccessKey | | AWS credentials
 sessionToken | | AWS credentials
-dyno | | a pre-configured [dyno client](https://github.com/mapbox/dyno) to use for DynamoDB interactions
+dynamodb | | a pre-configured [DynamoDBDocumentClient](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/lib-dynamodb/) to use for DynamoDB interactions
 
-Providing AWS credentials is optional. Cardboard depends on the AWS SDK for JavaScript, and so credentials can be provided in any way supported by that library. See [configuring the SDK in Node.js](http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-configuring.html) for more configuration options.
+Providing AWS credentials is optional. Cardboard depends on the AWS SDK for JavaScript v3, and so credentials can be provided in any way supported by that library. See [configuring the SDK in Node.js](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/setting-credentials-node.html) for more configuration options.
 
-If you provide a preconfigured [dyno client](https://github.com/mapbox/dyno), you do not need to specify `table` and `region` when initializing cardboard.
+If you provide a preconfigured `dynamodb` client, you do not need to specify `mainTable` and `region` when initializing cardboard.
 
 #### Example
 
