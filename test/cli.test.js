@@ -33,8 +33,6 @@ mainTable.test('[cli] config via env', features, function(assert) {
         env: _.extend({
             CardboardRegion: 'region',
             CardboardMainTable: 'features',
-            CardboardBucket: 'bucket',
-            CardboardPrefix: 'prefix',
             CardboardEndpoint: 'http://localhost:4567'
         }, process.env)
     };
@@ -51,8 +49,6 @@ mainTable.test('[cli] config via params', features, function(assert) {
         cmd,
         '--region', 'region',
         '--mainTable', config.mainTable,
-        '--bucket', 'bucket',
-        '--prefix', 'prefix',
         '--endpoint', 'http://localhost:4567',
         'invalid-command'
     ];
@@ -68,8 +64,6 @@ mainTable.test('[cli] config fail', features, function(assert) {
         cmd,
         '--mainTable', config.mainTable,
         '--searchTable', config.searchTable,
-        '--bucket', 'bucket',
-        '--prefix', 'prefix',
         '--endpoint', 'http://localhost:4567',
         'invalid-command'
     ];
@@ -85,8 +79,6 @@ mainTable.test('[cli] get', features, function(assert) {
         '--region', 'region',
         '--mainTable', config.mainTable,
         '--searchTable', config.searchTable,
-        '--bucket', 'test',
-        '--prefix', 'test',
         '--endpoint', 'http://localhost:4567',
         'get', 'test', '\'new-hampshire\''
     ];

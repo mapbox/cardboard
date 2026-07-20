@@ -15,12 +15,6 @@ function configLoader(args, env) {
     config.mainTable = args.mainTable || env.CardboardMainTable;
     if (!config.mainTable) throw new Error('You must provide a features table name');
 
-    config.bucket = args.bucket || env.CardboardBucket;
-    if (!config.bucket) throw new Error('You must provide an S3 bucket');
-
-    config.prefix = args.prefix || env.CardboardPrefix;
-    if (!config.prefix) throw new Error('You must provide an S3 prefix');
-
     if (args.endpoint || env.CardboardEndpoint) {
         config.endpoint = args.endpoint || env.CardboardEndpoint;
     }

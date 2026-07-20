@@ -52,7 +52,6 @@
     "geojson-fixtures": "0.1.0",
     "geojson-random": "^0.2.2",
     "geojson-stream": "0.0.0",
-    "mock-aws-s3": "^0.2.1",
     "nyc": "^6.4.4",
     "tape": "^4.6.3"
   }
