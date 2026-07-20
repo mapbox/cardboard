@@ -34,18 +34,16 @@
     "@aws-sdk/client-dynamodb": "^3.0.0",
     "@aws-sdk/lib-dynamodb": "^3.0.0",
     "@aws-sdk/util-dynamodb": "^3.0.0",
+    "@paralleldrive/cuid2": "^2.2.2",
     "buffer-from": "^0.1.1",
-    "cuid": "1.2.4",
     "geobuf": "^3.0.0",
     "@mapbox/geojson-extent": "^1.0.1",
-    "geojson-normalize": "0.0.0",
+    "@mapbox/geojson-normalize": "^0.0.1",
     "lodash": "^4.17.23",
     "minimist": "^1.2.8",
     "pbf": "^3.0.4",
-    "queue-async": "~1.0.7",
-    "sphericalmercator": "^1.0.3",
-    "through2": "^2.0.0",
-    "tilebelt": "^0.5.2"
+    "queue-async": "^1.2.1",
+    "through2": "^2.0.0"
   },
   "devDependencies": {
     "coveralls": "^2.11.2",
