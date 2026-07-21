@@ -22,7 +22,7 @@ function Cardboard(config) {
     config = config || {};
 
     // Allow caller to pass in an aws-sdk client
-    if (!config.dynamodb && (typeof config.mainTable !== 'string' || config.mainTable.length === 0)) throw new Error('"mainTable" must be a string');
+    if (typeof config.mainTable !== 'string' || config.mainTable.length === 0) throw new Error('"mainTable" must be a string');
     if (!config.dynamodb && !config.region) throw new Error('No region set');
     if (!config.dynamodb) {
         var clientConfig = { region: config.region, endpoint: config.endpoint };

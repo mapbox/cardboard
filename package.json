@@ -5,7 +5,7 @@
   "main": "index.js",
   "engines": {
     "node": ">=20"
-  }
+  },
   "scripts": {
     "pretest": "eslint index.js lib test/*.js",
     "test": "nyc tape test/*.test.js",
