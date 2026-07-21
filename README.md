@@ -32,7 +32,7 @@ dynamodb | | a pre-configured [DynamoDBDocumentClient](https://docs.aws.amazon.c
 
 Providing AWS credentials is optional. Cardboard depends on the AWS SDK for JavaScript v3, and so credentials can be provided in any way supported by that library. See [configuring the SDK in Node.js](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/setting-credentials-node.html) for more configuration options.
 
-If you provide a preconfigured `dynamodb` client, you do not need to specify `mainTable` and `region` when initializing cardboard.
+If you provide a preconfigured `dynamodb` client, you do not need to specify `region` when initializing cardboard.
 
 #### Example
 
