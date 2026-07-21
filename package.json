@@ -4,8 +4,8 @@
   "description": "A library for storing and searching geographic features",
   "main": "index.js",
   "engines": {
-    "node": ">=18"
-  },
+    "node": ">=20"
+  }
   "scripts": {
     "pretest": "eslint index.js lib test/*.js",
     "test": "nyc tape test/*.test.js",
